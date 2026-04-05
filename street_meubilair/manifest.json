@@ -1,0 +1,16 @@
+{
+    "include_js": [],
+    "include_css": [],
+    "web_include_js": [],
+    "web_include_css": [],
+    "sounds": [],
+    "app_name": "street_meubilair",
+    "app_title": "Stephen's Bankjes",
+    "app_publisher": "Stephen",
+    "app_description": "Stephen's Amsterdam Bankjes (Benches) Explorer",
+    "app_icon": "octicon octicon-file-directory",
+    "app_color": "grey",
+    "app_email": "your@email.com",
+    "app_license": "MIT",
+    "app_version": "0.0.1"
+} 
