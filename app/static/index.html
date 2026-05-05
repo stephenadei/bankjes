@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bankjes — Amsterdam straatmeubilair</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #ffffff;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --border: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
+  body { display: grid; grid-template-rows: auto 1fr; }
+  header { padding: 12px 16px; background: var(--bg); color: #fff; display: flex; align-items: baseline; gap: 12px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header .sub { color: #94a3b8; font-size: 13px; }
+  header .status { margin-left: auto; font-size: 12px; color: #94a3b8; }
+  main { display: grid; grid-template-columns: 280px 1fr; min-height: 0; }
+  aside { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; }
+  aside section { padding: 16px; border-bottom: 1px solid var(--border); }
+  aside h2 { margin: 0 0 12px; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  label.row { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; user-select: none; }
+  label.row input { transform: scale(1.15); accent-color: var(--accent); }
+  label.row .name { flex: 1; }
+  label.row .count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); }
+  button.refresh { width: 100%; padding: 8px 12px; background: var(--accent); color: white; border: 0; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button.refresh:disabled { opacity: .5; cursor: wait; }
+  #map { height: 100%; }
+  .legend-note { font-size: 12px; color: var(--muted); }
+  .popup-title { font-weight: 600; margin: 0 0 4px; }
+  .popup-id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; color: var(--muted); }
+  .popup-props { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; }
+  .popup-props li { display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 2px 0; }
+  .popup-props .k { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🪑 Bankjes</h1>
+  <span class="sub">Amsterdam straatmeubilair · live van data.amsterdam.nl</span>
+  <span class="status" id="status">…</span>
+</header>
+<main>
+  <aside>
+    <section>
+      <h2>Categorieën</h2>
+      <div id="filters"></div>
+    </section>
+    <section>
+      <button class="refresh" id="refresh">Vernieuwen</button>
+      <p class="legend-note" style="margin-top:10px">Klikken op een marker toont onderliggende eigenschappen uit de open-data-API.</p>
+    </section>
+    <section>
+      <h2>Bron</h2>
+      <p class="legend-note">api.data.amsterdam.nl/v1 — banken &amp; picknicktafels (BGT straatmeubilair), afvalcontainers, fietspaaltjes, sportplekken.</p>
+    </section>
+  </aside>
+  <div id="map"></div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+  // Dataset metadata: label → {display name, color}
+  const DATASETS = {
+    bench:           { name: "Banken",            color: "#2563eb" },
+    picnic_table:    { name: "Picknicktafels",    color: "#16a34a" },
+    trash_bin:       { name: "Afvalcontainers",   color: "#525252" },
+    bike_pole:       { name: "Fietspaaltjes",     color: "#ea580c" },
+    sports_facility: { name: "Sportvoorzieningen", color: "#9333ea" },
+  };
+
+  const map = L.map("map").setView([52.3676, 4.9041], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "© OpenStreetMap",
+  }).addTo(map);
+
+  // One cluster group per dataset, so we can toggle them independently.
+  const clusters = {};
+  for (const key of Object.keys(DATASETS)) {
+    clusters[key] = L.markerClusterGroup({
+      chunkedLoading: true,
+      iconCreateFunction: (cluster) =>
+        L.divIcon({
+          html: `<div style="background:${DATASETS[key].color};color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)">${cluster.getChildCount()}</div>`,
+          className: "",
+          iconSize: [36, 36],
+        }),
+    });
+    clusters[key].addTo(map);
+  }
+
+  function dotIcon(color) {
+    return L.divIcon({
+      html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.4)"></div>`,
+      className: "",
+      iconSize: [12, 12],
+    });
+  }
+
+  // Filter sidebar
+  const counts = Object.fromEntries(Object.keys(DATASETS).map((k) => [k, 0]));
+  const filtersEl = document.getElementById("filters");
+  for (const [key, meta] of Object.entries(DATASETS)) {
+    const wrap = document.createElement("label");
+    wrap.className = "row";
+    wrap.innerHTML = `
+      <input type="checkbox" data-key="${key}" checked>
+      <span class="swatch" style="background:${meta.color}"></span>
+      <span class="name">${meta.name}</span>
+      <span class="count" id="count-${key}">–</span>
+    `;
+    wrap.querySelector("input").addEventListener("change", (e) => {
+      const k = e.target.dataset.key;
+      if (e.target.checked) clusters[k].addTo(map);
+      else map.removeLayer(clusters[k]);
+    });
+    filtersEl.appendChild(wrap);
+  }
+
+  function popupHtml(item) {
+    const meta = DATASETS[item.dataset] || { name: item.dataset };
+    const propRows = Object.entries(item.props || {})
+      .filter(([k, v]) => v != null && typeof v !== "object" && !k.startsWith("_"))
+      .slice(0, 8)
+      .map(([k, v]) => `<li><span class="k">${k}</span><span>${String(v)}</span></li>`)
+      .join("");
+    return `
+      <p class="popup-title">${meta.name}</p>
+      <p class="popup-id">${item.id ?? ""}</p>
+      <ul class="popup-props">${propRows}</ul>
+    `;
+  }
+
+  async function load() {
+    const btn = document.getElementById("refresh");
+    const status = document.getElementById("status");
+    btn.disabled = true;
+    status.textContent = "Laden…";
+
+    // Reset all clusters and counts
+    for (const key of Object.keys(DATASETS)) {
+      clusters[key].clearLayers();
+      counts[key] = 0;
+      document.getElementById(`count-${key}`).textContent = "…";
+    }
+
+    try {
+      const r = await fetch("/api/items");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      for (const item of data.items) {
+        if (item.lat == null || item.lon == null) continue;
+        const meta = DATASETS[item.dataset];
+        if (!meta) continue;
+        const marker = L.marker([item.lat, item.lon], { icon: dotIcon(meta.color) });
+        marker.bindPopup(popupHtml(item));
+        clusters[item.dataset].addLayer(marker);
+        counts[item.dataset]++;
+      }
+      for (const key of Object.keys(DATASETS)) {
+        document.getElementById(`count-${key}`).textContent = counts[key].toLocaleString("nl-NL");
+      }
+      status.textContent = `${data.count.toLocaleString("nl-NL")} items`;
+    } catch (err) {
+      status.textContent = `Fout: ${err.message}`;
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById("refresh").addEventListener("click", load);
+  load();
+</script>
+</body>
+</html>
