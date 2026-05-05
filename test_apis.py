@@ -39,13 +39,13 @@ def test_amsterdam_apis():
     """Test the real Amsterdam data APIs"""
     print("\n🏛️ Testing Amsterdam Open Data APIs...")
     
-    # The API endpoints from our sync script
+    # Endpoints used by sync_all.py (DSO-API v1, _pageSize is camelCase, single-= filters)
     endpoints = {
-        "BRT10 (Benches/Furniture)": "https://api.data.amsterdam.nl/v1/brt10/inrichtingselementen/?soort_object==Zitbank&_format=geojson&_page_size=5",
-        "Household Waste": "https://api.data.amsterdam.nl/v1/huishoudelijkafval/containerlocatie/?_format=geojson&_page_size=5",
-        "Public Lighting": "https://api.data.amsterdam.nl/v1/storingsmeldingen_openbare_verlichting_en_klokken/openbareVerlichting/?_format=geojson&_page_size=5",
-        "Bike Poles": "https://api.data.amsterdam.nl/v1/fietspaaltjes/fietspaaltjes/?_format=geojson&_page_size=5",
-        "Sports (Benches)": "https://api.data.amsterdam.nl/v1/sport/openbaresportplek/?type==bank&_format=geojson&_page_size=5"
+        "Benches (BGT straatmeubilair, plusType=bank)": "https://api.data.amsterdam.nl/v1/bgt/straatmeubilair/?plusType=bank&_format=geojson&_pageSize=5",
+        "Picnic tables (BGT straatmeubilair)": "https://api.data.amsterdam.nl/v1/bgt/straatmeubilair/?plusType=picknicktafel&_format=geojson&_pageSize=5",
+        "Household waste containers": "https://api.data.amsterdam.nl/v1/huishoudelijkafval/containerlocatie/?_format=geojson&_pageSize=5",
+        "Bike poles": "https://api.data.amsterdam.nl/v1/fietspaaltjes/fietspaaltjes/?_format=geojson&_pageSize=5",
+        "Sports facilities": "https://api.data.amsterdam.nl/v1/sport/openbaresportplek/?_format=geojson&_pageSize=5",
     }
     
     results = {}
@@ -112,15 +112,15 @@ def test_sync_script():
         
         print("✅ Sync script imports successfully")
         print(f"   Configured datasets: {len(TABLES)}")
-        
-        for dataset, (table, filters) in TABLES.items():
-            print(f"   - {dataset}/{table}")
+
+        for label, path, filters in TABLES:
+            print(f"   - {label}: {path}")
             if filters:
                 print(f"     Filters: {filters}")
-        
+
         # Test the pull function with a small dataset
         print("\n   Testing data pull function...")
-        test_url = "https://api.data.amsterdam.nl/v1/brt10/inrichtingselementen/?soort_object==Zitbank&_format=geojson&_page_size=2"
+        test_url = "https://api.data.amsterdam.nl/v1/bgt/straatmeubilair/?plusType=bank&_format=geojson&_pageSize=2"
         
         try:
             items = list(pull(test_url))

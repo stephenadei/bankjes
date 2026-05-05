@@ -1,88 +1,90 @@
-
 # street_meubilair/sync_all.py
-import requests, frappe, json, time
+import json
+import time
+from urllib.parse import urlencode
+
+import frappe
+import requests
+
 BASE = "https://api.data.amsterdam.nl/v1"
 
-# Map dataset → table → optional filter params
-TABLES = {
-    "huishoudelijkafval": ("containerlocatie", {}),  # Waste containers
-    "fietspaaltjes": ("fietspaaltjes", {}),           # Bike poles  
-    "sport": ("openbaresportplek", {}),               # Sports facilities (may include benches)
-}
+# (label, dataset/table path, query params).
+# Always requested as GeoJSON so the server reprojects RD → WGS84 (CRS84).
+TABLES = [
+    ("bench",            "bgt/straatmeubilair",                 {"plusType": "bank"}),
+    ("picnic_table",     "bgt/straatmeubilair",                 {"plusType": "picknicktafel"}),
+    ("trash_bin",        "huishoudelijkafval/containerlocatie", {}),
+    ("bike_pole",        "fietspaaltjes/fietspaaltjes",         {}),
+    ("sports_facility",  "sport/openbaresportplek",             {}),
+]
+
 
 def pull(url):
     while url:
         r = requests.get(url, timeout=30).json()
-        
-        # Handle different response formats:
-        # 1. HAL format (_embedded with dataset name)
-        if "_embedded" in r:
-            embedded = r["_embedded"]
-            # Get the first (and usually only) embedded collection
-            items = next(iter(embedded.values())) if embedded else []
-        # 2. GeoJSON format (features)
-        elif "features" in r:
-            items = r["features"]
-        # 3. Standard format (results)
-        else:
-            items = r.get("results", [])
-        
-        yield from items
-        
-        # Handle pagination - check both _links.next and next
-        url = r.get("next")
-        if not url and "_links" in r and "next" in r["_links"]:
-            url = r["_links"]["next"]["href"]
+        for feat in r.get("features", []):
+            yield feat
+        # GeoJSON pagination: _links is a list with rel="next"
+        next_url = None
+        for link in r.get("_links") or []:
+            if isinstance(link, dict) and link.get("rel") == "next":
+                next_url = link.get("href")
+                break
+        url = next_url
+
 
 def sync():
-    for ds, (tbl, q) in TABLES.items():
-        params = "&".join(f"{k}={v}" for k, v in q.items()) if q else ""
-        url = f"{BASE}/{ds}/{tbl}/?{params}&_pageSize=1000"
-        for row in pull(url):
-            # Extract coordinates from different formats
-            lat, lon = None, None
-            
-            # Try different geometry field names and formats
-            if "geometry" in row and "coordinates" in row["geometry"]:
-                # GeoJSON format
-                coords = row["geometry"]["coordinates"]
-                lon, lat = coords[0], coords[1]
-            elif "geometrie" in row and row["geometrie"]:
-                # Dutch format - may need coordinate transformation
-                geom = row["geometrie"]
-                if isinstance(geom, dict) and "coordinates" in geom:
-                    coords = geom["coordinates"]
-                    lon, lat = coords[0], coords[1]
-                # Note: These might be RD coordinates, need transformation
-            
-            # Skip items without valid coordinates
-            if not (lat and lon):
+    for label, path, q in TABLES:
+        params = dict(q)
+        params["_format"] = "geojson"
+        params["_pageSize"] = 1000
+        url = f"{BASE}/{path}/?{urlencode(params)}"
+        for feat in pull(url):
+            geom = feat.get("geometry") or {}
+            coords = geom.get("coordinates") if geom.get("type") == "Point" else None
+            if not coords or len(coords) < 2:
                 continue
-                
-            # Extract ID
-            item_id = (row.get("id") or 
-                      row.get("_id") or 
-                      row.get("identificatie") or 
-                      str(hash(str(row)))[:10])
-            
-            # Create document
+            lon, lat = coords[0], coords[1]
+
+            props = feat.get("properties") or {}
+            item_id = (
+                feat.get("id")
+                or props.get("identificatie")
+                or props.get("id")
+            )
+            if not item_id:
+                continue
+
             doc = frappe.get_doc({
                 "doctype": "Street Furniture Item",
                 "external_id": str(item_id),
-                "dataset": ds,  # Use dataset name instead of type
+                "dataset": label,
                 "latitude": lat,
                 "longitude": lon,
-                "material": (row.get("materiaal") or 
-                           row.get("material") or 
-                           row.get("soortOndergrond")),
-                "status": (row.get("status") or 
-                          row.get("mutatietype") or 
-                          "unknown"),
-                "last_inspection": (row.get("datumControle") or 
-                                  row.get("datumLaatsteMelding") or 
-                                  row.get("datumCreatie")),
-                "raw_json": json.dumps(row),
+                "material": (
+                    props.get("materiaal")
+                    or props.get("material")
+                    or props.get("soortOndergrond")
+                ),
+                "status": (
+                    props.get("status")
+                    or props.get("bgtStatus")
+                    or props.get("mutatietype")
+                    or "unknown"
+                ),
+                "last_inspection": (
+                    props.get("datumControle")
+                    or props.get("datumLaatsteMelding")
+                    or props.get("datumCreatie")
+                    or props.get("tijdstipRegistratie")
+                ),
+                "raw_json": json.dumps(feat),
             })
-            doc.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True, ignore_if_duplicate=True)
+            doc.insert(
+                ignore_permissions=True,
+                ignore_mandatory=True,
+                ignore_links=True,
+                ignore_if_duplicate=True,
+            )
         frappe.db.commit()
-        time.sleep(1)  # polite pause 
+        time.sleep(1)  # polite pause
