@@ -6,7 +6,7 @@
 <title>Stephen's Bankjes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -15,10 +15,15 @@
     --cream:    #faf7f0;
     --paper:    #fffdf6;
     --moss:     #5b7a3f;
+    --moss-2:   #7a8a47;
     --bark:     #6b5d4f;
+    --rust:     #a06a3f;
+    --plum:     #7a4a72;
+    --osm:      #4a5d6a;
     --ink:      #2d2a26;
     --muted:    #857d72;
     --line:     rgba(45, 42, 38, 0.10);
+    --line-strong: rgba(45, 42, 38, 0.18);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,89 +32,127 @@
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--ink);
     background: var(--cream);
+    display: grid;
+    grid-template-rows: auto 1fr;
   }
 
-  #map { position: fixed; inset: 0; z-index: 0; background: var(--cream); }
-
-  /* tile-cleanup voor warmer karakter */
-  .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
-
-  .glass {
-    background: rgba(255, 253, 246, 0.92);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    box-shadow:
-      0 1px 3px rgba(45, 42, 38, 0.08),
-      0 0 0 1px var(--line);
-  }
-
-  .brand {
-    position: fixed; top: 12px; left: 12px; z-index: 1000;
-    border-radius: 12px;
-    padding: 8px 13px;
-    display: inline-flex; align-items: baseline; gap: 7px;
-    line-height: 1.1;
-    white-space: nowrap;
-  }
-  .brand .mark { font-size: 15px; line-height: 1; }
-  .brand .title {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-weight: 500;
-    font-size: 15px;
-    font-variation-settings: "opsz" 18;
-    letter-spacing: -0.005em;
-  }
-  .brand .status {
-    color: var(--muted);
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-    margin-left: 2px;
-  }
-
-  /* 5 ronde icon-buttons in een verticale kolom langs rechterrand */
-  .icons {
-    position: fixed; top: 12px; right: 12px; z-index: 1000;
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .icon-btn {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; user-select: none;
-    transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
+  /* ========== Hero header ========== */
+  header.topbar {
+    background:
+      linear-gradient(180deg, rgba(255,253,246,1) 0%, rgba(255,253,246,0.96) 100%);
+    border-bottom: 1px solid var(--line);
+    padding: 18px 22px 14px;
     position: relative;
+    z-index: 500;
+  }
+  .hero {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .hero .mark { font-size: 28px; line-height: 1; }
+  .hero .title {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1.05;
+    color: var(--ink);
+    font-variation-settings: "opsz" 32;
+    letter-spacing: -0.015em;
+  }
+  .hero .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 400;
+    align-self: center;
+  }
+  .hero .status {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    align-self: center;
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 14px 10px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.12s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.1;
+    box-shadow: 0 1px 2px rgba(45, 42, 38, 0.04);
+  }
+  .filter-btn:hover { border-color: var(--line-strong); }
+  .filter-btn:active { transform: scale(0.97); }
+  .filter-btn .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
     flex-shrink: 0;
   }
-  .icon-btn:active { transform: scale(0.93); }
-  .icon-btn .swatch {
-    width: 11px; height: 11px;
-    border-radius: 50%;
-  }
-  .icon-btn.bench .swatch {
-    width: 18px; height: 18px;
-    border-radius: 0;
-    background: transparent !important;
-  }
-  .icon-btn.bench svg { display: block; }
-  .icon-btn.off { opacity: 0.42; }
-  .icon-btn .count {
-    position: absolute;
-    bottom: -6px;
-    right: -6px;
-    background: var(--paper);
-    color: var(--ink);
-    border-radius: 999px;
-    font-size: 9px;
-    font-weight: 600;
+  .filter-btn .name { white-space: nowrap; }
+  .filter-btn .count {
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
-    padding: 1px 5px;
-    line-height: 1.4;
-    box-shadow: 0 1px 2px rgba(45, 42, 38, 0.15), 0 0 0 1px var(--line);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .filter-btn.on {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .filter-btn.on .count { color: rgba(255, 253, 246, 0.7); }
+  .filter-btn.osm {
+    border-style: dashed;
+    border-color: var(--line-strong);
+  }
+  .filter-btn.osm .name::before {
+    content: "+ ";
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .filter-btn.osm.on .name::before {
+    color: rgba(255, 253, 246, 0.7);
+  }
+  .filter-btn.loading {
+    opacity: 0.5;
     pointer-events: none;
   }
-  .icon-btn.off .count { opacity: 0.6; }
 
-  /* Subtiele cluster + popup styling */
+  /* ========== Map ========== */
+  #map {
+    width: 100%;
+    height: 100%;
+    background: var(--cream);
+  }
+  .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
+  .leaflet-control-attribution {
+    background: rgba(255, 253, 246, 0.85) !important;
+    color: var(--muted) !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: var(--moss) !important; }
+
+  /* ========== Popups ========== */
   .leaflet-popup-content-wrapper {
     background: var(--paper);
     border-radius: 12px;
@@ -123,61 +166,56 @@
     margin-bottom: 2px;
     font-variation-settings: "opsz" 14;
   }
+  .pop-source {
+    display: inline-block;
+    font-size: 9px; font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
   .pop-id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; word-break: break-all; }
   .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
   .pop-row .k { color: var(--muted); font-size: 11px; }
   .pop-row .v { font-size: 12px; word-break: break-word; }
 
-  .leaflet-bar a {
-    background: rgba(255, 253, 246, 0.92) !important;
-    color: var(--ink) !important;
-    border-bottom-color: var(--line) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-  .leaflet-bar a:hover { background: var(--paper) !important; }
-  .leaflet-control-attribution {
-    background: rgba(255, 253, 246, 0.85) !important;
-    color: var(--muted) !important;
-    font-family: 'Inter', sans-serif;
-    font-size: 10px !important;
-  }
-  .leaflet-control-attribution a { color: var(--moss) !important; }
-
   @media (max-width: 540px) {
-    .brand { padding: 7px 11px; }
-    .brand .title { font-size: 14px; }
-    .brand .status { display: none; }
-    .icons { gap: 5px; }
-    .icon-btn { width: 36px; height: 36px; }
+    header.topbar { padding: 14px 16px 12px; }
+    .hero .mark { font-size: 22px; }
+    .hero .title { font-size: 24px; }
+    .hero .subtitle { display: none; }
+    .filters { gap: 6px; margin-top: 11px; }
+    .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; }
   }
 </style>
 </head>
 <body>
+<header class="topbar">
+  <div class="hero">
+    <span class="mark">🪑</span>
+    <h1 class="title">Stephen's Bankjes</h1>
+    <span class="subtitle">Amsterdam straatmeubilair</span>
+    <span class="status" id="status">·</span>
+  </div>
+  <nav class="filters" id="filters"></nav>
+</header>
 <div id="map"></div>
-
-<div class="brand glass">
-  <span class="mark">🪑</span>
-  <span class="title">Stephen's Bankjes</span>
-  <span class="status" id="status">·</span>
-</div>
-
-<div class="icons" id="icons"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // Mosgroen voor banken (hoofdrol), aardse tinten voor de rest
+  // 5 primaire categorieën uit data.amsterdam.nl + 1 secundaire OSM-laag
   const DATASETS = {
-    bench:           { name: "Banken",         color: "#5b7a3f", featured: true,  defaultOn: true  },
-    picnic_table:    { name: "Picknicktafels", color: "#7a8a47", defaultOn: false },
-    trash_bin:       { name: "Afval",          color: "#6b5d4f", defaultOn: false },
-    bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f", defaultOn: false },
-    sports_facility: { name: "Sport",          color: "#7a4a72", defaultOn: false },
+    bench:           { name: "Banken",         color: "#5b7a3f", source: "dso", primary: true,  defaultOn: true,  featured: true },
+    picnic_table:    { name: "Picknicktafels", color: "#7a8a47", source: "dso", primary: true,  defaultOn: false },
+    trash_bin:       { name: "Afval",          color: "#6b5d4f", source: "dso", primary: true,  defaultOn: false },
+    bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f", source: "dso", primary: true,  defaultOn: false },
+    sports_facility: { name: "Sport",          color: "#7a4a72", source: "dso", primary: true,  defaultOn: false },
+    bench_osm:       { name: "Banken (OSM)",   color: "#4a5d6a", source: "osm", primary: false, defaultOn: false },
   };
 
   const map = L.map("map", {
-    zoomControl: true,
+    zoomControl: false,
     zoomAnimation: true,
     fadeAnimation: true,
     inertia: true,
@@ -205,6 +243,15 @@
     });
   }
 
+  function ringIcon(color, size) {
+    size = size || 9;
+    return L.divIcon({
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(255,253,246,0.85);border:2px solid ${color};box-shadow:0 1px 1px rgba(45,42,38,0.20)"></div>`,
+      className: "",
+      iconSize: [size, size],
+    });
+  }
+
   function benchMarkerIcon(color) {
     return L.divIcon({
       html: `<div style="width:22px;height:22px;border-radius:50%;background:rgba(255,253,246,0.97);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1.5px solid ${color}55">${benchSvg(color, 14)}</div>`,
@@ -213,11 +260,13 @@
     });
   }
 
+  // Cluster groups per dataset
   const clusters = {};
   const enabled = {};
-  for (const key of Object.keys(DATASETS)) {
-    const meta = DATASETS[key];
+  const loaded = {};
+  for (const [key, meta] of Object.entries(DATASETS)) {
     enabled[key] = !!meta.defaultOn;
+    loaded[key]  = false;
     clusters[key] = L.markerClusterGroup({
       chunkedLoading: true,
       animateAddingMarkers: false,
@@ -234,27 +283,11 @@
     if (enabled[key]) clusters[key].addTo(map);
   }
 
-  const iconsEl = document.getElementById("icons");
-  for (const [key, meta] of Object.entries(DATASETS)) {
-    const btn = document.createElement("div");
-    btn.className = "icon-btn glass" + (meta.featured ? " bench" : "") + (enabled[key] ? "" : " off");
-    btn.dataset.key = key;
-    btn.title = meta.name;
-    const inner = meta.featured
-      ? `<span class="swatch">${benchSvg(meta.color, 18)}</span>`
-      : `<span class="swatch" style="background:${meta.color}"></span>`;
-    btn.innerHTML = `${inner}<span class="count" id="count-${key}">…</span>`;
-    btn.addEventListener("click", () => {
-      enabled[key] = !enabled[key];
-      btn.classList.toggle("off", !enabled[key]);
-      if (enabled[key]) clusters[key].addTo(map);
-      else map.removeLayer(clusters[key]);
-    });
-    iconsEl.appendChild(btn);
-  }
-
   function popupHtml(item) {
-    const meta = DATASETS[item.dataset] || { name: item.dataset };
+    const meta = DATASETS[item.dataset] || { name: item.dataset, source: "?" };
+    const sourceLabel = meta.source === "osm"
+      ? "Bron · OpenStreetMap"
+      : "Bron · data.amsterdam.nl";
     const propRows = Object.entries(item.props || {})
       .filter(([k, v]) => v != null && typeof v !== "object" && !k.startsWith("_"))
       .slice(0, 6)
@@ -262,46 +295,105 @@
       .join("");
     return `
       <div class="pop-title">${meta.name}</div>
+      <span class="pop-source">${sourceLabel}</span>
       <div class="pop-id">${item.id ?? ""}</div>
       ${propRows}
     `;
   }
 
-  async function load() {
-    document.getElementById("status").textContent = "laden";
-    for (const key of Object.keys(DATASETS)) {
-      clusters[key].clearLayers();
-      document.getElementById(`count-${key}`).textContent = "…";
+  function addItemsToCluster(key, items) {
+    const meta = DATASETS[key];
+    let icon;
+    if (meta.featured)            icon = (item) => benchMarkerIcon(meta.color);
+    else if (meta.source === "osm") icon = (item) => ringIcon(meta.color, 8);
+    else                          icon = (item) => dotIcon(meta.color);
+
+    const markers = [];
+    for (const item of items) {
+      if (item.lat == null || item.lon == null) continue;
+      const m = L.marker([item.lat, item.lon], { icon: icon(item) });
+      m.bindPopup(popupHtml({ ...item, dataset: key }));
+      markers.push(m);
     }
+    clusters[key].addLayers(markers);
+    return markers.length;
+  }
+
+  // Lazy load: alleen ophalen wanneer toggle aan staat en nog niet geladen
+  async function ensureLoaded(key) {
+    if (loaded[key]) return;
+    const btn = document.querySelector(`.filter-btn[data-key="${key}"]`);
+    btn?.classList.add("loading");
     try {
-      const r = await fetch("/api/items");
+      const r = await fetch(`/api/items?dataset=${encodeURIComponent(key)}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      const counts = Object.fromEntries(Object.keys(DATASETS).map(k => [k, 0]));
-      for (const item of data.items) {
-        if (item.lat == null || item.lon == null) continue;
-        const meta = DATASETS[item.dataset];
-        if (!meta) continue;
-        const icon = meta.featured ? benchMarkerIcon(meta.color) : dotIcon(meta.color);
-        const marker = L.marker([item.lat, item.lon], { icon });
-        marker.bindPopup(popupHtml(item));
-        clusters[item.dataset].addLayer(marker);
-        counts[item.dataset]++;
-      }
-      for (const key of Object.keys(DATASETS)) {
-        const el = document.getElementById(`count-${key}`);
-        const n = counts[key];
-        // Korte notatie voor grote getallen op badge
-        el.textContent = n >= 1000 ? Math.round(n / 100) / 10 + "k" : String(n);
-      }
-      document.getElementById("status").textContent = `${data.count.toLocaleString("nl-NL")}`;
+      const n = addItemsToCluster(key, data.items);
+      loaded[key] = true;
+      const countEl = document.getElementById(`count-${key}`);
+      if (countEl) countEl.textContent = formatCount(n);
+      updateStatus();
     } catch (err) {
-      document.getElementById("status").textContent = "fout";
-      console.error(err);
+      console.error("load error", key, err);
+      const countEl = document.getElementById(`count-${key}`);
+      if (countEl) countEl.textContent = "fout";
+    } finally {
+      btn?.classList.remove("loading");
     }
   }
 
-  load();
+  function formatCount(n) {
+    return n >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(n);
+  }
+
+  function updateStatus() {
+    let total = 0;
+    for (const key of Object.keys(DATASETS)) {
+      if (enabled[key] && loaded[key]) {
+        total += clusters[key].getLayers().length;
+      }
+    }
+    document.getElementById("status").textContent = total
+      ? `${total.toLocaleString("nl-NL")} zichtbaar`
+      : "niets aan";
+  }
+
+  // Bouw filter-buttons
+  const filtersEl = document.getElementById("filters");
+  for (const [key, meta] of Object.entries(DATASETS)) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filter-btn"
+      + (enabled[key] ? " on" : "")
+      + (meta.source === "osm" ? " osm" : "");
+    btn.dataset.key = key;
+    btn.title = meta.source === "osm"
+      ? `${meta.name} — secundaire bron, crowd-sourced`
+      : meta.name;
+    btn.innerHTML = `
+      <span class="swatch" style="background:${meta.color}"></span>
+      <span class="name">${meta.name}</span>
+      <span class="count" id="count-${key}">…</span>
+    `;
+    btn.addEventListener("click", async () => {
+      enabled[key] = !enabled[key];
+      btn.classList.toggle("on", enabled[key]);
+      if (enabled[key]) {
+        clusters[key].addTo(map);
+        await ensureLoaded(key);
+      } else {
+        map.removeLayer(clusters[key]);
+        updateStatus();
+      }
+    });
+    filtersEl.appendChild(btn);
+  }
+
+  // Initieel: laad alleen wat default-on staat
+  (async function init() {
+    const initial = Object.keys(DATASETS).filter(k => enabled[k]);
+    await Promise.all(initial.map(ensureLoaded));
+  })();
 </script>
 </body>
 </html>

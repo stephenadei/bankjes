@@ -1,8 +1,8 @@
 """Stephen's Bankjes — Amsterdam Street Furniture Explorer.
 
-Pure-proxy FastAPI backend over the Amsterdam DSO open-data API.
-No database; results are cached in memory with a short TTL so a busy
-browser session does not hammer the upstream.
+Pure-proxy FastAPI backend. Banken komen uit OSM Overpass (echte coverage,
+incl. centrum Amsterdam) — de andere 4 categorieën komen uit het Amsterdam
+DSO open-data portaal. Geen DB; in-memory TTL cache.
 """
 
 import asyncio
@@ -18,44 +18,89 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-BASE = "https://api.data.amsterdam.nl/v1"
+DSO_BASE = "https://api.data.amsterdam.nl/v1"
+OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
-# (label, dataset/table path, query params)
-# Amsterdam municipality code in the BGT bronhouder field. Without this filter
-# the BGT endpoint returns straatmeubilair from neighbouring municipalities too
-# (Hilversum, Almere, etc.) — the dataset is national, not Amsterdam-only.
-AMSTERDAM_BRONHOUDER = "G0363"
+# Amsterdam-stadsdelen, bewust zonder Weesp (Weesp domineert BGT-data).
+AMS_BBOX = (52.295, 4.745, 52.430, 5.020)  # south, west, north, east
 
+# Each dataset has a label + source-specific config.
+# DSO sources use a path under DSO_BASE; OSM uses an Overpass query template.
 DATASETS = [
-    ("bench",            "bgt/straatmeubilair",                 {"plusType": "bank",          "bronhouder": AMSTERDAM_BRONHOUDER}),
-    ("picnic_table",     "bgt/straatmeubilair",                 {"plusType": "picknicktafel", "bronhouder": AMSTERDAM_BRONHOUDER}),
-    ("trash_bin",        "huishoudelijkafval/containerlocatie", {}),
-    ("bike_pole",        "fietspaaltjes/fietspaaltjes",         {}),
-    ("sports_facility",  "sport/openbaresportplek",             {}),
+    # Primair — Amsterdam-officieel via data.amsterdam.nl (DSO)
+    {
+        "label":  "bench",
+        "source": "dso",
+        "path":   "bgt/straatmeubilair",
+        "params": {"plusType": "bank", "bronhouder": "G0363"},
+    },
+    {
+        "label":  "picnic_table",
+        "source": "dso",
+        "path":   "bgt/straatmeubilair",
+        "params": {"plusType": "picknicktafel", "bronhouder": "G0363"},
+    },
+    {
+        "label":  "trash_bin",
+        "source": "dso",
+        "path":   "huishoudelijkafval/containerlocatie",
+        "params": {},
+    },
+    {
+        "label":  "bike_pole",
+        "source": "dso",
+        "path":   "fietspaaltjes/fietspaaltjes",
+        "params": {},
+    },
+    {
+        "label":  "sports_facility",
+        "source": "dso",
+        "path":   "sport/openbaresportplek",
+        "params": {},
+    },
+    # Secundair — aanvullende crowd-sourced laag voor banken (OSM)
+    {
+        "label":  "bench_osm",
+        "source": "osm",
+        "query":  '[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
+    },
 ]
 
-DATASET_LABELS = {label for label, _path, _q in DATASETS}
+DATASET_LABELS = {d["label"] for d in DATASETS}
 
 CACHE_TTL_SECONDS = 300
 PAGE_SIZE = 1000
-MAX_PAGES = 50  # hard cap to avoid runaway pagination
+MAX_PAGES = 50
 
 cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
 
 
-async def fetch_geojson(client: httpx.AsyncClient, path: str, params: dict) -> list[dict]:
-    """Walk all pages of a dataset and return the merged feature list (WGS84)."""
+async def fetch_dso(client: httpx.AsyncClient, path: str, params: dict) -> list[dict]:
+    """Walk all pages of a DSO dataset and return marker-shaped dicts (WGS84)."""
     q = dict(params)
     q["_format"] = "geojson"
     q["_pageSize"] = PAGE_SIZE
-    url: Optional[str] = f"{BASE}/{path}/?{urlencode(q)}"
+    url: Optional[str] = f"{DSO_BASE}/{path}/?{urlencode(q)}"
     out: list[dict] = []
     pages = 0
     while url and pages < MAX_PAGES:
         r = await client.get(url, timeout=30.0)
         r.raise_for_status()
         d = r.json()
-        out.extend(d.get("features") or [])
+        for feat in d.get("features") or []:
+            geom = feat.get("geometry") or {}
+            if geom.get("type") != "Point":
+                continue
+            coords = geom.get("coordinates") or []
+            if len(coords) < 2:
+                continue
+            props = feat.get("properties") or {}
+            out.append({
+                "id":   feat.get("id") or props.get("identificatie") or props.get("id"),
+                "lat":  coords[1],
+                "lon":  coords[0],
+                "props": props,
+            })
         url = None
         for link in d.get("_links") or []:
             if isinstance(link, dict) and link.get("rel") == "next":
@@ -65,26 +110,45 @@ async def fetch_geojson(client: httpx.AsyncClient, path: str, params: dict) -> l
     return out
 
 
-def feature_to_marker(label: str, feat: dict) -> Optional[dict]:
-    geom = feat.get("geometry") or {}
-    if geom.get("type") != "Point":
-        return None
-    coords = geom.get("coordinates") or []
-    if len(coords) < 2:
-        return None
-    props = feat.get("properties") or {}
-    return {
-        "id": feat.get("id") or props.get("identificatie") or props.get("id"),
-        "dataset": label,
-        "lat": coords[1],
-        "lon": coords[0],
-        "props": props,
-    }
+async def fetch_overpass(client: httpx.AsyncClient, query_template: str) -> list[dict]:
+    """Run an Overpass query and return marker-shaped dicts."""
+    s, w, n, e = AMS_BBOX
+    query = query_template.format(s=s, w=w, n=n, e=e)
+    # Overpass accepteert GET of POST application/x-www-form-urlencoded.
+    # We sturen GET — eenvoudiger en niet gevoelig voor de Accept-default van httpx.
+    r = await client.get(
+        OVERPASS_URL,
+        params={"data": query},
+        timeout=60.0,
+        headers={"User-Agent": "stephens-bankjes/1.0 (https://bankjes.stephensprive.app)"},
+    )
+    r.raise_for_status()
+    d = r.json()
+    out: list[dict] = []
+    for el in d.get("elements") or []:
+        if el.get("type") != "node":
+            continue
+        if "lat" not in el or "lon" not in el:
+            continue
+        out.append({
+            "id":   f'osm:{el["id"]}',
+            "lat":  el["lat"],
+            "lon":  el["lon"],
+            "props": el.get("tags") or {},
+        })
+    return out
+
+
+async def fetch_dataset(client: httpx.AsyncClient, ds: dict) -> list[dict]:
+    """Dispatch by source."""
+    if ds["source"] == "osm":
+        return await fetch_overpass(client, ds["query"])
+    return await fetch_dso(client, ds["path"], ds["params"])
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.client = httpx.AsyncClient(timeout=30.0)
+    app.state.client = httpx.AsyncClient(timeout=60.0)
     yield
     await app.state.client.aclose()
 
@@ -124,26 +188,24 @@ async def items(
         except ValueError:
             raise HTTPException(status_code=400, detail="bbox must be 'south,west,north,east'")
 
-    targets = [d for d in DATASETS if dataset is None or d[0] == dataset]
+    targets = [d for d in DATASETS if dataset is None or d["label"] == dataset]
 
-    async def get_one(label, path, q):
-        key = (label, frozenset(q.items()))
+    async def get_one(ds):
+        key = ds["label"]
         if key in cache:
             return cache[key]
-        feats = await fetch_geojson(app.state.client, path, q)
-        cache[key] = feats
-        return feats
+        items = await fetch_dataset(app.state.client, ds)
+        cache[key] = items
+        return items
 
-    results = await asyncio.gather(*[get_one(*t) for t in targets])
+    results = await asyncio.gather(*[get_one(t) for t in targets])
 
     out: list[dict] = []
-    for (label, _path, _q), features in zip(targets, results):
-        for feat in features:
-            m = feature_to_marker(label, feat)
-            if m is None:
+    for ds, items_for_ds in zip(targets, results):
+        label = ds["label"]
+        for it in items_for_ds:
+            if bb and not (bb[0] <= it["lat"] <= bb[2] and bb[1] <= it["lon"] <= bb[3]):
                 continue
-            if bb and not (bb[0] <= m["lat"] <= bb[2] and bb[1] <= m["lon"] <= bb[3]):
-                continue
-            out.append(m)
+            out.append({**it, "dataset": label})
 
     return {"count": len(out), "items": out}
