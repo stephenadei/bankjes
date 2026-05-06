@@ -31,7 +31,7 @@
 
   #map { position: fixed; inset: 0; z-index: 0; background: var(--cream); }
 
-  /* OSM-tile cleanup: licht ontzadigen voor warmer karakter */
+  /* tile-cleanup voor warmer karakter */
   .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
 
   .glass {
@@ -46,15 +46,16 @@
   .brand {
     position: fixed; top: 12px; left: 12px; z-index: 1000;
     border-radius: 12px;
-    padding: 8px 14px 8px 12px;
-    display: flex; align-items: baseline; gap: 8px;
+    padding: 8px 13px;
+    display: inline-flex; align-items: baseline; gap: 7px;
     line-height: 1.1;
+    white-space: nowrap;
   }
-  .brand .mark { font-size: 16px; line-height: 1; }
+  .brand .mark { font-size: 15px; line-height: 1; }
   .brand .title {
     font-family: 'Fraunces', ui-serif, Georgia, serif;
     font-weight: 500;
-    font-size: 16px;
+    font-size: 15px;
     font-variation-settings: "opsz" 18;
     letter-spacing: -0.005em;
   }
@@ -62,30 +63,52 @@
     color: var(--muted);
     font-size: 11px;
     font-variant-numeric: tabular-nums;
-    margin-left: 4px;
+    margin-left: 2px;
   }
 
-  .pills {
+  /* 5 ronde icon-buttons langs rechter bovenrand */
+  .icons {
     position: fixed; top: 12px; right: 12px; z-index: 1000;
-    display: flex; gap: 6px; flex-wrap: wrap;
-    max-width: calc(100vw - 24px);
-    justify-content: flex-end;
+    display: flex; gap: 6px;
+    flex-wrap: nowrap;
   }
-  .pill {
-    border-radius: 999px;
-    padding: 6px 11px;
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 12px; font-weight: 500;
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer; user-select: none;
-    transition: opacity 0.25s ease, transform 0.15s ease;
-    line-height: 1.2;
-    color: var(--ink);
+    transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
   }
-  .pill:active { transform: scale(0.97); }
-  .pill .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .pill .count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
-  .pill.off { opacity: 0.38; }
-  .pill.off .count { color: var(--muted); }
+  .icon-btn:active { transform: scale(0.93); }
+  .icon-btn .swatch {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .icon-btn.bench .swatch {
+    width: 18px; height: 18px;
+    border-radius: 0;
+    background: transparent !important;
+  }
+  .icon-btn.bench svg { display: block; }
+  .icon-btn.off { opacity: 0.42; }
+  .icon-btn .count {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding: 1px 5px;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(45, 42, 38, 0.15), 0 0 0 1px var(--line);
+    pointer-events: none;
+  }
+  .icon-btn.off .count { opacity: 0.6; }
 
   /* Subtiele cluster + popup styling */
   .leaflet-popup-content-wrapper {
@@ -106,7 +129,6 @@
   .pop-row .k { color: var(--muted); font-size: 11px; }
   .pop-row .v { font-size: 12px; word-break: break-word; }
 
-  /* Leaflet zoom-control style match */
   .leaflet-bar a {
     background: rgba(255, 253, 246, 0.92) !important;
     color: var(--ink) !important;
@@ -124,11 +146,11 @@
   .leaflet-control-attribution a { color: var(--moss) !important; }
 
   @media (max-width: 540px) {
-    .brand { padding: 7px 12px; }
-    .brand .title { font-size: 15px; }
+    .brand { padding: 7px 11px; }
+    .brand .title { font-size: 14px; }
     .brand .status { display: none; }
-    .pills { gap: 5px; }
-    .pill { padding: 5px 10px; font-size: 11px; }
+    .icons { gap: 5px; }
+    .icon-btn { width: 36px; height: 36px; }
   }
 </style>
 </head>
@@ -141,18 +163,18 @@
   <span class="status" id="status">·</span>
 </div>
 
-<div class="pills" id="pills"></div>
+<div class="icons" id="icons"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
   // Mosgroen voor banken (hoofdrol), aardse tinten voor de rest
   const DATASETS = {
-    bench:           { name: "Banken",         color: "#5b7a3f", featured: true },
-    picnic_table:    { name: "Picknicktafels", color: "#7a8a47" },
-    trash_bin:       { name: "Afval",          color: "#6b5d4f" },
-    bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f" },
-    sports_facility: { name: "Sport",          color: "#7a4a72" },
+    bench:           { name: "Banken",         color: "#5b7a3f", featured: true,  defaultOn: true  },
+    picnic_table:    { name: "Picknicktafels", color: "#7a8a47", defaultOn: false },
+    trash_bin:       { name: "Afval",          color: "#6b5d4f", defaultOn: false },
+    bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f", defaultOn: false },
+    sports_facility: { name: "Sport",          color: "#7a4a72", defaultOn: false },
   };
 
   const map = L.map("map", {
@@ -160,20 +182,19 @@
     zoomAnimation: true,
     fadeAnimation: true,
     inertia: true,
-    inertiaDeceleration: 2500,  // langzamer dan default (3000)
-    zoomAnimationDuration: 0.35, // iets trager dan default 0.25
+    inertiaDeceleration: 2500,
+    zoomAnimationDuration: 0.35,
   }).setView([52.3676, 4.9041], 13);
 
-  // Warm gedempte tile — CartoDB Voyager
   L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
     maxZoom: 19,
     subdomains: "abcd",
     attribution: '&copy; <a href="https://carto.com/" target="_blank" rel="noopener">CARTO</a> &middot; OSM &middot; <a href="https://api.data.amsterdam.nl/v1/" target="_blank" rel="noopener">data.amsterdam.nl</a>',
   }).addTo(map);
 
-  function bencheSvg(color) {
-    // Klein bankje-silhouette voor de hoofd-categorie
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
+  function benchSvg(color, size) {
+    size = size || 16;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
   }
 
   function dotIcon(color, size) {
@@ -187,17 +208,17 @@
 
   function benchMarkerIcon(color) {
     return L.divIcon({
-      html: `<div style="width:18px;height:18px;border-radius:50%;background:rgba(255,253,246,0.95);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1px solid ${color}33">${bencheSvg(color)}</div>`,
+      html: `<div style="width:22px;height:22px;border-radius:50%;background:rgba(255,253,246,0.97);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1.5px solid ${color}55">${benchSvg(color, 14)}</div>`,
       className: "",
-      iconSize: [18, 18],
+      iconSize: [22, 22],
     });
   }
 
   const clusters = {};
   const enabled = {};
   for (const key of Object.keys(DATASETS)) {
-    enabled[key] = true;
     const meta = DATASETS[key];
+    enabled[key] = !!meta.defaultOn;
     clusters[key] = L.markerClusterGroup({
       chunkedLoading: true,
       animateAddingMarkers: false,
@@ -211,22 +232,26 @@
         });
       },
     });
-    clusters[key].addTo(map);
+    if (enabled[key]) clusters[key].addTo(map);
   }
 
-  const pillsEl = document.getElementById("pills");
+  const iconsEl = document.getElementById("icons");
   for (const [key, meta] of Object.entries(DATASETS)) {
-    const pill = document.createElement("div");
-    pill.className = "pill glass";
-    pill.dataset.key = key;
-    pill.innerHTML = `<span class="dot" style="background:${meta.color}"></span><span>${meta.name}</span><span class="count" id="count-${key}">…</span>`;
-    pill.addEventListener("click", () => {
+    const btn = document.createElement("div");
+    btn.className = "icon-btn glass" + (meta.featured ? " bench" : "") + (enabled[key] ? "" : " off");
+    btn.dataset.key = key;
+    btn.title = meta.name;
+    const inner = meta.featured
+      ? `<span class="swatch">${benchSvg(meta.color, 18)}</span>`
+      : `<span class="swatch" style="background:${meta.color}"></span>`;
+    btn.innerHTML = `${inner}<span class="count" id="count-${key}">…</span>`;
+    btn.addEventListener("click", () => {
       enabled[key] = !enabled[key];
-      pill.classList.toggle("off", !enabled[key]);
+      btn.classList.toggle("off", !enabled[key]);
       if (enabled[key]) clusters[key].addTo(map);
       else map.removeLayer(clusters[key]);
     });
-    pillsEl.appendChild(pill);
+    iconsEl.appendChild(btn);
   }
 
   function popupHtml(item) {
@@ -265,7 +290,10 @@
         counts[item.dataset]++;
       }
       for (const key of Object.keys(DATASETS)) {
-        document.getElementById(`count-${key}`).textContent = counts[key].toLocaleString("nl-NL");
+        const el = document.getElementById(`count-${key}`);
+        const n = counts[key];
+        // Korte notatie voor grote getallen op badge
+        el.textContent = n >= 1000 ? Math.round(n / 100) / 10 + "k" : String(n);
       }
       document.getElementById("status").textContent = `${data.count.toLocaleString("nl-NL")}`;
     } catch (err) {
