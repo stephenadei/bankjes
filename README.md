@@ -1,4 +1,4 @@
-# Bankjes
+# Stephen's Bankjes
 
 Amsterdam straatmeubilair-explorer. FastAPI proxy over de Amsterdam DSO open-data
 API met een Leaflet-kaart als frontend. Geen database — alles in-memory gecached.

@@ -1,4 +1,4 @@
-"""Bankjes — Amsterdam Street Furniture Explorer.
+"""Stephen's Bankjes — Amsterdam Street Furniture Explorer.
 
 Pure-proxy FastAPI backend over the Amsterdam DSO open-data API.
 No database; results are cached in memory with a short TTL so a busy
@@ -89,7 +89,7 @@ async def lifespan(app: FastAPI):
     await app.state.client.aclose()
 
 
-app = FastAPI(title="Bankjes — Amsterdam Street Furniture", lifespan=lifespan)
+app = FastAPI(title="Stephen's Bankjes — Amsterdam Street Furniture", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 STATIC_DIR = Path(__file__).parent / "static"
