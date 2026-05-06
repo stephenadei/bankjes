@@ -3,6 +3,8 @@ services:
     build: .
     container_name: bankjes
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "127.0.0.1:4307:8000"
     healthcheck:

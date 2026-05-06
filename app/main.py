@@ -6,6 +6,7 @@ DSO open-data portaal. Geen DB; in-memory TTL cache.
 """
 
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -20,6 +21,10 @@ from fastapi.staticfiles import StaticFiles
 
 DSO_BASE = "https://api.data.amsterdam.nl/v1"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+
+# Amsterdam DSO-API gaat API-keys verplichten; nu nog optioneel maar warm aanzetten.
+# Aanvragen via https://keys.api.data.amsterdam.nl/clients/v1/
+AMSTERDAM_API_KEY = os.environ.get("AMSTERDAM_API_KEY") or None
 
 # Amsterdam-stadsdelen, bewust zonder Weesp (Weesp domineert BGT-data).
 AMS_BBOX = (52.295, 4.745, 52.430, 5.020)  # south, west, north, east
@@ -76,10 +81,11 @@ async def fetch_dso(client: httpx.AsyncClient, path: str, params: dict) -> list[
     q["_format"] = "geojson"
     q["_pageSize"] = PAGE_SIZE
     url: Optional[str] = f"{DSO_BASE}/{path}/?{urlencode(q)}"
+    headers = {"X-API-Key": AMSTERDAM_API_KEY} if AMSTERDAM_API_KEY else None
     out: list[dict] = []
     pages = 0
     while url and pages < MAX_PAGES:
-        r = await client.get(url, timeout=30.0)
+        r = await client.get(url, timeout=30.0, headers=headers)
         r.raise_for_status()
         d = r.json()
         for feat in d.get("features") or []:
