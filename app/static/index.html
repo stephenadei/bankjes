@@ -152,6 +152,35 @@
   }
   .leaflet-control-attribution a { color: var(--moss) !important; }
 
+  /* ========== Locate-knop (rechtsonder) ========== */
+  .locate-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 253, 246, 0.96);
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 2px 6px rgba(45, 42, 38, 0.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.18s ease;
+    color: var(--ink);
+  }
+  .locate-btn:hover { background: var(--paper); }
+  .locate-btn:active { transform: scale(0.94); }
+  .locate-btn.busy { opacity: 0.55; pointer-events: none; }
+  .locate-btn svg { display: block; }
+  .leaflet-control.locate-wrap { margin-bottom: 14px !important; margin-right: 14px !important; }
+
+  /* User-locatie marker (pulserend) */
+  .user-loc {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--moss);
+    border: 3px solid var(--paper);
+    box-shadow: 0 0 0 4px rgba(91, 122, 63, 0.22), 0 1px 3px rgba(45, 42, 38, 0.4);
+  }
+
   /* ========== Popups ========== */
   .leaflet-popup-content-wrapper {
     background: var(--paper);
@@ -211,7 +240,7 @@
     trash_bin:       { name: "Afval",          color: "#6b5d4f", source: "dso", primary: true,  defaultOn: false },
     bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f", source: "dso", primary: true,  defaultOn: false },
     sports_facility: { name: "Sport",          color: "#7a4a72", source: "dso", primary: true,  defaultOn: false },
-    bench_osm:       { name: "Banken (OSM)",   color: "#4a5d6a", source: "osm", primary: false, defaultOn: false },
+    bench_osm:       { name: "Banken (OSM)",   color: "#4a5d6a", source: "osm", primary: false, defaultOn: true  },
   };
 
   const map = L.map("map", {
@@ -389,10 +418,61 @@
     filtersEl.appendChild(btn);
   }
 
-  // Initieel: laad alleen wat default-on staat
+  // ========== Locate-knop + auto-locate bij opening ==========
+  const LocateControl = L.Control.extend({
+    options: { position: "bottomright" },
+    onAdd: function () {
+      L.DomUtil.create("div");
+      const wrap = L.DomUtil.create("div", "leaflet-control locate-wrap");
+      const btn = L.DomUtil.create("button", "locate-btn", wrap);
+      btn.type = "button";
+      btn.title = "Mijn locatie";
+      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>`;
+      L.DomEvent.disableClickPropagation(wrap);
+      L.DomEvent.on(btn, "click", () => locate({ fly: true }));
+      this._btn = btn;
+      return wrap;
+    },
+    setBusy(busy) { if (this._btn) this._btn.classList.toggle("busy", !!busy); },
+  });
+  const locateControl = new LocateControl();
+  locateControl.addTo(map);
+
+  let userMarker = null;
+
+  function locate({ fly = true, silentFail = false } = {}) {
+    if (!navigator.geolocation) {
+      if (!silentFail) console.warn("Geolocation niet beschikbaar");
+      return;
+    }
+    locateControl.setBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const ll = [latitude, longitude];
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker(ll, {
+          icon: L.divIcon({ className: "", html: `<div class="user-loc"></div>`, iconSize: [14, 14] }),
+          interactive: false,
+          keyboard: false,
+        }).addTo(map);
+        if (fly) map.flyTo(ll, 16, { duration: 0.9 });
+        locateControl.setBusy(false);
+      },
+      (err) => {
+        locateControl.setBusy(false);
+        if (!silentFail) console.warn("Geolocation fout:", err.message);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  }
+
+  // Initieel: laad alleen wat default-on staat, en probeer locatie
   (async function init() {
     const initial = Object.keys(DATASETS).filter(k => enabled[k]);
     await Promise.all(initial.map(ensureLoaded));
+    // Auto-locate na laden — silent fail als gebruiker weigert of in headless context
+    locate({ fly: true, silentFail: true });
   })();
 </script>
 </body>
