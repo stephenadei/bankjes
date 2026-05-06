@@ -204,6 +204,8 @@
     margin-bottom: 8px;
   }
   .pop-id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; word-break: break-all; }
+  .pop-addr { font-size: 12px; color: var(--ink); margin-bottom: 6px; font-style: italic; }
+  .pop-addr[data-loaded="true"] { font-style: normal; }
   .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
   .pop-row .k { color: var(--muted); font-size: 11px; }
   .pop-row .v { font-size: 12px; word-break: break-word; }
@@ -233,14 +235,13 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // 5 primaire categorieën uit data.amsterdam.nl + 1 secundaire OSM-laag
+  // Drie hoofd-categorieën, voor banken en prullenbakken meerdere bronnen
   const DATASETS = {
-    bench:           { name: "Banken",         color: "#5b7a3f", source: "dso", primary: true,  defaultOn: true,  featured: true },
-    picnic_table:    { name: "Picknicktafels", color: "#7a8a47", source: "dso", primary: true,  defaultOn: false },
-    trash_bin:       { name: "Afval",          color: "#6b5d4f", source: "dso", primary: true,  defaultOn: false },
-    bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f", source: "dso", primary: true,  defaultOn: false },
-    sports_facility: { name: "Sport",          color: "#7a4a72", source: "dso", primary: true,  defaultOn: false },
-    bench_osm:       { name: "Banken (OSM)",   color: "#4a5d6a", source: "osm", primary: false, defaultOn: true  },
+    bench:             { name: "Banken",        color: "#5b7a3f", source: "dso", defaultOn: true,  featured: true },
+    bench_osm:         { name: "Banken (OSM)",  color: "#4a5d6a", source: "osm", defaultOn: true,  secondary: true },
+    picnic_table:      { name: "Tafels",        color: "#7a8a47", source: "dso", defaultOn: false },
+    trash_underground: { name: "Containers",    color: "#6b5d4f", source: "dso", defaultOn: false },
+    trash_surface:     { name: "Afvalbakken",   color: "#a08770", source: "dso", defaultOn: false },
   };
 
   const map = L.map("map", {
@@ -312,23 +313,71 @@
     if (enabled[key]) clusters[key].addTo(map);
   }
 
+  function inlineAddress(props) {
+    // Sommige datasets hebben straatnaam/huisnummer/postcode native
+    const street = props.straatnaam || props.openbareruimte || props["addr:street"];
+    const num    = props.huisnummer || props["addr:housenumber"];
+    const pc     = props.postcode   || props["addr:postcode"];
+    if (street && num) return pc ? `${street} ${num}, ${pc}` : `${street} ${num}`;
+    if (street)        return pc ? `${street}, ${pc}` : street;
+    return null;
+  }
+
   function popupHtml(item) {
     const meta = DATASETS[item.dataset] || { name: item.dataset, source: "?" };
     const sourceLabel = meta.source === "osm"
       ? "Bron · OpenStreetMap"
       : "Bron · data.amsterdam.nl";
+    const inline = inlineAddress(item.props || {});
+    const addrBlock = inline
+      ? `<div class="pop-addr" data-loaded="true">${inline}</div>`
+      : `<div class="pop-addr" data-lat="${item.lat}" data-lon="${item.lon}">Adres opzoeken…</div>`;
     const propRows = Object.entries(item.props || {})
       .filter(([k, v]) => v != null && typeof v !== "object" && !k.startsWith("_"))
+      .filter(([k]) => !["straatnaam", "huisnummer", "postcode", "openbareruimte"].includes(k))
       .slice(0, 6)
       .map(([k, v]) => `<div class="pop-row"><span class="k">${k}</span><span class="v">${String(v)}</span></div>`)
       .join("");
     return `
       <div class="pop-title">${meta.name}</div>
       <span class="pop-source">${sourceLabel}</span>
+      ${addrBlock}
       <div class="pop-id">${item.id ?? ""}</div>
       ${propRows}
     `;
   }
+
+  // Cache voor reverse-geocode: lat,lon → adres
+  const addrCache = new Map();
+
+  async function reverseGeocode(lat, lon) {
+    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+    if (addrCache.has(key)) return addrCache.get(key);
+    try {
+      const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?lat=${lat}&lon=${lon}&rows=1&fl=weergavenaam,straatnaam,huisnummer,postcode`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      const doc = (d.response?.docs || [])[0];
+      const result = doc?.weergavenaam ?? null;
+      addrCache.set(key, result);
+      return result;
+    } catch (e) {
+      addrCache.set(key, null);
+      return null;
+    }
+  }
+
+  map.on("popupopen", async (e) => {
+    const el = e.popup.getElement()?.querySelector(".pop-addr");
+    if (!el || el.dataset.loaded) return;
+    const lat = parseFloat(el.dataset.lat);
+    const lon = parseFloat(el.dataset.lon);
+    const addr = await reverseGeocode(lat, lon);
+    el.dataset.loaded = "true";
+    el.textContent = addr || "(geen adres in BAG)";
+    e.popup.update();
+  });
 
   function addItemsToCluster(key, items) {
     const meta = DATASETS[key];
@@ -394,7 +443,7 @@
     btn.type = "button";
     btn.className = "filter-btn"
       + (enabled[key] ? " on" : "")
-      + (meta.source === "osm" ? " osm" : "");
+      + (meta.secondary ? " osm" : "");
     btn.dataset.key = key;
     btn.title = meta.source === "osm"
       ? `${meta.name} — secundaire bron, crowd-sourced`

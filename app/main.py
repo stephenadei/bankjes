@@ -27,7 +27,7 @@ AMS_BBOX = (52.295, 4.745, 52.430, 5.020)  # south, west, north, east
 # Each dataset has a label + source-specific config.
 # DSO sources use a path under DSO_BASE; OSM uses an Overpass query template.
 DATASETS = [
-    # Primair — Amsterdam-officieel via data.amsterdam.nl (DSO)
+    # Banken — beide bronnen
     {
         "label":  "bench",
         "source": "dso",
@@ -35,34 +35,29 @@ DATASETS = [
         "params": {"plusType": "bank", "bronhouder": "G0363"},
     },
     {
+        "label":  "bench_osm",
+        "source": "osm",
+        "query":  '[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
+    },
+    # Tafels (picknicktafels) — alleen DSO; OSM heeft er 0 in Amsterdam
+    {
         "label":  "picnic_table",
         "source": "dso",
         "path":   "bgt/straatmeubilair",
         "params": {"plusType": "picknicktafel", "bronhouder": "G0363"},
     },
+    # Prullenbakken — twee bronnen (ondergrondse containers + bovengrondse afvalbakken)
     {
-        "label":  "trash_bin",
+        "label":  "trash_underground",
         "source": "dso",
         "path":   "huishoudelijkafval/containerlocatie",
         "params": {},
     },
     {
-        "label":  "bike_pole",
+        "label":  "trash_surface",
         "source": "dso",
-        "path":   "fietspaaltjes/fietspaaltjes",
+        "path":   "objectenopenbareruimte/afvalbakken",
         "params": {},
-    },
-    {
-        "label":  "sports_facility",
-        "source": "dso",
-        "path":   "sport/openbaresportplek",
-        "params": {},
-    },
-    # Secundair — aanvullende crowd-sourced laag voor banken (OSM)
-    {
-        "label":  "bench_osm",
-        "source": "osm",
-        "query":  '[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
     },
 ]
 
