@@ -166,6 +166,11 @@ async def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/onderzoek")
+async def onderzoek():
+    return FileResponse(STATIC_DIR / "onderzoek.html")
+
+
 @app.get("/healthz")
 async def healthz():
     return {"ok": True, "datasets": sorted(DATASET_LABELS)}

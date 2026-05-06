@@ -67,6 +67,19 @@
     font-weight: 400;
     align-self: center;
   }
+  .hero .research-link {
+    align-self: center;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    border-bottom: 1px dotted var(--line-strong);
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .hero .research-link:hover {
+    color: var(--moss);
+    border-bottom-color: var(--moss);
+  }
   .hero .status {
     margin-left: auto;
     color: var(--muted);
@@ -226,6 +239,7 @@
     <span class="mark">🪑</span>
     <h1 class="title">Stephen's Bankjes</h1>
     <span class="subtitle">Amsterdam straatmeubilair</span>
+    <a class="research-link" href="/onderzoek">onderzoek →</a>
     <span class="status" id="status">·</span>
   </div>
   <nav class="filters" id="filters"></nav>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onderzoek — Stephen's Bankjes</title>
+<meta name="description" content="De gemeente Amsterdam registreert 345 banken in de BGT. OpenStreetMap kent er 6.946. Een gap-analyse op publieke open data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --cream: #faf7f0;
+    --paper: #fffdf6;
+    --moss:  #5b7a3f;
+    --rust:  #a06a3f;
+    --bark:  #6b5d4f;
+    --ink:   #2d2a26;
+    --muted: #857d72;
+    --line:  rgba(45, 42, 38, 0.10);
+    --line-strong: rgba(45, 42, 38, 0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--cream); color: var(--ink); }
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  a { color: var(--moss); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: var(--ink); }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  nav.topnav {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 36px;
+    font-size: 13px;
+  }
+  nav.topnav .home { color: var(--muted); text-decoration: none; }
+  nav.topnav .home:hover { color: var(--ink); }
+  nav.topnav .sep { color: var(--line-strong); }
+
+  h1, h2, h3 {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  h1 {
+    font-size: 38px;
+    font-variation-settings: "opsz" 48;
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-size: 22px;
+    margin-top: 40px;
+    margin-bottom: 12px;
+    font-variation-settings: "opsz" 24;
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-top: 20px;
+    margin-bottom: 6px;
+  }
+
+  .lead {
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-weight: 400;
+    font-variation-settings: "opsz" 18;
+    line-height: 1.5;
+  }
+
+  p { margin-bottom: 14px; color: var(--ink); }
+  p.muted { color: var(--muted); font-size: 14px; }
+
+  ul { margin: 12px 0 18px 22px; }
+  ul li { margin-bottom: 6px; }
+
+  .numbers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 28px 0 8px;
+  }
+  .num-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .num-card .big {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-size: 48px;
+    font-weight: 600;
+    line-height: 1;
+    font-variation-settings: "opsz" 60;
+    color: var(--ink);
+  }
+  .num-card .source {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 10px;
+  }
+  .num-card.bgt .big { color: var(--moss); }
+  .num-card.osm .big { color: var(--rust); }
+  .num-card .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .ratio {
+    text-align: center;
+    margin: 16px 0 36px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .ratio strong { color: var(--ink); font-weight: 600; }
+
+  #compare-map {
+    height: 460px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    margin: 18px 0 12px;
+    background: var(--cream);
+  }
+  .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
+  .map-legend {
+    display: flex; gap: 22px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .map-legend .swatch {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 7px;
+  }
+
+  blockquote {
+    border-left: 3px solid var(--moss);
+    padding: 4px 0 4px 16px;
+    margin: 18px 0;
+    color: var(--ink);
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-size: 17px;
+    font-weight: 400;
+    font-variation-settings: "opsz" 18;
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--ink); }
+
+  @media (max-width: 540px) {
+    .container { padding: 22px 18px 64px; }
+    h1 { font-size: 30px; }
+    h2 { font-size: 19px; }
+    .lead { font-size: 16px; }
+    .num-card { padding: 16px 18px; }
+    .num-card .big { font-size: 38px; }
+    #compare-map { height: 360px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav class="topnav">
+  <a class="home" href="/">← naar de kaart</a>
+  <span class="sep">·</span>
+  <span style="color: var(--muted);">Onderzoek</span>
+</nav>
+
+<h1>345 of 6.946?</h1>
+<p class="lead">
+  Wat de gemeente Amsterdam in haar eigen registratie ziet, en wat er werkelijk in de stad staat, verschilt met een factor 20.
+</p>
+
+<p>
+  Bij het bouwen van <a href="/">Stephen's Bankjes</a> kwam een ongemakkelijke discrepantie boven: de officiële Amsterdamse Basisregistratie Grootschalige Topografie (BGT) noemt <strong>345 banken</strong> binnen de gemeentegrens. OpenStreetMap, gemapt door burgers, kent er <strong>6.946</strong> in dezelfde rechthoek.
+</p>
+
+<div class="numbers">
+  <div class="num-card bgt">
+    <div class="big">345</div>
+    <div class="label">banken</div>
+    <div class="source">BGT · gemeente</div>
+  </div>
+  <div class="num-card osm">
+    <div class="big">6.946</div>
+    <div class="label">banken</div>
+    <div class="source">OSM · burgers</div>
+  </div>
+</div>
+
+<p class="ratio">
+  Verhouding: <strong>1 op 20</strong> · de gemeente registreert ongeveer <strong>5%</strong> van wat er feitelijk staat.
+</p>
+
+<h2>Wat je ziet</h2>
+<p>
+  Op één kaart, op exact dezelfde Amsterdam-bbox, beide bronnen tegelijk. Mosgroene punten zijn BGT-banken (van de gemeente). Oranje punten zijn OSM-banken (van mappers). De densiteit spreekt voor zich.
+</p>
+
+<div id="compare-map"></div>
+<div class="map-legend">
+  <span><span class="swatch" style="background: #5b7a3f"></span>BGT (gemeente Amsterdam)</span>
+  <span><span class="swatch" style="background: #a06a3f"></span>OpenStreetMap (community)</span>
+</div>
+
+<h2>Methode</h2>
+<p>
+  De vergelijking gebruikt twee publieke bronnen, beide live opgevraagd:
+</p>
+<ul>
+  <li><strong>BGT</strong> via de Amsterdam DSO-API: <code>bgt/straatmeubilair?plusType=bank&amp;bronhouder=G0363</code>. Filter <code>bronhouder=G0363</code> beperkt tot het gemeentelijke Amsterdam-grondgebied.</li>
+  <li><strong>OSM</strong> via Overpass: <code>node["amenity"="bench"]</code> binnen bbox 52.295-52.430 N / 4.745-5.020 E.</li>
+</ul>
+<p>
+  De code is open en reproduceerbaar — zie <a href="https://github.com/stephenadei/bankjes" target="_blank" rel="noopener">github.com/stephenadei/bankjes</a>. Cijfers van 6 mei 2026.
+</p>
+
+<h2>Wat het betekent</h2>
+<p>
+  Banken zijn niet zomaar meubels. Voor mensen met mobiliteits-, hart- of paniek-problemen, voor zwangeren en ouderen zijn rustpunten een primaire kwaliteit van de stedelijke ruimte. Onderzoek vanuit de school van Jan Gehl wijst structureel: zit-mogelijkheden bepalen of een stadsdeel <em>doorlopen</em> of <em>geleefd</em> wordt.
+</p>
+<p>
+  Wanneer beleid leunt op de officiële registratie — voor toegankelijkheidsplannen, hittestress-strategie, of de Inclusieagenda — werkt het met een dataset die 95% van de werkelijkheid niet ziet.
+</p>
+
+<blockquote>
+  Een data-gat is een beleidsgat.
+</blockquote>
+
+<h3>Voor wie zou dit nuttig zijn</h3>
+<ul>
+  <li><strong>Wethouder Openbare Ruimte</strong> + Stadsbeheer V&amp;OR — operationele eigenaars van straatmeubilair</li>
+  <li><strong>CIO Office</strong> Amsterdam, beheerder van het data-portaal — kennen het discourse</li>
+  <li><strong>Cliëntenbelang Amsterdam</strong> — toegankelijkheidsbelangen</li>
+  <li><strong>Code for NL</strong>, Open State Foundation, Geofort — civic-tech amplifiers</li>
+</ul>
+
+<h2>Caveats</h2>
+<p>
+  De claim "5%" verdient nuance. Een deel van de OSM-banken is mogelijk verouderd, in particulier toegankelijke ruimte, of dubbel ingevoerd. Een conservatieve correctie van 30% laat alsnog ~4.800 echte publieke banken over, tegenover BGT's 345. De gap is niet 20× maar dan nog 14×. De richting is glashelder, het exacte getal niet.
+</p>
+<p>
+  Verder: BGT is een wettelijk register voor wat de gemeente <em>bezit en beheert</em>. Banken op NS-stations, GVB-tramhaltes, in particuliere binnentuinen die toegankelijk zijn voor publiek, of in parken beheerd door derden vallen er buiten. De gemeente <em>kan</em> dat niet allemaal registreren — maar dat is precies waarom een aanvullende crowdsource-bron beleidsmatig waardevol is.
+</p>
+
+<h2>Wat zou je doen?</h2>
+<ul>
+  <li><strong>Aanvullen</strong> — BGT mag aangevuld worden met andere bronnen. Een gevalideerde import van OSM-banken zou de coverage in één klap dichterbij de werkelijkheid brengen.</li>
+  <li><strong>VerbeterDeBuurt uitbreiden</strong> met "ontbrekende bank melden" als crowdsource-laag in eigen huis.</li>
+  <li><strong>Reverse flow</strong> — de 345 BGT-banken die nog niet in OSM staan, naar OSM duwen. Beide bronnen completer.</li>
+</ul>
+
+<footer>
+  <p>
+    Stephen Adei · 6 mei 2026 · <a href="https://github.com/stephenadei/bankjes" target="_blank" rel="noopener">broncode</a> · <a href="/">terug naar de kaart</a>
+  </p>
+  <p style="margin-top: 8px;">
+    Gemaakt als onderdeel van <a href="/">bankjes.stephensprive.app</a>, een verkenning van Amsterdams straatmeubilair als civic-tech artefact.
+  </p>
+</footer>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map("compare-map", { zoomControl: true, scrollWheelZoom: false }).setView([52.3676, 4.9041], 12);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    maxZoom: 19,
+    subdomains: "abcd",
+    attribution: '&copy; CARTO &middot; OSM &middot; data.amsterdam.nl',
+  }).addTo(map);
+
+  function dotIcon(color) {
+    return L.divIcon({
+      html: `<div style="width:7px;height:7px;border-radius:50%;background:${color};border:1px solid rgba(255,253,246,0.9);box-shadow:0 1px 1px rgba(45,42,38,0.3)"></div>`,
+      className: "",
+      iconSize: [7, 7],
+    });
+  }
+
+  async function loadAndPlot(dataset, color) {
+    try {
+      const r = await fetch(`/api/items?dataset=${dataset}`);
+      if (!r.ok) return 0;
+      const d = await r.json();
+      for (const item of d.items) {
+        if (item.lat == null || item.lon == null) continue;
+        L.marker([item.lat, item.lon], { icon: dotIcon(color), interactive: false }).addTo(map);
+      }
+      return d.count;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  // Plot beide datasets parallel
+  Promise.all([
+    loadAndPlot("bench", "#5b7a3f"),
+    loadAndPlot("bench_osm", "#a06a3f"),
+  ]).then(([bgt, osm]) => {
+    console.log(`bgt=${bgt} osm=${osm}`);
+  });
+</script>
+</body>
+</html>
