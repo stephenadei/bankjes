@@ -249,14 +249,11 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // Drie hoofd-categorieën, voor banken en prullenbakken meerdere bronnen
-  const DATASETS = {
-    bench:             { name: "Banken",        color: "#5b7a3f", source: "dso", defaultOn: true,  featured: true },
-    bench_osm:         { name: "Banken (OSM)",  color: "#4a5d6a", source: "osm", defaultOn: true,  secondary: true },
-    picnic_table:      { name: "Tafels",        color: "#7a8a47", source: "dso", defaultOn: false },
-    trash_underground: { name: "Containers",    color: "#6b5d4f", source: "dso", defaultOn: false },
-    trash_surface:     { name: "Afvalbakken",   color: "#a08770", source: "dso", defaultOn: false },
-  };
+(async function () {
+  // Single source of truth: server. /api/datasets levert label, name, color,
+  // sourceType ("dso"|"osm"), defaultOn, featured — geen dataset-config in JS.
+  const datasetList = await (await fetch("/api/datasets")).json();
+  const DATASETS = Object.fromEntries(datasetList.map(d => [d.label, d]));
 
   const map = L.map("map", {
     zoomControl: false,
@@ -339,7 +336,7 @@
 
   function popupHtml(item) {
     const meta = DATASETS[item.dataset] || { name: item.dataset, source: "?" };
-    const sourceLabel = meta.source === "osm"
+    const sourceLabel = meta.sourceType === "osm"
       ? "Bron · OpenStreetMap"
       : "Bron · data.amsterdam.nl";
     const inline = inlineAddress(item.props || {});
@@ -397,7 +394,7 @@
     const meta = DATASETS[key];
     let icon;
     if (meta.featured)            icon = (item) => benchMarkerIcon(meta.color);
-    else if (meta.source === "osm") icon = (item) => ringIcon(meta.color, 8);
+    else if (meta.sourceType === "osm") icon = (item) => ringIcon(meta.color, 8);
     else                          icon = (item) => dotIcon(meta.color);
 
     const markers = [];
@@ -457,9 +454,9 @@
     btn.type = "button";
     btn.className = "filter-btn"
       + (enabled[key] ? " on" : "")
-      + (meta.secondary ? " osm" : "");
+      + (meta.sourceType === "osm" ? " osm" : "");
     btn.dataset.key = key;
-    btn.title = meta.source === "osm"
+    btn.title = meta.sourceType === "osm"
       ? `${meta.name} — secundaire bron, crowd-sourced`
       : meta.name;
     btn.innerHTML = `
@@ -531,12 +528,16 @@
   }
 
   // Initieel: laad alleen wat default-on staat, en probeer locatie
-  (async function init() {
-    const initial = Object.keys(DATASETS).filter(k => enabled[k]);
-    await Promise.all(initial.map(ensureLoaded));
-    // Auto-locate na laden — silent fail als gebruiker weigert of in headless context
-    locate({ fly: true, silentFail: true });
-  })();
+  const initial = Object.keys(DATASETS).filter(k => enabled[k]);
+  await Promise.all(initial.map(ensureLoaded));
+  // Auto-locate na laden — silent fail als gebruiker weigert of in headless context
+  locate({ fly: true, silentFail: true });
+
+})().catch(err => {
+  console.error("init failed", err);
+  const s = document.getElementById("status");
+  if (s) s.textContent = "fout bij init";
+});
 </script>
 </body>
 </html>
