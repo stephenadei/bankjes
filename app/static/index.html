@@ -2,168 +2,264 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stephen's Bankjes — Amsterdam straatmeubilair</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Stephen's Bankjes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <style>
   :root {
-    --bg: #0f172a;
-    --panel: #ffffff;
-    --ink: #1f2937;
-    --muted: #6b7280;
-    --accent: #2563eb;
-    --border: #e5e7eb;
+    --cream:    #faf7f0;
+    --paper:    #fffdf6;
+    --moss:     #5b7a3f;
+    --bark:     #6b5d4f;
+    --ink:      #2d2a26;
+    --muted:    #857d72;
+    --line:     rgba(45, 42, 38, 0.10);
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
-  body { display: grid; grid-template-rows: auto 1fr; }
-  header { padding: 12px 16px; background: var(--bg); color: #fff; display: flex; align-items: baseline; gap: 12px; }
-  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
-  header .sub { color: #94a3b8; font-size: 13px; }
-  header .status { margin-left: auto; font-size: 12px; color: #94a3b8; }
-  main { display: grid; grid-template-columns: 280px 1fr; min-height: 0; }
-  aside { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; }
-  aside section { padding: 16px; border-bottom: 1px solid var(--border); }
-  aside h2 { margin: 0 0 12px; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-  label.row { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; user-select: none; }
-  label.row input { transform: scale(1.15); accent-color: var(--accent); }
-  label.row .name { flex: 1; }
-  label.row .count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
-  .swatch { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); }
-  button.refresh { width: 100%; padding: 8px 12px; background: var(--accent); color: white; border: 0; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  button.refresh:disabled { opacity: .5; cursor: wait; }
-  #map { height: 100%; }
-  .legend-note { font-size: 12px; color: var(--muted); }
-  .popup-title { font-weight: 600; margin: 0 0 4px; }
-  .popup-id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; color: var(--muted); }
-  .popup-props { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; }
-  .popup-props li { display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 2px 0; }
-  .popup-props .k { color: var(--muted); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--cream);
+  }
+
+  #map { position: fixed; inset: 0; z-index: 0; background: var(--cream); }
+
+  /* OSM-tile cleanup: licht ontzadigen voor warmer karakter */
+  .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
+
+  .glass {
+    background: rgba(255, 253, 246, 0.92);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    box-shadow:
+      0 1px 3px rgba(45, 42, 38, 0.08),
+      0 0 0 1px var(--line);
+  }
+
+  .brand {
+    position: fixed; top: 12px; left: 12px; z-index: 1000;
+    border-radius: 12px;
+    padding: 8px 14px 8px 12px;
+    display: flex; align-items: baseline; gap: 8px;
+    line-height: 1.1;
+  }
+  .brand .mark { font-size: 16px; line-height: 1; }
+  .brand .title {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-weight: 500;
+    font-size: 16px;
+    font-variation-settings: "opsz" 18;
+    letter-spacing: -0.005em;
+  }
+  .brand .status {
+    color: var(--muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    margin-left: 4px;
+  }
+
+  .pills {
+    position: fixed; top: 12px; right: 12px; z-index: 1000;
+    display: flex; gap: 6px; flex-wrap: wrap;
+    max-width: calc(100vw - 24px);
+    justify-content: flex-end;
+  }
+  .pill {
+    border-radius: 999px;
+    padding: 6px 11px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; user-select: none;
+    transition: opacity 0.25s ease, transform 0.15s ease;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .pill:active { transform: scale(0.97); }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .pill .count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+  .pill.off { opacity: 0.38; }
+  .pill.off .count { color: var(--muted); }
+
+  /* Subtiele cluster + popup styling */
+  .leaflet-popup-content-wrapper {
+    background: var(--paper);
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(45, 42, 38, 0.18), 0 0 0 1px var(--line);
+  }
+  .leaflet-popup-content { margin: 12px 14px; font-size: 12px; line-height: 1.5; min-width: 200px; }
+  .leaflet-popup-tip { background: var(--paper); }
+  .pop-title {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-weight: 500; font-size: 15px;
+    margin-bottom: 2px;
+    font-variation-settings: "opsz" 14;
+  }
+  .pop-id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; word-break: break-all; }
+  .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
+  .pop-row .k { color: var(--muted); font-size: 11px; }
+  .pop-row .v { font-size: 12px; word-break: break-word; }
+
+  /* Leaflet zoom-control style match */
+  .leaflet-bar a {
+    background: rgba(255, 253, 246, 0.92) !important;
+    color: var(--ink) !important;
+    border-bottom-color: var(--line) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .leaflet-bar a:hover { background: var(--paper) !important; }
+  .leaflet-control-attribution {
+    background: rgba(255, 253, 246, 0.85) !important;
+    color: var(--muted) !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: var(--moss) !important; }
+
+  @media (max-width: 540px) {
+    .brand { padding: 7px 12px; }
+    .brand .title { font-size: 15px; }
+    .brand .status { display: none; }
+    .pills { gap: 5px; }
+    .pill { padding: 5px 10px; font-size: 11px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>🪑 Stephen's Bankjes</h1>
-  <span class="sub">Amsterdam straatmeubilair · live van data.amsterdam.nl</span>
-  <span class="status" id="status">…</span>
-</header>
-<main>
-  <aside>
-    <section>
-      <h2>Categorieën</h2>
-      <div id="filters"></div>
-    </section>
-    <section>
-      <button class="refresh" id="refresh">Vernieuwen</button>
-      <p class="legend-note" style="margin-top:10px">Klikken op een marker toont onderliggende eigenschappen uit de open-data-API.</p>
-    </section>
-    <section>
-      <h2>Bron</h2>
-      <p class="legend-note">api.data.amsterdam.nl/v1 — banken &amp; picknicktafels (BGT straatmeubilair), afvalcontainers, fietspaaltjes, sportplekken.</p>
-    </section>
-  </aside>
-  <div id="map"></div>
-</main>
+<div id="map"></div>
+
+<div class="brand glass">
+  <span class="mark">🪑</span>
+  <span class="title">Stephen's Bankjes</span>
+  <span class="status" id="status">·</span>
+</div>
+
+<div class="pills" id="pills"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // Dataset metadata: label → {display name, color}
+  // Mosgroen voor banken (hoofdrol), aardse tinten voor de rest
   const DATASETS = {
-    bench:           { name: "Banken",            color: "#2563eb" },
-    picnic_table:    { name: "Picknicktafels",    color: "#16a34a" },
-    trash_bin:       { name: "Afvalcontainers",   color: "#525252" },
-    bike_pole:       { name: "Fietspaaltjes",     color: "#ea580c" },
-    sports_facility: { name: "Sportvoorzieningen", color: "#9333ea" },
+    bench:           { name: "Banken",         color: "#5b7a3f", featured: true },
+    picnic_table:    { name: "Picknicktafels", color: "#7a8a47" },
+    trash_bin:       { name: "Afval",          color: "#6b5d4f" },
+    bike_pole:       { name: "Fietspaaltjes",  color: "#a06a3f" },
+    sports_facility: { name: "Sport",          color: "#7a4a72" },
   };
 
-  const map = L.map("map").setView([52.3676, 4.9041], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  const map = L.map("map", {
+    zoomControl: true,
+    zoomAnimation: true,
+    fadeAnimation: true,
+    inertia: true,
+    inertiaDeceleration: 2500,  // langzamer dan default (3000)
+    zoomAnimationDuration: 0.35, // iets trager dan default 0.25
+  }).setView([52.3676, 4.9041], 13);
+
+  // Warm gedempte tile — CartoDB Voyager
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
     maxZoom: 19,
-    attribution: "© OpenStreetMap",
+    subdomains: "abcd",
+    attribution: '&copy; <a href="https://carto.com/" target="_blank" rel="noopener">CARTO</a> &middot; OSM &middot; <a href="https://api.data.amsterdam.nl/v1/" target="_blank" rel="noopener">data.amsterdam.nl</a>',
   }).addTo(map);
 
-  // One cluster group per dataset, so we can toggle them independently.
+  function bencheSvg(color) {
+    // Klein bankje-silhouette voor de hoofd-categorie
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
+  }
+
+  function dotIcon(color, size) {
+    size = size || 9;
+    return L.divIcon({
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:1.5px solid rgba(255,253,246,0.95);box-shadow:0 1px 2px rgba(45,42,38,0.35)"></div>`,
+      className: "",
+      iconSize: [size, size],
+    });
+  }
+
+  function benchMarkerIcon(color) {
+    return L.divIcon({
+      html: `<div style="width:18px;height:18px;border-radius:50%;background:rgba(255,253,246,0.95);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1px solid ${color}33">${bencheSvg(color)}</div>`,
+      className: "",
+      iconSize: [18, 18],
+    });
+  }
+
   const clusters = {};
+  const enabled = {};
   for (const key of Object.keys(DATASETS)) {
+    enabled[key] = true;
+    const meta = DATASETS[key];
     clusters[key] = L.markerClusterGroup({
       chunkedLoading: true,
-      iconCreateFunction: (cluster) =>
-        L.divIcon({
-          html: `<div style="background:${DATASETS[key].color};color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)">${cluster.getChildCount()}</div>`,
+      animateAddingMarkers: false,
+      iconCreateFunction: (cluster) => {
+        const n = cluster.getChildCount();
+        const size = meta.featured ? 36 : 30;
+        return L.divIcon({
+          html: `<div style="background:${meta.color};color:#fffdf6;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;font-family:Inter,sans-serif;border:2px solid rgba(255,253,246,0.95);box-shadow:0 1px 3px rgba(45,42,38,0.30)">${n}</div>`,
           className: "",
-          iconSize: [36, 36],
-        }),
+          iconSize: [size, size],
+        });
+      },
     });
     clusters[key].addTo(map);
   }
 
-  function dotIcon(color) {
-    return L.divIcon({
-      html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.4)"></div>`,
-      className: "",
-      iconSize: [12, 12],
-    });
-  }
-
-  // Filter sidebar
-  const counts = Object.fromEntries(Object.keys(DATASETS).map((k) => [k, 0]));
-  const filtersEl = document.getElementById("filters");
+  const pillsEl = document.getElementById("pills");
   for (const [key, meta] of Object.entries(DATASETS)) {
-    const wrap = document.createElement("label");
-    wrap.className = "row";
-    wrap.innerHTML = `
-      <input type="checkbox" data-key="${key}" checked>
-      <span class="swatch" style="background:${meta.color}"></span>
-      <span class="name">${meta.name}</span>
-      <span class="count" id="count-${key}">–</span>
-    `;
-    wrap.querySelector("input").addEventListener("change", (e) => {
-      const k = e.target.dataset.key;
-      if (e.target.checked) clusters[k].addTo(map);
-      else map.removeLayer(clusters[k]);
+    const pill = document.createElement("div");
+    pill.className = "pill glass";
+    pill.dataset.key = key;
+    pill.innerHTML = `<span class="dot" style="background:${meta.color}"></span><span>${meta.name}</span><span class="count" id="count-${key}">…</span>`;
+    pill.addEventListener("click", () => {
+      enabled[key] = !enabled[key];
+      pill.classList.toggle("off", !enabled[key]);
+      if (enabled[key]) clusters[key].addTo(map);
+      else map.removeLayer(clusters[key]);
     });
-    filtersEl.appendChild(wrap);
+    pillsEl.appendChild(pill);
   }
 
   function popupHtml(item) {
     const meta = DATASETS[item.dataset] || { name: item.dataset };
     const propRows = Object.entries(item.props || {})
       .filter(([k, v]) => v != null && typeof v !== "object" && !k.startsWith("_"))
-      .slice(0, 8)
-      .map(([k, v]) => `<li><span class="k">${k}</span><span>${String(v)}</span></li>`)
+      .slice(0, 6)
+      .map(([k, v]) => `<div class="pop-row"><span class="k">${k}</span><span class="v">${String(v)}</span></div>`)
       .join("");
     return `
-      <p class="popup-title">${meta.name}</p>
-      <p class="popup-id">${item.id ?? ""}</p>
-      <ul class="popup-props">${propRows}</ul>
+      <div class="pop-title">${meta.name}</div>
+      <div class="pop-id">${item.id ?? ""}</div>
+      ${propRows}
     `;
   }
 
   async function load() {
-    const btn = document.getElementById("refresh");
-    const status = document.getElementById("status");
-    btn.disabled = true;
-    status.textContent = "Laden…";
-
-    // Reset all clusters and counts
+    document.getElementById("status").textContent = "laden";
     for (const key of Object.keys(DATASETS)) {
       clusters[key].clearLayers();
-      counts[key] = 0;
       document.getElementById(`count-${key}`).textContent = "…";
     }
-
     try {
       const r = await fetch("/api/items");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
+      const counts = Object.fromEntries(Object.keys(DATASETS).map(k => [k, 0]));
       for (const item of data.items) {
         if (item.lat == null || item.lon == null) continue;
         const meta = DATASETS[item.dataset];
         if (!meta) continue;
-        const marker = L.marker([item.lat, item.lon], { icon: dotIcon(meta.color) });
+        const icon = meta.featured ? benchMarkerIcon(meta.color) : dotIcon(meta.color);
+        const marker = L.marker([item.lat, item.lon], { icon });
         marker.bindPopup(popupHtml(item));
         clusters[item.dataset].addLayer(marker);
         counts[item.dataset]++;
@@ -171,16 +267,13 @@
       for (const key of Object.keys(DATASETS)) {
         document.getElementById(`count-${key}`).textContent = counts[key].toLocaleString("nl-NL");
       }
-      status.textContent = `${data.count.toLocaleString("nl-NL")} items`;
+      document.getElementById("status").textContent = `${data.count.toLocaleString("nl-NL")}`;
     } catch (err) {
-      status.textContent = `Fout: ${err.message}`;
+      document.getElementById("status").textContent = "fout";
       console.error(err);
-    } finally {
-      btn.disabled = false;
     }
   }
 
-  document.getElementById("refresh").addEventListener("click", load);
   load();
 </script>
 </body>
