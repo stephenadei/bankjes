@@ -18,8 +18,10 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
             echo "env=prd" >> $GITHUB_OUTPUT
+            echo "branch=master" >> $GITHUB_OUTPUT
           else
             echo "env=acc" >> $GITHUB_OUTPUT
+            echo "branch=develop" >> $GITHUB_OUTPUT
           fi
 
       - uses: actions/setup-python@v5
@@ -57,6 +59,8 @@ jobs:
           script: |
             set -e
             cd /home/stephen/projects/bankjes-${{ steps.env.outputs.env }}
-            git pull --ff-only
+            git fetch origin
+            git checkout ${{ steps.env.outputs.branch }} 2>/dev/null || git checkout -b ${{ steps.env.outputs.branch }} origin/${{ steps.env.outputs.branch }}
+            git reset --hard origin/${{ steps.env.outputs.branch }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             ./scripts/deploy.sh ${{ steps.env.outputs.env }}
