@@ -456,7 +456,7 @@
     let data = photoCache.get(key);
     if (!data) {
       try {
-        const r = await fetch(`/api/photos?lat=${lat}&lon=${lon}&radius=25&limit=3`);
+        const r = await fetch(`/api/photos?lat=${lat}&lon=${lon}&radius=50&limit=3`);
         data = await r.json();
         photoCache.set(key, data);
       } catch (err) {

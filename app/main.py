@@ -150,7 +150,7 @@ async def items(
 async def photos(
     lat: float = Query(..., ge=-90, le=90),
     lon: float = Query(..., ge=-180, le=180),
-    radius: int = Query(default=25, ge=5, le=200, description="meters"),
+    radius: int = Query(default=50, ge=5, le=200, description="meters"),
     limit: int = Query(default=3, ge=1, le=10),
 ):
     """Nearby street-level photos via Mapillary. Empty list if no token or no coverage."""
@@ -168,8 +168,11 @@ async def photos(
         r = await app.state.client.get(
             "https://graph.mapillary.com/images",
             params={
+                # is_pano=false: skip 360° panoramas (sparser) so we get
+                # ordinary street-level shots, which have far better coverage.
                 "access_token": MAPILLARY_TOKEN,
                 "bbox": bbox,
+                "is_pano": "false",
                 "limit": max(limit * 3, 10),
                 "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
             },
