@@ -6,6 +6,7 @@ caching, and shaping the response.
 """
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -19,16 +20,35 @@ from fastapi.responses import FileResponse
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
 
-CACHE_TTL_SECONDS = 300
+# Benches don't move; an hour of staleness is fine and avoids
+# making the first visitor after idle pay the Overpass cold cost.
+CACHE_TTL_SECONDS = 3600
 
 cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
+
+log = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.client = httpx.AsyncClient(timeout=60.0)
+    # Pre-warm the cache for datasets the UI loads on first paint,
+    # so the first visitor sees warm timings instead of the ~2.4s
+    # Overpass cold call.
+    app.state.prewarm = asyncio.create_task(_prewarm(app.state.client))
     yield
+    app.state.prewarm.cancel()
     await app.state.client.aclose()
+
+
+async def _prewarm(client: httpx.AsyncClient) -> None:
+    targets = [ds for ds in DATASETS if ds.default_on]
+    for ds in targets:
+        try:
+            await _cached_fetch(ds, client)
+            log.info("prewarm: %s loaded (%d cached)", ds.label, len(cache[ds.label]))
+        except Exception as e:
+            log.warning("prewarm: %s failed: %s", ds.label, e)
 
 
 app = FastAPI(
