@@ -222,6 +222,25 @@
   .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
   .pop-row .k { color: var(--muted); font-size: 11px; }
   .pop-row .v { font-size: 12px; word-break: break-word; }
+  .pop-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .pop-actions a {
+    font-size: 12px;
+    color: var(--moss);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--moss);
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .pop-actions a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
 
   @media (max-width: 540px) {
     header.topbar { padding: 14px 16px 12px; }
@@ -349,12 +368,18 @@
       .slice(0, 6)
       .map(([k, v]) => `<div class="pop-row"><span class="k">${k}</span><span class="v">${String(v)}</span></div>`)
       .join("");
+    const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${item.lat},${item.lon}`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lon}`;
     return `
       <div class="pop-title">${meta.name}</div>
       <span class="pop-source">${sourceLabel}</span>
       ${addrBlock}
       <div class="pop-id">${item.id ?? ""}</div>
       ${propRows}
+      <div class="pop-actions">
+        <a href="${streetViewUrl}" target="_blank" rel="noopener">↗ Street View</a>
+        <a href="${mapsUrl}" target="_blank" rel="noopener">↗ Open in Maps</a>
+      </div>
     `;
   }
 
