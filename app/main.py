@@ -161,32 +161,35 @@ async def photos(
     if key in photo_cache:
         return photo_cache[key]
 
-    delta = radius / 111000  # degrees per meter, good enough at NL latitudes
-    bbox = f"{lon - delta},{lat - delta},{lon + delta},{lat + delta}"
-
-    try:
-        r = await app.state.client.get(
-            "https://graph.mapillary.com/images",
-            params={
-                # is_pano=false: skip 360° panoramas (sparser) so we get
-                # ordinary street-level shots, which have far better coverage.
-                "access_token": MAPILLARY_TOKEN,
-                "bbox": bbox,
-                "is_pano": "false",
-                "limit": max(limit * 3, 10),
-                "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
-            },
-            timeout=10.0,
-        )
-    except httpx.HTTPError as e:
-        log.warning("mapillary fetch failed: %s", e)
-        return {"photos": []}
-
-    if r.status_code != 200:
-        log.warning("mapillary %d: %s", r.status_code, r.text[:200])
-        return {"photos": []}
-
-    raw = r.json().get("data", [])
+    # Progressive radius: precise first, expand to ~3× if no coverage. Benches
+    # in side streets often have no drive-by within 50m but plenty within 150m.
+    raw: list = []
+    for try_radius in (radius, min(radius * 3, 200)):
+        delta = try_radius / 111000  # degrees per meter, good enough at NL latitudes
+        bbox = f"{lon - delta},{lat - delta},{lon + delta},{lat + delta}"
+        try:
+            r = await app.state.client.get(
+                "https://graph.mapillary.com/images",
+                params={
+                    # is_pano=false: skip 360° panoramas (sparser) so we get
+                    # ordinary street-level shots, which have far better coverage.
+                    "access_token": MAPILLARY_TOKEN,
+                    "bbox": bbox,
+                    "is_pano": "false",
+                    "limit": max(limit * 3, 10),
+                    "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
+                },
+                timeout=10.0,
+            )
+        except httpx.HTTPError as e:
+            log.warning("mapillary fetch failed: %s", e)
+            return {"photos": []}
+        if r.status_code != 200:
+            log.warning("mapillary %d: %s", r.status_code, r.text[:200])
+            return {"photos": []}
+        raw = r.json().get("data", [])
+        if raw:
+            break
 
     def dist_sq(img: dict) -> float:
         coords = (img.get("geometry") or {}).get("coordinates") or [0, 0]
