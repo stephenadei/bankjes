@@ -6,6 +6,8 @@ venv/
 .env
 .env.*
 !.env.example
+!.env.acc.example
+!.env.prd.example
 .DS_Store
 .idea/
 .vscode/

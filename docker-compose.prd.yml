@@ -1,13 +1,13 @@
 services:
   bankjes:
-    build: .
-    image: ghcr.io/stephenadei/bankjes:dev
-    container_name: bankjes-dev
+    image: ghcr.io/stephenadei/bankjes:prd
+    container_name: bankjes
+    pull_policy: always
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.prd
     ports:
-      - "127.0.0.1:4309:8000"
+      - "127.0.0.1:4307:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
       interval: 30s

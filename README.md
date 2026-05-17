@@ -19,7 +19,7 @@ Alle requests vragen `_format=geojson` zodat de DSO-API server-side van RD New (
 
 ```bash
 docker compose up --build
-# open http://localhost:4307
+# open http://localhost:4309
 ```
 
 Of zonder Docker:
@@ -28,6 +28,25 @@ Of zonder Docker:
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 # open http://localhost:8000
+```
+
+## Environments
+
+| Env | URL | Branch | Compose file | Port (VPS) |
+|---|---|---|---|---|
+| dev | `http://localhost:4309` | feature branches | `docker-compose.yml` | n.v.t. (laptop) |
+| acc | `https://bankjes-acc.stephensprive.app` | `develop` | `docker-compose.acc.yml` | 4308 |
+| prd | `https://bankjes.stephensprive.app` | `master` | `docker-compose.prd.yml` | 4307 |
+
+Push naar `develop` → GHA bouwt `ghcr.io/stephenadei/bankjes:acc` en deployt naar acc.
+Push (PR-merge) naar `master` → idem voor `prd`.
+
+Handmatige deploy op de VPS:
+
+```bash
+cd /home/stephen/projects/bankjes-acc   # of /home/stephen/projects/bankjes-prd
+git pull
+./scripts/deploy.sh acc   # of prd
 ```
 
 ## Endpoints
