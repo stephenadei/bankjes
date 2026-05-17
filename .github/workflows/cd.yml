@@ -59,7 +59,9 @@ jobs:
           script: |
             set -e
             cd /home/stephen/projects/bankjes-${{ steps.env.outputs.env }}
-            git fetch origin
+            # Pin git credentials to the workflow's GITHUB_TOKEN so we don't
+            # depend on whichever gh account happens to be "active" on the VPS.
+            git -c http.https://github.com/.extraheader="AUTHORIZATION: bearer ${{ secrets.GITHUB_TOKEN }}" fetch origin
             git checkout ${{ steps.env.outputs.branch }} 2>/dev/null || git checkout -b ${{ steps.env.outputs.branch }} origin/${{ steps.env.outputs.branch }}
             git reset --hard origin/${{ steps.env.outputs.branch }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
