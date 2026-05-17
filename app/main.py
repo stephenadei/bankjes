@@ -7,6 +7,7 @@ caching, and shaping the response.
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -25,6 +26,10 @@ from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
 CACHE_TTL_SECONDS = 3600
 
 cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
+# Photo lookups dwarf dataset count; a day of staleness is fine.
+photo_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
+
+MAPILLARY_TOKEN: Optional[str] = os.environ.get("MAPILLARY_TOKEN") or None
 
 log = logging.getLogger("uvicorn.error")
 
@@ -139,3 +144,65 @@ async def items(
             ))
 
     return {"count": len(out), "items": [m.model_dump() for m in out]}
+
+
+@app.get("/api/photos")
+async def photos(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    radius: int = Query(default=25, ge=5, le=200, description="meters"),
+    limit: int = Query(default=3, ge=1, le=10),
+):
+    """Nearby street-level photos via Mapillary. Empty list if no token or no coverage."""
+    if not MAPILLARY_TOKEN:
+        return {"photos": []}
+
+    key = f"{lat:.5f},{lon:.5f},{radius},{limit}"
+    if key in photo_cache:
+        return photo_cache[key]
+
+    delta = radius / 111000  # degrees per meter, good enough at NL latitudes
+    bbox = f"{lon - delta},{lat - delta},{lon + delta},{lat + delta}"
+
+    try:
+        r = await app.state.client.get(
+            "https://graph.mapillary.com/images",
+            params={
+                "access_token": MAPILLARY_TOKEN,
+                "bbox": bbox,
+                "limit": max(limit * 3, 10),
+                "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
+            },
+            timeout=10.0,
+        )
+    except httpx.HTTPError as e:
+        log.warning("mapillary fetch failed: %s", e)
+        return {"photos": []}
+
+    if r.status_code != 200:
+        log.warning("mapillary %d: %s", r.status_code, r.text[:200])
+        return {"photos": []}
+
+    raw = r.json().get("data", [])
+
+    def dist_sq(img: dict) -> float:
+        coords = (img.get("geometry") or {}).get("coordinates") or [0, 0]
+        return (coords[0] - lon) ** 2 + (coords[1] - lat) ** 2
+
+    raw.sort(key=dist_sq)
+
+    out = [
+        {
+            "id": img["id"],
+            "thumb": img.get("thumb_256_url"),
+            "large": img.get("thumb_1024_url"),
+            "captured_at": img.get("captured_at"),
+            "url": f"https://www.mapillary.com/app/?focus=photo&pKey={img['id']}",
+        }
+        for img in raw[:limit]
+        if img.get("thumb_256_url")
+    ]
+
+    result = {"photos": out}
+    photo_cache[key] = result
+    return result

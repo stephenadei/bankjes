@@ -222,6 +222,43 @@
   .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
   .pop-row .k { color: var(--muted); font-size: 11px; }
   .pop-row .v { font-size: 12px; word-break: break-word; }
+  .pop-photos {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0 4px;
+    min-height: 0;
+  }
+  .pop-photos.empty { display: none; }
+  .pop-photos a {
+    flex: 1;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+    line-height: 0;
+  }
+  .pop-photos a:hover {
+    opacity: 0.92;
+    border-color: var(--line-strong);
+  }
+  .pop-photos img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pop-photos .placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--cream);
+    animation: pop-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pop-pulse {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 0.85; }
+  }
   .pop-actions {
     display: flex;
     gap: 14px;
@@ -370,10 +407,14 @@
       .join("");
     const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${item.lat},${item.lon}`;
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lon}`;
+    const photosBlock = `<div class="pop-photos" data-lat="${item.lat}" data-lon="${item.lon}">
+        <div class="placeholder"></div><div class="placeholder"></div><div class="placeholder"></div>
+      </div>`;
     return `
       <div class="pop-title">${meta.name}</div>
       <span class="pop-source">${sourceLabel}</span>
       ${addrBlock}
+      ${photosBlock}
       <div class="pop-id">${item.id ?? ""}</div>
       ${propRows}
       <div class="pop-actions">
@@ -404,15 +445,56 @@
     }
   }
 
+  const photoCache = new Map();
+
+  async function loadPhotos(photoEl) {
+    if (photoEl.dataset.loaded) return;
+    photoEl.dataset.loaded = "true";
+    const lat = parseFloat(photoEl.dataset.lat);
+    const lon = parseFloat(photoEl.dataset.lon);
+    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+    let data = photoCache.get(key);
+    if (!data) {
+      try {
+        const r = await fetch(`/api/photos?lat=${lat}&lon=${lon}&radius=25&limit=3`);
+        data = await r.json();
+        photoCache.set(key, data);
+      } catch (err) {
+        console.error("photo fetch", err);
+        photoEl.classList.add("empty");
+        return;
+      }
+    }
+    const photos = data.photos || [];
+    if (photos.length === 0) {
+      photoEl.classList.add("empty");
+      return;
+    }
+    photoEl.innerHTML = photos.map(p => {
+      const when = p.captured_at ? new Date(p.captured_at).toLocaleDateString("nl-NL", { year: "numeric", month: "short" }) : "";
+      return `<a href="${p.url}" target="_blank" rel="noopener" title="Mapillary · ${when}"><img src="${p.thumb}" loading="lazy" alt=""></a>`;
+    }).join("");
+  }
+
   map.on("popupopen", async (e) => {
-    const el = e.popup.getElement()?.querySelector(".pop-addr");
-    if (!el || el.dataset.loaded) return;
-    const lat = parseFloat(el.dataset.lat);
-    const lon = parseFloat(el.dataset.lon);
-    const addr = await reverseGeocode(lat, lon);
-    el.dataset.loaded = "true";
-    el.textContent = addr || "(geen adres in BAG)";
-    e.popup.update();
+    const root = e.popup.getElement();
+    if (!root) return;
+
+    const addrEl = root.querySelector(".pop-addr");
+    if (addrEl && !addrEl.dataset.loaded) {
+      const lat = parseFloat(addrEl.dataset.lat);
+      const lon = parseFloat(addrEl.dataset.lon);
+      const addr = await reverseGeocode(lat, lon);
+      addrEl.dataset.loaded = "true";
+      addrEl.textContent = addr || "(geen adres in BAG)";
+      e.popup.update();
+    }
+
+    const photoEl = root.querySelector(".pop-photos");
+    if (photoEl) {
+      await loadPhotos(photoEl);
+      e.popup.update();
+    }
   });
 
   function addItemsToCluster(key, items) {
