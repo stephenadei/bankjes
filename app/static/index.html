@@ -284,6 +284,38 @@
     border-bottom-color: var(--ink);
   }
 
+  /* ========== Footer about-card ========== */
+  footer.about {
+    border-top: 1px dotted var(--line-strong);
+    background: var(--cream);
+    padding: 32px 22px;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    z-index: 0;
+  }
+  footer.about img {
+    width: 220px;
+    height: 220px;
+    flex-shrink: 0;
+    border-radius: 8px;
+  }
+  footer.about .text { font-size: 14px; line-height: 1.55; max-width: 56ch; color: var(--ink); }
+  footer.about .text h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 4px;
+    font-variation-settings: "opsz" 22;
+  }
+  footer.about .text .role { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  footer.about .text a {
+    color: var(--moss);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--moss);
+  }
+  footer.about .text a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
   @media (max-width: 540px) {
     header.topbar { padding: 14px 16px 12px; }
     .hero .mark { width: 22px; height: 22px; vertical-align: -3px; }
@@ -291,6 +323,8 @@
     .hero .subtitle { display: none; }
     .filters { gap: 6px; margin-top: 11px; }
     .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; }
+    footer.about { flex-direction: column; padding: 22px 16px; gap: 18px; align-items: flex-start; }
+    footer.about img { width: 140px; height: 140px; }
   }
 </style>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -317,6 +351,17 @@
   <nav class="filters" id="filters"></nav>
 </header>
 <div id="map"></div>
+
+<footer class="about">
+  <img src="/static/portrait-halftone.png" alt="Portret Stephen Adei">
+  <div class="text">
+    <h2>Stephen Adei</h2>
+    <div class="role">Data engineer · Amsterdam</div>
+    <p>
+      Stephen's Bankjes begon als minor-opdracht aan de UvA en wordt sindsdien onderhouden als civic-tech-portfolio. Officiële BGT-data van data.amsterdam.nl staat voorop; OSM vult de gaten in het centrum. Lees de <a href="/onderzoek">coverage-analyse →</a>
+    </p>
+  </div>
+</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>

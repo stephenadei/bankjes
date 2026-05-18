@@ -35,3 +35,10 @@ def test_header_mark_is_image():
     # New image is in
     assert 'class="mark"' in html
     assert 'src="/static/silhouette.svg"' in html
+
+
+def test_footer_about_card():
+    html = _read("index.html")
+    assert 'class="about"' in html
+    assert "portrait-halftone.png" in html
+    assert "Stephen Adei" in html
