@@ -284,37 +284,60 @@
     border-bottom-color: var(--ink);
   }
 
-  /* ========== Footer about-card ========== */
-  footer.about {
+  /* ========== Footer about-card (collapsible <details>) ========== */
+  details.about {
     border-top: 1px dotted var(--line-strong);
     background: var(--cream);
-    padding: 32px 22px;
-    display: flex;
-    gap: 28px;
-    align-items: center;
     z-index: 0;
   }
-  footer.about img {
-    width: 220px;
-    height: 220px;
+  details.about summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 22px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  details.about summary::-webkit-details-marker { display: none; }
+  details.about summary .chev {
+    display: inline-block;
+    transition: transform 0.18s ease;
+    font-size: 10px;
+    color: var(--moss);
+  }
+  details.about[open] summary .chev { transform: rotate(90deg); }
+  details.about summary:hover { color: var(--ink); }
+  details.about summary:hover .chev { color: var(--ink); }
+  details.about .body {
+    padding: 4px 22px 24px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  details.about .body img {
+    width: 180px;
+    height: 180px;
     flex-shrink: 0;
     border-radius: 8px;
   }
-  footer.about .text { font-size: 14px; line-height: 1.55; max-width: 56ch; color: var(--ink); }
-  footer.about .text h2 {
+  details.about .text { font-size: 14px; line-height: 1.55; max-width: 56ch; color: var(--ink); }
+  details.about .text h2 {
     font-family: 'Fraunces', serif;
     font-weight: 600;
-    font-size: 22px;
+    font-size: 20px;
     margin-bottom: 4px;
     font-variation-settings: "opsz" 22;
   }
-  footer.about .text .role { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
-  footer.about .text a {
+  details.about .text .role { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  details.about .text a {
     color: var(--moss);
     text-decoration: none;
     border-bottom: 1px dotted var(--moss);
   }
-  footer.about .text a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+  details.about .text a:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
   @media (max-width: 540px) {
     header.topbar { padding: 14px 16px 12px; }
@@ -323,8 +346,14 @@
     .hero .subtitle { display: none; }
     .filters { gap: 6px; margin-top: 11px; }
     .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; }
-    footer.about { flex-direction: column; padding: 22px 16px; gap: 18px; align-items: flex-start; }
-    footer.about img { width: 140px; height: 140px; }
+    details.about summary { padding: 9px 16px; font-size: 11px; }
+    details.about .body {
+      flex-direction: column;
+      padding: 4px 16px 18px;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    details.about .body img { width: 120px; height: 120px; }
   }
 </style>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -352,16 +381,22 @@
 </header>
 <div id="map"></div>
 
-<footer class="about">
-  <img src="/static/portrait-halftone.png" alt="Portret Stephen Adei">
-  <div class="text">
-    <h2>Stephen Adei</h2>
-    <div class="role">Data engineer · Amsterdam</div>
-    <p>
-      Stephen's Bankjes begon als minor-opdracht aan de UvA en wordt sindsdien onderhouden als civic-tech-portfolio. Officiële BGT-data van data.amsterdam.nl staat voorop; OSM vult de gaten in het centrum. Lees de <a href="/onderzoek">coverage-analyse →</a>
-    </p>
+<details class="about">
+  <summary>
+    <span class="chev">▸</span>
+    <span>Over Stephen</span>
+  </summary>
+  <div class="body">
+    <img src="/static/portrait-halftone.png" alt="Portret Stephen Adei">
+    <div class="text">
+      <h2>Stephen Adei</h2>
+      <div class="role">Data engineer · Amsterdam</div>
+      <p>
+        Stephen's Bankjes begon als minor-opdracht aan de UvA en wordt sindsdien onderhouden als civic-tech-portfolio. Officiële BGT-data van data.amsterdam.nl staat voorop; OSM vult de gaten in het centrum. Lees de <a href="/onderzoek">coverage-analyse →</a>
+      </p>
+    </div>
   </div>
-</footer>
+</details>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
