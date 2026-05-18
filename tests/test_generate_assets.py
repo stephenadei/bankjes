@@ -50,3 +50,14 @@ def test_silhouette_outputs():
         flat = {c for _, c in colours}
         assert (91, 122, 63) in flat, "moss not found in silhouette png"
         assert (250, 247, 240) in flat, "cream not found in silhouette png"
+
+
+def test_halftone_output():
+    run_generator()
+    png = STATIC_DIR / "portrait-halftone.png"
+    assert png.exists()
+    with Image.open(png) as im:
+        assert im.size == (560, 560), f"halftone size {im.size}"
+        colours = {c for _, c in (im.convert("RGB").getcolors(maxcolors=10_000) or [])}
+        assert (91, 122, 63) in colours
+        assert (250, 247, 240) in colours

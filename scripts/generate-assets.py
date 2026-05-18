@@ -20,7 +20,7 @@ import statistics
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageOps
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STATIC_DIR = REPO_ROOT / "app" / "static"
@@ -117,6 +117,32 @@ def generate_silhouette(src: Image.Image, out_dir: Path) -> None:
     (out_dir / "favicon.svg").write_text(body)
 
 
+def generate_halftone(src: Image.Image, out_dir: Path) -> None:
+    """Floyd-Steinberg dither of the masked subject -> moss dots on cream."""
+    sq = _square_crop(src, 1024)
+    mask = _mask_from_portrait(sq)
+
+    gray = sq.convert("L")
+    gray = ImageOps.autocontrast(gray, cutoff=2)
+    dithered = gray.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+    # 1-bit -> L; dark pixels become 255 in our "on" mask
+    on = dithered.point(lambda p: 255 if p < 128 else 0).convert("L")
+    # Keep only "on" pixels inside the subject mask
+    on_masked = Image.new("L", sq.size, 0)
+    op, mp, omp = on.load(), mask.load(), on_masked.load()
+    w, h = sq.size
+    for y in range(h):
+        for x in range(w):
+            if mp[x, y] > 128 and op[x, y] > 128:
+                omp[x, y] = 255
+
+    out = Image.new("RGB", sq.size, CREAM)
+    moss_layer = Image.new("RGB", sq.size, MOSS)
+    out.paste(moss_layer, (0, 0), on_masked)
+    out = out.resize((560, 560), Image.LANCZOS)
+    out.save(out_dir / "portrait-halftone.png", optimize=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
@@ -132,6 +158,8 @@ def main(argv: list[str] | None = None) -> int:
     src = Image.open(args.source).convert("RGB")
     generate_silhouette(src, args.out)
     print("silhouette done")
+    generate_halftone(src, args.out)
+    print("halftone done")
     return 0
 
 
