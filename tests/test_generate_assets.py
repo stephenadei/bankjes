@@ -61,3 +61,16 @@ def test_halftone_output():
         colours = {c for _, c in (im.convert("RGB").getcolors(maxcolors=10_000) or [])}
         assert (91, 122, 63) in colours
         assert (250, 247, 240) in colours
+
+
+def test_favicon_outputs():
+    run_generator()
+    f32 = STATIC_DIR / "favicon-32.png"
+    apple = STATIC_DIR / "apple-touch-icon.png"
+    assert f32.exists() and apple.exists()
+    with Image.open(f32) as im:
+        assert im.size == (32, 32)
+    with Image.open(apple) as im:
+        assert im.size == (180, 180)
+        # Apple expects opaque; no alpha
+        assert im.mode in ("RGB", "P"), f"apple-touch must be opaque, got {im.mode}"

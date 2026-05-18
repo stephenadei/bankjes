@@ -117,6 +117,34 @@ def generate_silhouette(src: Image.Image, out_dir: Path) -> None:
     (out_dir / "favicon.svg").write_text(body)
 
 
+def generate_favicons(out_dir: Path) -> None:
+    """Derive favicon-32 and apple-touch-icon from the 1024² silhouette PNG."""
+    src = Image.open(out_dir / "silhouette-1024.png").convert("RGB")
+    # Tight square crop around the figure so the 32×32 favicon stays readable
+    # (the silhouette is centred but doesn't fill the frame).
+    bbox = src.convert("L").point(lambda p: 0 if p > 250 else 255).getbbox()
+    if bbox:
+        # Add 8% padding
+        x0, y0, x1, y1 = bbox
+        pad = int(0.08 * max(x1 - x0, y1 - y0))
+        x0 = max(0, x0 - pad)
+        y0 = max(0, y0 - pad)
+        x1 = min(src.width, x1 + pad)
+        y1 = min(src.height, y1 + pad)
+        # Square-ify to the larger dimension, centred
+        side = max(x1 - x0, y1 - y0)
+        cx = (x0 + x1) // 2
+        cy = (y0 + y1) // 2
+        x0 = max(0, cx - side // 2)
+        y0 = max(0, cy - side // 2)
+        cropped = src.crop((x0, y0, x0 + side, y0 + side))
+    else:
+        cropped = src
+
+    cropped.resize((32, 32), Image.LANCZOS).save(out_dir / "favicon-32.png", optimize=True)
+    cropped.resize((180, 180), Image.LANCZOS).save(out_dir / "apple-touch-icon.png", optimize=True)
+
+
 def generate_halftone(src: Image.Image, out_dir: Path) -> None:
     """Floyd-Steinberg dither of the masked subject -> moss dots on cream."""
     sq = _square_crop(src, 1024)
@@ -160,6 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     print("silhouette done")
     generate_halftone(src, args.out)
     print("halftone done")
+    generate_favicons(args.out)
+    print("favicons done")
     return 0
 
 
