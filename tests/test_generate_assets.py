@@ -8,6 +8,11 @@ from pathlib import Path
 
 import pytest
 
+# Pillow is dev-only — generated assets are committed, the container doesn't
+# need to regenerate them. Skip this entire module when PIL is missing so CI
+# (which installs only runtime deps) stays green.
+pytest.importorskip("PIL")
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STATIC_DIR = REPO_ROOT / "app" / "static"
 SCRIPT = REPO_ROOT / "scripts" / "generate-assets.py"
