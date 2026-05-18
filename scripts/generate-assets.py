@@ -20,7 +20,7 @@ import statistics
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STATIC_DIR = REPO_ROOT / "app" / "static"
@@ -171,6 +171,76 @@ def generate_halftone(src: Image.Image, out_dir: Path) -> None:
     out.save(out_dir / "portrait-halftone.png", optimize=True)
 
 
+def generate_og_banner(out_dir: Path) -> None:
+    """1200×630 social-share banner: title left, halftone portrait on the left,
+    stylised Amsterdam map snippet right.
+
+    Layout:
+      cream background
+      title block top-left (Fraunces fallback to a system serif)
+      halftone portrait bottom-left, 440×440
+      map snippet right half: 3 concentric arcs (Singel/Herengracht/Keizersgracht)
+        with 5 moss dots scattered along them
+      footer band with URL in muted Inter (system sans fallback)
+    """
+    W, H = 1200, 630
+    img = Image.new("RGB", (W, H), CREAM)
+    draw = ImageDraw.Draw(img)
+
+    # Title + tagline — use DejaVu serif fallback if Fraunces isn't installed
+    # system-wide. The container doesn't ship Fraunces; the generator runs on
+    # the dev machine where the user has it. DejaVu Serif is a safe fallback.
+    def _font(names: list[str], size: int) -> ImageFont.FreeTypeFont:
+        for n in names:
+            try:
+                return ImageFont.truetype(n, size)
+            except OSError:
+                continue
+        return ImageFont.load_default()
+
+    title_font   = _font(["Fraunces-SemiBold.ttf", "DejaVuSerif-Bold.ttf"], 72)
+    tagline_font = _font(["Inter-Regular.ttf", "DejaVuSans.ttf"], 22)
+    url_font     = _font(["Inter-Regular.ttf", "DejaVuSans.ttf"], 20)
+
+    draw.text((60, 50), "Stephen's Bankjes", fill=MOSS, font=title_font)
+    draw.text(
+        (60, 150),
+        "Amsterdam straatmeubilair, in kaart gebracht",
+        fill=INK,
+        font=tagline_font,
+    )
+
+    # Halftone portrait (re-derived smaller, positioned lower to avoid text overlap)
+    halftone = Image.open(out_dir / "portrait-halftone.png").convert("RGB").resize((440, 440), Image.LANCZOS)
+    img.paste(halftone, (60, 260))  # position portrait lower, clear of text
+
+    # Map snippet on right half: 3 arcs centred near (900, 360) suggesting grachten
+    cx, cy = 900, 360
+    for r in (130, 180, 230):
+        draw.arc(
+            (cx - r, cy - r, cx + r, cy + r),
+            start=200, end=340,
+            fill=INK,
+            width=2,
+        )
+
+    # 5 moss bench dots scattered along the arcs
+    for (x, y, size) in [
+        (820, 270, 14),
+        (970, 245, 12),
+        (1020, 320, 14),
+        (850, 430, 14),
+        (960, 470, 16),
+    ]:
+        draw.ellipse((x - size, y - size, x + size, y + size), fill=MOSS)
+
+    # Footer URL band
+    draw.line((60, H - 60, W - 60, H - 60), fill=MOSS, width=1)
+    draw.text((60, H - 45), "bankjes.stephensprive.app", fill=(133, 125, 114), font=url_font)
+
+    img.save(out_dir / "og-banner.png", optimize=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
@@ -190,6 +260,8 @@ def main(argv: list[str] | None = None) -> int:
     print("halftone done")
     generate_favicons(args.out)
     print("favicons done")
+    generate_og_banner(args.out)
+    print("og banner done")
     return 0
 
 

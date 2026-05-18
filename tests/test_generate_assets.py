@@ -74,3 +74,13 @@ def test_favicon_outputs():
         assert im.size == (180, 180)
         # Apple expects opaque; no alpha
         assert im.mode in ("RGB", "P"), f"apple-touch must be opaque, got {im.mode}"
+
+
+def test_og_banner_output():
+    run_generator()
+    og = STATIC_DIR / "og-banner.png"
+    assert og.exists()
+    with Image.open(og) as im:
+        assert im.size == (1200, 630), f"og size {im.size}"
+        # Sanity: file size > 10 KB (rules out empty/transparent stub)
+    assert og.stat().st_size > 10_000
