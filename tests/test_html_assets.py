@@ -26,3 +26,12 @@ def test_onderzoek_has_favicons_and_og():
     html = _read("onderzoek.html")
     assert "favicon.svg" in html
     assert "og-banner.png" in html
+
+
+def test_header_mark_is_image():
+    html = _read("index.html")
+    # Old emoji should be gone from the hero
+    assert '<span class="mark">🪑</span>' not in html
+    # New image is in
+    assert 'class="mark"' in html
+    assert 'src="/static/silhouette.svg"' in html

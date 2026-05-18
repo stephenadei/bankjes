@@ -51,7 +51,12 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-  .hero .mark { font-size: 28px; line-height: 1; }
+  .hero .mark {
+    width: 28px;
+    height: 28px;
+    vertical-align: -4px;
+    display: inline-block;
+  }
   .hero .title {
     font-family: 'Fraunces', ui-serif, Georgia, serif;
     font-weight: 600;
@@ -281,7 +286,7 @@
 
   @media (max-width: 540px) {
     header.topbar { padding: 14px 16px 12px; }
-    .hero .mark { font-size: 22px; }
+    .hero .mark { width: 22px; height: 22px; vertical-align: -3px; }
     .hero .title { font-size: 24px; }
     .hero .subtitle { display: none; }
     .filters { gap: 6px; margin-top: 11px; }
@@ -303,7 +308,7 @@
 <body>
 <header class="topbar">
   <div class="hero">
-    <span class="mark">🪑</span>
+    <img class="mark" src="/static/silhouette.svg" alt="" width="28" height="28">
     <h1 class="title">Stephen's Bankjes</h1>
     <span class="subtitle">Amsterdam straatmeubilair</span>
     <a class="research-link" href="/onderzoek">onderzoek →</a>
