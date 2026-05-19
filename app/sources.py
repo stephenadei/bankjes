@@ -6,6 +6,7 @@ exist today: DsoSource (Amsterdam DSO open-data API) and OsmSource
 adapter and appending it to DATASETS — nothing in main.py has to change.
 """
 
+import asyncio
 import math
 import os
 from dataclasses import dataclass, field
@@ -197,6 +198,34 @@ def _next_link(links) -> Optional[str]:
         if isinstance(link, dict) and link.get("rel") == "next":
             return link.get("href")
     return None
+
+
+@dataclass
+class MergedBenchSource:
+    """Composite DataSource: BGT + OSM benches, deduplicated by proximity.
+
+    Satisfies the DataSource Protocol (returns list[Marker]) so the
+    Dataset abstraction itself does not change. Implementation:
+    fetch both sources in parallel, drop OSM markers within `dedup_m`
+    of any BGT marker (BGT wins; see ADR-0002).
+    """
+
+    bgt: DsoSource
+    osm: OsmSource
+    dedup_m: int = 10
+    # DataSource Protocol fields
+    label: str = "bench"
+    name: str = "Banken"
+    color: str = "#5b7a3f"
+    source_type: str = "merged"
+    default_on: bool = True
+    featured: bool = True
+
+    async def fetch(self, client: httpx.AsyncClient) -> list[Marker]:
+        bgt_markers, osm_markers = await asyncio.gather(
+            self.bgt.fetch(client), self.osm.fetch(client)
+        )
+        return _dedup_by_proximity(bgt_markers, osm_markers, self.dedup_m)
 
 
 # ─── Registered datasets ──────────────────────────────────────────
