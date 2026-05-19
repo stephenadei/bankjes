@@ -3,15 +3,17 @@
 #
 #   scripts/deploy.sh acc   → pulls :acc tag, restarts bankjes-acc
 #   scripts/deploy.sh prd   → pulls :prd tag, restarts bankjes
+#   scripts/deploy.sh pre   → pulls :pre tag, restarts bankjes-pre (one-phase-ahead preview)
 #
-# Expects to run from a checkout in /opt/bankjes-<env>/ with .env.<env> present.
+# Expects to run from a checkout in /home/stephen/projects/bankjes-<env>/
+# with .env.<env> present.
 
 set -euo pipefail
 
-ENV="${1:?usage: deploy.sh <acc|prd>}"
+ENV="${1:?usage: deploy.sh <acc|prd|pre>}"
 case "$ENV" in
-  acc|prd) ;;
-  *) echo "env must be acc or prd, got: $ENV" >&2; exit 2 ;;
+  acc|prd|pre) ;;
+  *) echo "env must be acc, prd, or pre, got: $ENV" >&2; exit 2 ;;
 esac
 
 COMPOSE_FILE="docker-compose.${ENV}.yml"

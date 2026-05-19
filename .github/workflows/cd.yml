@@ -2,7 +2,7 @@ name: cd
 
 on:
   push:
-    branches: [master, develop]
+    branches: [master, develop, pre]
 
 jobs:
   build-deploy:
@@ -16,13 +16,20 @@ jobs:
       - name: Resolve target env
         id: env
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            echo "env=prd" >> $GITHUB_OUTPUT
-            echo "branch=master" >> $GITHUB_OUTPUT
-          else
-            echo "env=acc" >> $GITHUB_OUTPUT
-            echo "branch=develop" >> $GITHUB_OUTPUT
-          fi
+          case "${{ github.ref }}" in
+            refs/heads/master)
+              echo "env=prd" >> $GITHUB_OUTPUT
+              echo "branch=master" >> $GITHUB_OUTPUT ;;
+            refs/heads/develop)
+              echo "env=acc" >> $GITHUB_OUTPUT
+              echo "branch=develop" >> $GITHUB_OUTPUT ;;
+            refs/heads/pre)
+              echo "env=pre" >> $GITHUB_OUTPUT
+              echo "branch=pre" >> $GITHUB_OUTPUT ;;
+            *)
+              echo "Unsupported branch: ${{ github.ref }}" >&2
+              exit 1 ;;
+          esac
 
       - uses: actions/setup-python@v5
         with:
