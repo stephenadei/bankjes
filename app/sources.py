@@ -6,6 +6,7 @@ exist today: DsoSource (Amsterdam DSO open-data API) and OsmSource
 adapter and appending it to DATASETS — nothing in main.py has to change.
 """
 
+import math
 import os
 from dataclasses import dataclass, field
 from typing import Optional, Protocol
@@ -24,6 +25,21 @@ AMSTERDAM_API_KEY: Optional[str] = os.environ.get("AMSTERDAM_API_KEY") or None
 
 PAGE_SIZE = 1000
 MAX_PAGES = 50
+
+
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Distance in metres between two WGS84 coordinates.
+
+    Standard Haversine formula. Good to within ~0.5% at the scale we
+    use (sub-kilometre comparisons in Amsterdam).
+    """
+    r = 6_371_000.0  # mean Earth radius, metres
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
 
 
 class DataSource(Protocol):
