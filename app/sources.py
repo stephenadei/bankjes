@@ -233,21 +233,20 @@ class MergedBenchSource:
 # returns this metadata; the map UI builds itself from it.
 
 DATASETS: list[DataSource] = [
-    DsoSource(
-        label="bench",
-        name="Banken",
-        color="#5b7a3f",
-        path="bgt/straatmeubilair",
-        params={"plusType": "bank", "bronhouder": "G0363"},
-        default_on=True,
-        featured=True,
-    ),
-    OsmSource(
-        label="bench_osm",
-        name="Banken (OSM)",
-        color="#4a5d6a",
-        overpass_query='[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
-        default_on=True,
+    MergedBenchSource(
+        bgt=DsoSource(
+            label="_bgt_bench",
+            name="BGT Banken (intern)",
+            color="#5b7a3f",
+            path="bgt/straatmeubilair",
+            params={"plusType": "bank", "bronhouder": "G0363"},
+        ),
+        osm=OsmSource(
+            label="_osm_bench",
+            name="OSM Banken (intern)",
+            color="#4a5d6a",
+            overpass_query='[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
+        ),
     ),
     DsoSource(
         label="picnic_table",
