@@ -42,6 +42,50 @@ def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
+def _dedup_by_proximity(
+    bgt_markers: list[Marker],
+    osm_markers: list[Marker],
+    radius_m: float,
+) -> list[Marker]:
+    """Merge two marker lists, dropping OSM markers within `radius_m` of any BGT marker.
+
+    BGT markers are kept unconditionally (they carry the official
+    identificatie field and are the canonical register). OSM markers
+    that fall outside the dedup radius are appended. Each surviving
+    BGT marker that absorbed one or more OSM matches gets a
+    `merged_replicas: int` prop so popups can surface the overlap
+    count.
+
+    O(n × m) — fine at n ≈ 345, m ≈ 7000 with 1h cache TTL.
+    """
+    out: list[Marker] = []
+    replica_counts: dict[str, int] = {}
+
+    for b in bgt_markers:
+        out.append(b)
+
+    for o in osm_markers:
+        absorbed = False
+        for b in bgt_markers:
+            if _haversine_m(b.lat, b.lon, o.lat, o.lon) <= radius_m:
+                replica_counts[b.id] = replica_counts.get(b.id, 0) + 1
+                absorbed = True
+                break
+        if not absorbed:
+            out.append(o)
+
+    # Re-emit BGT survivors with merged_replicas in props (Marker model
+    # is immutable-ish since props is a dict but we keep it explicit).
+    final: list[Marker] = []
+    for m in out:
+        if m.id in replica_counts:
+            new_props = {**m.props, "merged_replicas": replica_counts[m.id]}
+            final.append(Marker(id=m.id, lat=m.lat, lon=m.lon, props=new_props))
+        else:
+            final.append(m)
+    return final
+
+
 class DataSource(Protocol):
     """Interface for anything that yields a list of Markers from an HTTP client."""
 
