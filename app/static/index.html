@@ -395,6 +395,49 @@
     padding: 0;
     margin: 0;
   }
+  #nearby-sheet #nearby-list li {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  #nearby-sheet #nearby-list li:last-child { border-bottom: none; }
+  #nearby-sheet #nearby-list .dist {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: var(--moss);
+    font-weight: 500;
+  }
+  #nearby-sheet #nearby-list .row-label {
+    font-size: 13px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    word-break: break-word;
+  }
+  #nearby-sheet #nearby-list .meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  #nearby-sheet #nearby-list .src-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  #nearby-sheet #nearby-list .rugleun {
+    font-size: 10px;
+    background: var(--cream);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 1px 6px;
+    color: var(--moss);
+  }
 
   @media (max-width: 540px) {
     header.topbar { padding: 14px 16px 12px; }
@@ -745,6 +788,7 @@
         map.removeLayer(clusters[key]);
         updateStatus();
       }
+      if (typeof renderNearby === "function") renderNearby();
     });
     filtersEl.appendChild(btn);
   }
@@ -813,6 +857,92 @@
     nearbySheet.dataset.state = next;
     nearbyHandle.setAttribute("aria-expanded", next === "full" ? "true" : "false");
   });
+
+  // ========== Nearby list state ==========
+  const nearbyList = document.getElementById("nearby-list");
+  const nearbyCountEl = document.getElementById("nearby-count");
+  let userLatLng = null;
+
+  function distanceMetres(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dPhi = toRad(lat2 - lat1);
+    const dLam = toRad(lon2 - lon1);
+    const a = Math.sin(dPhi/2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLam/2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  function fmtDist(m) {
+    if (m < 1000) return Math.round(m / 10) * 10 + "m";
+    return (m / 1000).toFixed(1) + "km";
+  }
+
+  function collectVisibleItems() {
+    const items = [];
+    for (const [key, meta] of Object.entries(DATASETS)) {
+      if (!enabled[key] || !loaded[key]) continue;
+      clusters[key].eachLayer(layer => {
+        if (typeof layer.getLatLng !== "function") return;  // cluster nodes, not markers
+        const ll = layer.getLatLng();
+        items.push({
+          key,
+          meta,
+          lat: ll.lat,
+          lon: ll.lng,
+          layer,
+        });
+      });
+    }
+    return items;
+  }
+
+  function renderNearby() {
+    if (!nearbyList) return;
+    const origin = userLatLng || map.getCenter();
+    const items = collectVisibleItems();
+    for (const it of items) {
+      it._dist = distanceMetres(origin.lat, origin.lng, it.lat, it.lon);
+    }
+    items.sort((a, b) => a._dist - b._dist);
+    const top = items.slice(0, 50);
+    nearbyCountEl.textContent = items.length > 0
+      ? items.length.toLocaleString("nl-NL")
+      : "—";
+    nearbyList.innerHTML = top.map(it => {
+      const srcTag = it.meta.sourceType === "osm" ? "OSM"
+                  : it.meta.sourceType === "merged" ? "BGT"
+                  : "BGT";
+      const backrest = it.layer.feature?.properties?.backrest;
+      const rugleun = backrest === "yes" ? '<span class="rugleun">+ rugleuning</span>' : "";
+      return `<li data-lat="${it.lat}" data-lon="${it.lon}">
+        <span class="dist">${fmtDist(it._dist)}</span>
+        <span class="row-label">${it.meta.name}</span>
+        <span class="meta"><span class="src-tag">${srcTag}</span>${rugleun}</span>
+      </li>`;
+    }).join("");
+    for (const li of nearbyList.querySelectorAll("li")) {
+      li.addEventListener("click", () => {
+        const lat = parseFloat(li.dataset.lat);
+        const lon = parseFloat(li.dataset.lon);
+        map.flyTo([lat, lon], 17, { duration: 0.6 });
+      });
+    }
+  }
+
+  // Silent geolocate to anchor distances on user position
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => { userLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude }; renderNearby(); },
+      () => { renderNearby(); },
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+    );
+  } else {
+    renderNearby();
+  }
+
+  // Re-render when map view changes
+  map.on("moveend zoomend", renderNearby);
 
 })().catch(err => {
   console.error("init failed", err);
