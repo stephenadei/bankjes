@@ -339,6 +339,63 @@
   }
   details.about .text a:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
+  /* ========== Nearby sheet (mobile bottom-sheet + desktop slide-down) ========== */
+  #nearby-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--paper);
+    border-top: 1px solid var(--line-strong);
+    box-shadow: 0 -4px 18px rgba(45, 42, 38, 0.10);
+    z-index: 600;
+    transition: transform 0.28s ease;
+    transform: translateY(calc(100% - 42px));  /* default: peek */
+  }
+  #nearby-sheet[data-state="full"] { transform: translateY(8%); }
+  #nearby-sheet[data-state="closed"] { transform: translateY(100%); }
+  #nearby-sheet .nearby-handle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 8px 22px 12px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink);
+  }
+  #nearby-sheet .grip {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    margin: 0 auto 6px;
+    display: block;
+  }
+  #nearby-sheet .label {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  #nearby-sheet .count {
+    margin-left: auto;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+  }
+  #nearby-sheet .nearby-body {
+    max-height: calc(92vh - 42px);
+    overflow-y: auto;
+    padding: 0 22px 22px;
+  }
+  #nearby-sheet #nearby-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
   @media (max-width: 540px) {
     header.topbar { padding: 14px 16px 12px; }
     .hero .mark { width: 22px; height: 22px; vertical-align: -3px; }
@@ -380,6 +437,17 @@
   <nav class="filters" id="filters"></nav>
 </header>
 <div id="map"></div>
+
+<aside id="nearby-sheet" aria-label="Bankjes in de buurt">
+  <button type="button" class="nearby-handle" aria-controls="nearby-list" aria-expanded="false">
+    <span class="grip"></span>
+    <span class="label">In de buurt</span>
+    <span class="count" id="nearby-count">—</span>
+  </button>
+  <div class="nearby-body">
+    <ul id="nearby-list" role="list"></ul>
+  </div>
+</aside>
 
 <details class="about">
   <summary>
@@ -735,6 +803,16 @@
   await Promise.all(initial.map(ensureLoaded));
   // Auto-locate na laden — silent fail als gebruiker weigert of in headless context
   locate({ fly: true, silentFail: true });
+
+  // ========== Nearby sheet: open/close state ==========
+  const nearbySheet = document.getElementById("nearby-sheet");
+  const nearbyHandle = nearbySheet.querySelector(".nearby-handle");
+  nearbyHandle.addEventListener("click", () => {
+    const current = nearbySheet.dataset.state || "peek";
+    const next = current === "full" ? "peek" : "full";
+    nearbySheet.dataset.state = next;
+    nearbyHandle.setAttribute("aria-expanded", next === "full" ? "true" : "false");
+  });
 
 })().catch(err => {
   console.error("init failed", err);
