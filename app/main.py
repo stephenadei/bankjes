@@ -148,6 +148,25 @@ async def items(
     return {"count": len(out), "items": [m.model_dump() for m in out]}
 
 
+@app.get("/api/coverage")
+async def coverage():
+    """Stats for the gap-analysis page: per-source counts + merged total."""
+    bench_ds = DATASETS_BY_LABEL["bench"]
+    if not hasattr(bench_ds, "bgt"):
+        # Defensive: if Banken is ever swapped back to a non-composite, return zeros.
+        return {"bgt_count": 0, "osm_count": 0, "merged_count": 0}
+    bgt_markers, osm_markers = await asyncio.gather(
+        bench_ds.bgt.fetch(app.state.client),
+        bench_ds.osm.fetch(app.state.client),
+    )
+    merged = await bench_ds.fetch(app.state.client)
+    return {
+        "bgt_count": len(bgt_markers),
+        "osm_count": len(osm_markers),
+        "merged_count": len(merged),
+    }
+
+
 @app.get("/api/photos")
 async def photos(
     lat: float = Query(..., ge=-90, le=90),
