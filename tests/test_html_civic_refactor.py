@@ -29,3 +29,9 @@ def test_mobile_bottom_bar_styling():
     assert "/* bottom-bar mobile */" in html
     # Bottom-bar pinning of filters on mobile
     assert "bottom: 42px" in html or "bottom:42px" in html
+
+
+def test_rugleun_filter_present():
+    html = _read("index.html")
+    assert 'id="rugleun-filter"' in html
+    assert "localStorage" in html  # persistence

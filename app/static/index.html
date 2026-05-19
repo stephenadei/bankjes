@@ -155,6 +155,23 @@
     pointer-events: none;
   }
 
+  .sub-filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--muted);
+  }
+  .chip input { accent-color: var(--moss); }
+  .chip input:checked ~ span { color: var(--moss); font-weight: 500; }
+
   /* ========== Map ========== */
   #map {
     width: 100%;
@@ -465,8 +482,20 @@
       margin-top: 0;
     }
     .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; flex-shrink: 0; }
-    /* Reserve room for bottom-bar + nearby-handle so map + footer don't get hidden */
-    body { padding-bottom: calc(42px + 56px + env(safe-area-inset-bottom)); }
+    .sub-filters {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(42px + 44px + env(safe-area-inset-bottom));
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+      padding: 6px 14px;
+      margin-top: 0;
+      z-index: 549;
+      justify-content: flex-start;
+    }
+    /* Reserve room for bottom-bar + rugleun-chip + nearby-handle so map + footer don't get hidden */
+    body { padding-bottom: calc(42px + 56px + 32px + env(safe-area-inset-bottom)); }
     /* Collapsible about-card floats above the bottom-bar on mobile */
     details.about { margin-bottom: calc(42px + 56px + env(safe-area-inset-bottom)); }
     details.about summary { padding: 9px 16px; font-size: 11px; }
@@ -501,6 +530,12 @@
     <span class="status" id="status">·</span>
   </div>
   <nav class="filters" id="filters"></nav>
+  <div class="sub-filters">
+    <label class="chip rugleun-chip">
+      <input type="checkbox" id="rugleun-filter">
+      <span>+ rugleuning</span>
+    </label>
+  </div>
 </header>
 <div id="map"></div>
 
@@ -966,6 +1001,33 @@
 
   // Re-render when map view changes
   map.on("moveend zoomend", renderNearby);
+
+  // ========== Rugleun filter ==========
+  const rugleun = document.getElementById("rugleun-filter");
+  function applyRugleunFilter() {
+    const onOnly = rugleun.checked;
+    localStorage.setItem("rugleun-filter", onOnly ? "1" : "0");
+    for (const [key, meta] of Object.entries(DATASETS)) {
+      if (meta.sourceType !== "merged" && meta.sourceType !== "osm") continue;
+      const cluster = clusters[key];
+      if (!cluster) continue;
+      cluster.eachLayer(layer => {
+        const has = layer.feature?.properties?.backrest === "yes";
+        if (onOnly && !has) {
+          cluster.removeLayer(layer);
+          layer._hiddenByRugleun = true;
+        } else if (!onOnly && layer._hiddenByRugleun) {
+          cluster.addLayer(layer);
+          delete layer._hiddenByRugleun;
+        }
+      });
+    }
+    if (typeof renderNearby === "function") renderNearby();
+  }
+  rugleun.checked = localStorage.getItem("rugleun-filter") === "1";
+  rugleun.addEventListener("change", applyRugleunFilter);
+  // Defer until datasets load (the initial fetch sequence in this IIFE populates clusters async)
+  setTimeout(applyRugleunFilter, 1500);
 
 })().catch(err => {
   console.error("init failed", err);
