@@ -439,13 +439,36 @@
     color: var(--moss);
   }
 
+  /* bottom-bar mobile */
   @media (max-width: 540px) {
-    header.topbar { padding: 14px 16px 12px; }
+    header.topbar {
+      padding: 10px 16px 8px;
+    }
+    .hero { gap: 8px; }
     .hero .mark { width: 22px; height: 22px; vertical-align: -3px; }
-    .hero .title { font-size: 24px; }
-    .hero .subtitle { display: none; }
-    .filters { gap: 6px; margin-top: 11px; }
-    .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; }
+    .hero .title { font-size: 22px; }
+    .hero .subtitle, .hero .status { display: none; }
+    /* Move filter pills to a bottom-sticky bar above the nearby-sheet handle */
+    .filters {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 42px;  /* sits directly above the nearby-sheet handle */
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: nowrap;
+      z-index: 550;
+      margin-top: 0;
+    }
+    .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; flex-shrink: 0; }
+    /* Reserve room for bottom-bar + nearby-handle so map + footer don't get hidden */
+    body { padding-bottom: calc(42px + 56px + env(safe-area-inset-bottom)); }
+    /* Collapsible about-card floats above the bottom-bar on mobile */
+    details.about { margin-bottom: calc(42px + 56px + env(safe-area-inset-bottom)); }
     details.about summary { padding: 9px 16px; font-size: 11px; }
     details.about .body {
       flex-direction: column;

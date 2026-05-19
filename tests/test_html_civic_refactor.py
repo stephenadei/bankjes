@@ -21,3 +21,11 @@ def test_nearby_list_has_lazy_renderer():
     # The renderer references the items state and distance computation
     assert "function renderNearby" in html or "renderNearby(" in html
     assert "navigator.geolocation" in html  # geolocate fallback path exists
+
+
+def test_mobile_bottom_bar_styling():
+    html = _read("index.html")
+    # Sentinel comment marks the new mobile-layout rules
+    assert "/* bottom-bar mobile */" in html
+    # Bottom-bar pinning of filters on mobile
+    assert "bottom: 42px" in html or "bottom:42px" in html
