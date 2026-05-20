@@ -569,6 +569,30 @@
     overflow-y: auto;
     padding: 0 22px 22px;
   }
+  #nearby-sheet .sheet-tabs {
+    display: flex;
+    gap: 14px;
+    padding: 4px 0 14px;
+    border-bottom: 1px dotted var(--line);
+    margin-bottom: 12px;
+  }
+  #nearby-sheet .sheet-tabs .tab {
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+    cursor: pointer;
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    font-variation-settings: "opsz" 14;
+    border-bottom: 2px solid transparent;
+  }
+  #nearby-sheet .sheet-tabs .tab.active {
+    color: var(--ink);
+    border-bottom-color: var(--moss);
+  }
+  #nearby-sheet .sheet-pane[hidden] { display: none; }
   #nearby-sheet #nearby-list {
     list-style: none;
     padding: 0;
@@ -616,6 +640,52 @@
     border-radius: 8px;
     padding: 1px 6px;
     color: var(--moss);
+  }
+
+  #nearby-sheet #mijn-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #nearby-sheet #mijn-list li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  #nearby-sheet #mijn-list li:last-child { border-bottom: none; }
+  #nearby-sheet #mijn-list .row-label {
+    font-size: 13px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    word-break: break-word;
+  }
+  #nearby-sheet #mijn-list .row-meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  #nearby-sheet #mijn-list .badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+    background: var(--moss);
+    border-radius: 4px;
+    padding: 1px 6px;
+    text-transform: uppercase;
+  }
+  #nearby-sheet #mijn-list .badge.private { background: var(--muted); }
+  #nearby-sheet #mijn-list .badge.pending  { background: var(--rust); }
+  #nearby-sheet #mijn-list .empty {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 16px 0;
+    text-align: center;
   }
 
   /* ========== Z v1: FAB + modals ========== */
@@ -970,7 +1040,12 @@
     <span class="count" id="nearby-count">—</span>
   </button>
   <div class="nearby-body">
-    <ul id="nearby-list" role="list"></ul>
+    <div class="sheet-tabs">
+      <button type="button" class="tab active" id="sheet-tab-nearby" data-tab="nearby">In de buurt</button>
+      <button type="button" class="tab" id="sheet-tab-mijn" data-tab="mijn" hidden>Mijn plekjes</button>
+    </div>
+    <ul id="nearby-list" class="sheet-pane" data-pane="nearby" role="list"></ul>
+    <ul id="mijn-list" class="sheet-pane" data-pane="mijn" role="list" hidden></ul>
   </div>
 </aside>
 
@@ -1792,6 +1867,80 @@
 
   // Initial load
   z1RefreshSpots();
+
+  // ========== Z v1: Mijn plekjes tab ==========
+  const tabNearby = document.getElementById("sheet-tab-nearby");
+  const tabMijn = document.getElementById("sheet-tab-mijn");
+  const paneNearby = document.getElementById("nearby-list");
+  const paneMijn = document.getElementById("mijn-list");
+
+  function setActiveTab(name) {
+    const isNearby = name === "nearby";
+    tabNearby.classList.toggle("active", isNearby);
+    tabMijn.classList.toggle("active", !isNearby);
+    paneNearby.hidden = !isNearby;
+    paneMijn.hidden = isNearby;
+    if (!isNearby) renderMijn();
+  }
+  tabNearby.addEventListener("click", () => setActiveTab("nearby"));
+  tabMijn.addEventListener("click", () => setActiveTab("mijn"));
+
+  function mijnBadge(spot) {
+    if (spot.public_status === "approved")  return '<span class="badge">publiek</span>';
+    if (spot.public_status === "requested") return '<span class="badge pending">in beoordeling</span>';
+    return '<span class="badge private">privé</span>';
+  }
+
+  async function renderMijn() {
+    let me = null;
+    try {
+      const r = await fetch("/api/me");
+      if (r.ok) me = await r.json();
+    } catch (e) {}
+    if (!me) {
+      paneMijn.innerHTML = '<li class="empty">Log in om je plekjes te zien.</li>';
+      return;
+    }
+    let spots = [];
+    try {
+      const r = await fetch("/api/spots");
+      if (r.ok) spots = (await r.json()).spots || [];
+    } catch (e) {}
+    const own = spots
+      .filter(s => s.owner.id === me.id)
+      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    if (own.length === 0) {
+      paneMijn.innerHTML = '<li class="empty">Nog geen plekjes — tap + onderaan.</li>';
+      return;
+    }
+    paneMijn.innerHTML = own.map(s => `
+      <li data-lat="${s.lat}" data-lon="${s.lon}">
+        <span class="row-label">${escapeHtml(s.label)}</span>
+        <span class="row-meta">${mijnBadge(s)}</span>
+      </li>
+    `).join("");
+    paneMijn.querySelectorAll("li").forEach(li => {
+      li.addEventListener("click", () => {
+        const lat = parseFloat(li.dataset.lat);
+        const lon = parseFloat(li.dataset.lon);
+        map.flyTo([lat, lon], 17, { duration: 0.6 });
+      });
+    });
+  }
+
+  // Show the tab when logged in; periodically poll on first paint (cheap).
+  async function z1ToggleMijnTabVisibility() {
+    let me = null;
+    try {
+      const r = await fetch("/api/me");
+      if (r.ok) me = await r.json();
+    } catch (e) {}
+    tabMijn.hidden = !me;
+  }
+  z1ToggleMijnTabVisibility();
+
+  // Also expose so login flow can refresh tab visibility
+  window.z1ToggleMijnTabVisibility = z1ToggleMijnTabVisibility;
 
 })().catch(err => {
   console.error("init failed", err);

@@ -71,3 +71,15 @@ def test_spot_popup_has_owner_actions_template():
     # Strings used in the owner-action labels
     assert "Verzoek publicatie" in html or "request-public" in html.lower()
     assert "Verwijder" in html or "DELETE" in html
+
+
+def test_mijn_plekjes_tab_present():
+    html = _read("index.html")
+    assert 'id="sheet-tab-nearby"' in html
+    assert 'id="sheet-tab-mijn"' in html
+    assert 'id="mijn-list"' in html
+
+
+def test_mijn_plekjes_renderer_present():
+    html = _read("index.html")
+    assert "renderMijn" in html
