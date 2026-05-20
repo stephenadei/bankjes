@@ -754,6 +754,49 @@
     }
     details.about .body img { width: 120px; height: 120px; }
   }
+
+  #z1-mini-map {
+    width: 100%;
+    height: 220px;
+    border-radius: 10px;
+    margin: 4px 0 14px;
+    overflow: hidden;
+  }
+  #z1-new-spot-modal .row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  #z1-new-spot-modal .row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  #z1-new-spot-modal .row input[type="radio"] { accent-color: var(--moss); }
+  #z1-new-spot-modal textarea {
+    min-height: 56px;
+    resize: vertical;
+    font-family: inherit;
+  }
+  #z1-new-spot-modal .hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: -8px;
+    margin-bottom: 12px;
+  }
+  #z1-new-spot-modal .error {
+    color: var(--rust);
+    font-size: 12px;
+    margin-top: -8px;
+    margin-bottom: 8px;
+    display: none;
+  }
+  #z1-new-spot-modal.has-error .error { display: block; }
 </style>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
@@ -816,6 +859,38 @@
       <div class="actions" style="margin-top: 12px;">
         <button class="secondary" type="button" id="z1-login-close">Sluiten</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="z1-new-spot-modal" role="dialog" aria-modal="true" aria-label="Nieuw plekje toevoegen">
+  <div class="card">
+    <h3>Nieuw plekje</h3>
+    <p>Sleep de pin naar de exacte locatie.</p>
+    <div id="z1-mini-map"></div>
+
+    <input id="z1-spot-label" type="text" placeholder="Naam / korte titel (verplicht)" maxlength="60" required>
+    <textarea id="z1-spot-description" placeholder="Beschrijving (optioneel)" maxlength="400"></textarea>
+
+    <select id="z1-spot-category">
+      <option value="anders">Anders</option>
+      <option value="bank">Bank</option>
+      <option value="stoel">Stoel</option>
+      <option value="picknicktafel">Picknicktafel</option>
+      <option value="krukje">Krukje</option>
+    </select>
+
+    <div class="row">
+      <label><input type="radio" name="z1-visibility" id="z1-spot-visibility-private" value="private" checked> Privé (alleen ik)</label>
+      <label><input type="radio" name="z1-visibility" value="public"> Publiek (vraag aan)</label>
+    </div>
+    <div class="hint">Publiek-plekjes verschijnen pas op de hoofdkaart na approval.</div>
+
+    <div class="error">Vul minimaal een label in.</div>
+
+    <div class="actions">
+      <button class="primary" type="button" id="z1-spot-save">Opslaan</button>
+      <button class="secondary" type="button" id="z1-spot-cancel">Annuleer</button>
     </div>
   </div>
 </div>
@@ -1413,20 +1488,108 @@
     return cachedMe;
   }
 
+  // ========== Z v1: new-spot modal ==========
+  const z1NewSpotModal = document.getElementById("z1-new-spot-modal");
+  const z1SpotLabel = document.getElementById("z1-spot-label");
+  const z1SpotDesc = document.getElementById("z1-spot-description");
+  const z1SpotCat = document.getElementById("z1-spot-category");
+  const z1SaveBtn = document.getElementById("z1-spot-save");
+
+  let z1MiniMap = null;
+  let z1MiniPin = null;
+
+  function z1OpenNewSpotModal() {
+    z1NewSpotModal.classList.add("show");
+    z1NewSpotModal.classList.remove("has-error");
+    z1SpotLabel.value = "";
+    z1SpotDesc.value = "";
+    z1SpotCat.value = "anders";
+    const radios = z1NewSpotModal.querySelectorAll('input[name="z1-visibility"]');
+    radios.forEach(r => { r.checked = (r.value === "private"); });
+
+    // Defer Leaflet init until the modal is visible so the container has size
+    setTimeout(() => {
+      const startLat = (userLatLng && userLatLng.lat) || map.getCenter().lat;
+      const startLng = (userLatLng && userLatLng.lng) || map.getCenter().lng;
+      if (z1MiniMap === null) {
+        z1MiniMap = L.map("z1-mini-map", { zoomControl: false, attributionControl: false })
+          .setView([startLat, startLng], 17);
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+          maxZoom: 19,
+          subdomains: "abcd",
+        }).addTo(z1MiniMap);
+        z1MiniPin = L.marker([startLat, startLng], { draggable: true }).addTo(z1MiniMap);
+      } else {
+        z1MiniMap.setView([startLat, startLng], 17);
+        z1MiniPin.setLatLng([startLat, startLng]);
+        z1MiniMap.invalidateSize();
+      }
+      setTimeout(() => z1SpotLabel.focus(), 60);
+    }, 40);
+  }
+
+  function z1CloseNewSpotModal() {
+    z1NewSpotModal.classList.remove("show");
+  }
+
+  z1SaveBtn.addEventListener("click", async () => {
+    const label = z1SpotLabel.value.trim();
+    if (!label) {
+      z1NewSpotModal.classList.add("has-error");
+      return;
+    }
+    const visibilityRadio = z1NewSpotModal.querySelector('input[name="z1-visibility"]:checked');
+    const wantsPublic = visibilityRadio && visibilityRadio.value === "public";
+    const ll = z1MiniPin.getLatLng();
+    const payload = {
+      lat: ll.lat,
+      lon: ll.lng,
+      label,
+      description: z1SpotDesc.value.trim() || null,
+      category: z1SpotCat.value,
+    };
+    try {
+      const r = await fetch("/api/spots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        z1NewSpotModal.classList.add("has-error");
+        return;
+      }
+      const created = await r.json();
+      if (wantsPublic) {
+        // Promote to public-request
+        await fetch(`/api/spots/${created.id}/request-public`, { method: "POST" });
+      }
+      z1CloseNewSpotModal();
+      // Trigger spots-layer refresh if Task 15 wired one; otherwise a window reload picks it up
+      if (typeof window.z1RefreshSpots === "function") {
+        window.z1RefreshSpots();
+      }
+    } catch (e) {
+      console.error("save spot failed", e);
+      z1NewSpotModal.classList.add("has-error");
+    }
+  });
+
+  document.getElementById("z1-spot-cancel").addEventListener("click", z1CloseNewSpotModal);
+  z1NewSpotModal.addEventListener("click", (e) => {
+    if (e.target === z1NewSpotModal) z1CloseNewSpotModal();
+  });
+
+  // Expose so the FAB-handler can use it
+  window.z1OpenNewSpotModal = z1OpenNewSpotModal;
+
   z1Fab.addEventListener("click", async () => {
     const me = await z1Me();
     if (!me) {
       z1LoginModal.classList.remove("sent");
       z1LoginModal.classList.add("show");
       setTimeout(() => z1LoginEmail.focus(), 50);
-    } else {
-      // Task 14 will populate this branch (new-spot modal). For now, fallback alert.
-      const nsm = document.getElementById("z1-new-spot-modal");
-      if (nsm) {
-        nsm.classList.add("show");
-      } else {
-        alert("Logged in as " + me.email + " — new-spot UI komt in Task 14.");
-      }
+    } else if (typeof window.z1OpenNewSpotModal === "function") {
+      window.z1OpenNewSpotModal();
     }
   });
 

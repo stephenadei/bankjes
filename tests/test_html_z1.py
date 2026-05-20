@@ -30,3 +30,29 @@ def test_fab_click_handler_wired():
     # The JS handler should call /api/me before deciding which modal to open
     assert "/api/me" in html
     assert "z1-fab" in html
+
+
+def test_new_spot_modal_present():
+    html = _read("index.html")
+    assert 'id="z1-new-spot-modal"' in html
+    # Form fields by id
+    assert 'id="z1-spot-label"' in html
+    assert 'id="z1-spot-description"' in html
+    assert 'id="z1-spot-category"' in html
+    # Visibility-radio
+    assert 'name="z1-visibility"' in html or 'id="z1-spot-visibility-private"' in html
+    # Save button
+    assert 'id="z1-spot-save"' in html
+
+
+def test_new_spot_mini_map_present():
+    html = _read("index.html")
+    # Container for the small leaflet preview inside the modal
+    assert 'id="z1-mini-map"' in html
+
+
+def test_new_spot_categories_match_backend():
+    """Frontend select must offer the same categories the backend accepts."""
+    html = _read("index.html")
+    for cat in ("bank", "stoel", "picknicktafel", "krukje", "anders"):
+        assert f'value="{cat}"' in html, f"missing category {cat}"
