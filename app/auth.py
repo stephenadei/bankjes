@@ -13,8 +13,10 @@ import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Cookie, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from typing import Optional
+
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel, EmailStr, ValidationError
 
@@ -30,6 +32,13 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 class MagicLinkRequest(BaseModel):
     email: str
+
+
+class User(BaseModel):
+    id: str
+    email: str
+    display_name: str
+    is_admin: bool
 
 
 def _serializer() -> URLSafeTimedSerializer:
@@ -50,19 +59,60 @@ def _issue_session_cookie(response, user_id: str) -> None:
     """Sign + set the session cookie on the given response."""
     payload = {"user_id": user_id, "issued_at": _now_utc().isoformat()}
     token = _session_serializer().dumps(payload)
+    # secure=False in test mode (env BANKJES_INSECURE_COOKIES=1) for TestClient compatibility
+    secure = not os.environ.get("BANKJES_INSECURE_COOKIES")
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=token,
         max_age=SESSION_TTL_SECONDS,
         httponly=True,
         samesite="lax",
-        secure=True,
+        secure=secure,
         path="/",
     )
 
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+async def get_current_user(request: Request) -> Optional[User]:
+    """Return the authenticated User from the session cookie, or None."""
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if not token:
+        return None
+    try:
+        payload = _session_serializer().loads(token, max_age=SESSION_TTL_SECONDS)
+    except (BadSignature, SignatureExpired):
+        return None
+    user_id = payload.get("user_id")
+    if not user_id:
+        return None
+    db = request.app.state.db
+    cur = await db.execute(
+        "SELECT id, email, display_name FROM users WHERE id = ?",
+        (user_id,),
+    )
+    row = await cur.fetchone()
+    if row is None:
+        return None
+    uid, email, display_name = row
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    return User(
+        id=uid,
+        email=email,
+        display_name=display_name,
+        is_admin=bool(admin_email and email.lower() == admin_email),
+    )
+
+
+async def require_current_user(
+    user: Optional[User] = Depends(get_current_user),
+) -> User:
+    """Variant that 401s when no session — use this in protected routes."""
+    if user is None:
+        raise HTTPException(status_code=401, detail="not authenticated")
+    return user
 
 
 @router.post("/api/auth/request-magic-link")
@@ -153,4 +203,16 @@ async def verify_magic_link(request: Request, token: str):
 
     response = RedirectResponse(url="/", status_code=302)
     _issue_session_cookie(response, user_id)
+    return response
+
+
+@router.get("/api/me")
+async def me(user: User = Depends(require_current_user)):
+    return user.model_dump()
+
+
+@router.post("/api/auth/logout")
+async def logout():
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(SESSION_COOKIE_NAME, path="/")
     return response

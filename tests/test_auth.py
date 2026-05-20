@@ -15,6 +15,7 @@ def client_with_envs(monkeypatch, tmp_path):
     monkeypatch.setenv("RESEND_API_KEY", "re_test")
     monkeypatch.setenv("RESEND_FROM_DOMAIN", "mail.example.com")
     monkeypatch.setenv("APP_BASE_URL", "https://test.example")
+    monkeypatch.setenv("BANKJES_INSECURE_COOKIES", "1")  # Allow TestClient to see cookies
     from app.main import app
     with TestClient(app) as client:
         yield client
@@ -181,3 +182,54 @@ def test_verify_existing_user_updates_last_login(client_with_envs):
             cur = await conn.execute("SELECT COUNT(*) FROM users WHERE email = ?", ("frank@example.com",))
             return (await cur.fetchone())[0]
     assert asyncio.run(count()) == 1
+
+
+def _login_as(client, email):
+    """Helper: full login flow, stores session cookie in client jar."""
+    token = _issue_token_via_request(client, email)
+    r = client.get(f"/auth/verify?token={token}", follow_redirects=False)
+    assert r.status_code in (302, 303), r.text
+    # TestClient now correctly stores the cookie (with BANKJES_INSECURE_COOKIES=1)
+
+
+def test_me_returns_401_when_not_logged_in(client_with_envs):
+    r = client_with_envs.get("/api/me")
+    assert r.status_code == 401
+
+
+def test_me_returns_user_info_when_logged_in(client_with_envs):
+    _login_as(client_with_envs, "gus@example.com")
+    r = client_with_envs.get("/api/me")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["email"] == "gus@example.com"
+    assert body["display_name"] == "gus"
+    assert "id" in body
+    assert body["is_admin"] is False
+
+
+def test_me_is_admin_when_email_matches_env(client_with_envs, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    _login_as(client_with_envs, "admin@example.com")
+    r = client_with_envs.get("/api/me")
+    assert r.status_code == 200
+    assert r.json()["is_admin"] is True
+
+
+def test_logout_clears_cookie_and_subsequent_me_401(client_with_envs):
+    _login_as(client_with_envs, "henk@example.com")
+    # Confirm logged in
+    assert client_with_envs.get("/api/me").status_code == 200
+    # Logout
+    r = client_with_envs.post("/api/auth/logout")
+    assert r.status_code == 200
+    assert r.json() == {"ok": True}
+    # Cookie should be cleared — clear from TestClient jar too to simulate browser
+    client_with_envs.cookies.clear()
+    assert client_with_envs.get("/api/me").status_code == 401
+
+
+def test_invalid_session_cookie_treated_as_unauth(client_with_envs):
+    client_with_envs.cookies.set("bankjes_session", "garbage-not-signed")
+    r = client_with_envs.get("/api/me")
+    assert r.status_code == 401
