@@ -96,6 +96,11 @@ async def onderzoek():
     return FileResponse(STATIC_DIR / "onderzoek.html")
 
 
+@app.get("/admin", include_in_schema=False)
+async def admin_page():
+    return FileResponse(STATIC_DIR / "admin.html")
+
+
 @app.get("/healthz")
 async def healthz():
     return {"ok": True, "datasets": sorted(DATASETS_BY_LABEL.keys())}

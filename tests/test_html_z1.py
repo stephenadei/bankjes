@@ -83,3 +83,25 @@ def test_mijn_plekjes_tab_present():
 def test_mijn_plekjes_renderer_present():
     html = _read("index.html")
     assert "renderMijn" in html
+
+
+def test_admin_html_exists():
+    """admin.html file is served at /admin"""
+    p = STATIC_DIR / "admin.html"
+    assert p.exists()
+
+
+def test_admin_html_has_pending_table_anchor():
+    p = STATIC_DIR / "admin.html"
+    assert p.exists()
+    html = p.read_text()
+    assert "pending-list" in html
+    assert "approve" in html.lower()
+    assert "deny" in html.lower() or "weiger" in html.lower()
+
+
+def test_main_serves_admin_route():
+    """The FastAPI app has an `/admin` route that returns admin.html for admin users."""
+    main_py = (STATIC_DIR.parent / "main.py").read_text()
+    assert "/admin" in main_py
+    assert "admin.html" in main_py
