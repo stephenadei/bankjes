@@ -301,6 +301,48 @@
     border-bottom-color: var(--ink);
   }
 
+  .spot-popup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 4px;
+    padding-top: 8px;
+    border-top: 1px dotted var(--line);
+  }
+  .spot-popup-actions button {
+    background: var(--cream);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .spot-popup-actions button:hover {
+    border-color: var(--moss);
+    color: var(--moss);
+  }
+  .spot-popup-actions button.danger:hover {
+    border-color: var(--rust);
+    color: var(--rust);
+  }
+  .spot-visibility-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+    background: var(--moss);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .spot-visibility-badge.private { background: var(--muted); }
+  .spot-visibility-badge.pending  { background: var(--rust); }
+
   /* ========== Footer about-card (collapsible <details>) ========== */
   details.about {
     border-top: 1px dotted var(--line-strong);
@@ -1626,6 +1668,130 @@
   z1LoginModal.addEventListener("click", (e) => {
     if (e.target === z1LoginModal) closeLoginModal();
   });
+
+  // ========== Z v1: Plekjes-laag op de kaart ==========
+  const z1SpotsCluster = L.markerClusterGroup({
+    chunkedLoading: true,
+    iconCreateFunction: (cluster) => {
+      const n = cluster.getChildCount();
+      return L.divIcon({
+        html: `<div style="background:#a06a3f;color:#fffdf6;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;font-family:Inter,sans-serif;border:2px solid rgba(255,253,246,0.95);box-shadow:0 1px 3px rgba(45,42,38,0.30)">${n}</div>`,
+        className: "",
+        iconSize: [32, 32],
+      });
+    },
+  });
+  z1SpotsCluster.addTo(map);
+
+  function z1SpotIcon(spot, isOwn) {
+    const isApproved = spot.public_status === "approved";
+    const isPending = spot.public_status === "requested";
+    const color = "#a06a3f";   // rust accent, distinct from bench-moss
+    const bg = isApproved ? color : "rgba(255,253,246,0.97)";
+    const border = isPending ? "#a06a3f dashed" : color;
+    const txt = isApproved ? "#fffdf6" : color;
+    return L.divIcon({
+      html: `<div style="width:22px;height:22px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:${txt};box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1.5px solid ${border}">+</div>`,
+      className: "",
+      iconSize: [22, 22],
+    });
+  }
+
+  function z1VisibilityBadge(spot) {
+    if (spot.public_status === "approved") return '<span class="spot-visibility-badge">publiek</span>';
+    if (spot.public_status === "requested") return '<span class="spot-visibility-badge pending">in beoordeling</span>';
+    return '<span class="spot-visibility-badge private">privé</span>';
+  }
+
+  function z1SpotPopup(spot, isOwn) {
+    const streetView = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${spot.lat},${spot.lon}`;
+    const maps = `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lon}`;
+    let html =
+      `<div class="pop-title">${escapeHtml(spot.label)}${z1VisibilityBadge(spot)}</div>` +
+      `<span class="pop-source">Plekje · ${escapeHtml(spot.owner.display_name)}</span>`;
+    if (spot.description) {
+      html += `<div style="font-size:12px;color:var(--ink);margin:6px 0;">${escapeHtml(spot.description)}</div>`;
+    }
+    if (spot.denial_reason) {
+      html += `<div style="font-size:11px;color:var(--rust);margin:6px 0;"><b>Afgewezen:</b> ${escapeHtml(spot.denial_reason)}</div>`;
+    }
+    html += `<div class="pop-actions">
+      <a href="${streetView}" target="_blank" rel="noopener">↗ Street View</a>
+      <a href="${maps}" target="_blank" rel="noopener">↗ Open in Maps</a>
+    </div>`;
+    if (isOwn) {
+      const reqLabel = spot.public_status === "approved" || spot.public_status === "requested"
+        ? "Trek aanvraag in" : "Verzoek publicatie";
+      const reqAction = spot.public_status === "approved" || spot.public_status === "requested"
+        ? "revoke" : "request";
+      html += `<div class="spot-popup-actions">
+        <button data-spot-id="${spot.id}" data-action="${reqAction}">${reqLabel}</button>
+        <button class="danger" data-spot-id="${spot.id}" data-action="delete">Verwijder</button>
+      </div>`;
+    }
+    return html;
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return "";
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  async function z1RefreshSpots() {
+    let me = null;
+    try {
+      const r = await fetch("/api/me");
+      if (r.ok) me = await r.json();
+    } catch (e) { /* anonymous */ }
+    cachedMe = me || false;
+
+    let spots = [];
+    try {
+      const r = await fetch("/api/spots");
+      if (r.ok) spots = (await r.json()).spots || [];
+    } catch (e) { return; }
+
+    z1SpotsCluster.clearLayers();
+    const markers = [];
+    for (const s of spots) {
+      const isOwn = me && s.owner.id === me.id;
+      const m = L.marker([s.lat, s.lon], { icon: z1SpotIcon(s, isOwn) });
+      m.bindPopup(z1SpotPopup(s, isOwn));
+      markers.push(m);
+    }
+    z1SpotsCluster.addLayers(markers);
+  }
+
+  // Expose so the new-spot modal can refresh on save
+  window.z1RefreshSpots = z1RefreshSpots;
+
+  // Handle popup-action button clicks (request-public / revoke / delete)
+  map.on("popupopen", (e) => {
+    const root = e.popup.getElement();
+    if (!root) return;
+    const buttons = root.querySelectorAll(".spot-popup-actions button");
+    buttons.forEach(b => {
+      b.addEventListener("click", async () => {
+        const sid = b.dataset.spotId;
+        const action = b.dataset.action;
+        if (action === "delete") {
+          if (!confirm("Plekje verwijderen?")) return;
+          await fetch(`/api/spots/${sid}`, { method: "DELETE" });
+        } else if (action === "request") {
+          await fetch(`/api/spots/${sid}/request-public`, { method: "POST" });
+        } else if (action === "revoke") {
+          await fetch(`/api/spots/${sid}/revoke-public`, { method: "POST" });
+        }
+        map.closePopup();
+        await z1RefreshSpots();
+      });
+    });
+  });
+
+  // Initial load
+  z1RefreshSpots();
 
 })().catch(err => {
   console.error("init failed", err);

@@ -56,3 +56,18 @@ def test_new_spot_categories_match_backend():
     html = _read("index.html")
     for cat in ("bank", "stoel", "picknicktafel", "krukje", "anders"):
         assert f'value="{cat}"' in html, f"missing category {cat}"
+
+
+def test_spots_layer_initialised():
+    html = _read("index.html")
+    # Frontend creates a dedicated cluster group for spots
+    assert "z1RefreshSpots" in html
+    assert "/api/spots" in html
+
+
+def test_spot_popup_has_owner_actions_template():
+    """The popup builder needs to render owner-specific buttons (request-public / delete)."""
+    html = _read("index.html")
+    # Strings used in the owner-action labels
+    assert "Verzoek publicatie" in html or "request-public" in html.lower()
+    assert "Verwijder" in html or "DELETE" in html
