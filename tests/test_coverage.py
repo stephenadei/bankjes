@@ -18,7 +18,8 @@ from app.main import app
     os.environ.get("CI") == "true",
     reason="hits live DSO + Overpass — flaky on GHA runners",
 )
-def test_coverage_endpoint_returns_counts():
+def test_coverage_endpoint_returns_counts(tmp_path, monkeypatch):
+    monkeypatch.setenv("BANKJES_DB_PATH", str(tmp_path / "test.db"))
     try:
         with TestClient(app) as client:
             r = client.get("/api/coverage")

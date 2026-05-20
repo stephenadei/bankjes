@@ -6,6 +6,7 @@ caching, and shaping the response.
 """
 
 import asyncio
+import contextlib
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -19,6 +20,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.db import open_db, run_migrations
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
 
@@ -37,14 +39,25 @@ log = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.client = httpx.AsyncClient(timeout=60.0)
-    # Pre-warm the cache for datasets the UI loads on first paint,
-    # so the first visitor sees warm timings instead of the ~2.4s
-    # Overpass cold call.
-    app.state.prewarm = asyncio.create_task(_prewarm(app.state.client))
-    yield
-    app.state.prewarm.cancel()
-    await app.state.client.aclose()
+    async with contextlib.AsyncExitStack() as stack:
+        app.state.client = httpx.AsyncClient(timeout=60.0)
+        stack.push_async_callback(app.state.client.aclose)
+
+        db_path = os.environ.get("BANKJES_DB_PATH", "/data/bankjes.db")
+        # Ensure parent dir exists (so tests with tmp_path work and prod /data is created if missing)
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+        app.state.db = await stack.enter_async_context(open_db(db_path))
+        await run_migrations(app.state.db)
+
+        # Pre-warm the cache for datasets the UI loads on first paint,
+        # so the first visitor sees warm timings instead of the ~2.4s
+        # Overpass cold call.
+        app.state.prewarm = asyncio.create_task(_prewarm(app.state.client))
+        try:
+            yield
+        finally:
+            app.state.prewarm.cancel()
 
 
 async def _prewarm(client: httpx.AsyncClient) -> None:

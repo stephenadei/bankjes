@@ -46,3 +46,16 @@ async def test_pragmas_applied():
             assert (await cur.fetchone())[0].lower() == "wal"
             cur = await conn.execute("PRAGMA foreign_keys")
             assert (await cur.fetchone())[0] == 1
+
+
+def test_app_state_has_db_after_startup(tmp_path, monkeypatch):
+    """After app lifespan-startup, app.state.db is a usable sqlite connection."""
+    from fastapi.testclient import TestClient
+    monkeypatch.setenv("BANKJES_DB_PATH", str(tmp_path / "test.db"))
+    from app.main import app
+    with TestClient(app) as client:
+        # If lifespan ran cleanly, app.state.db exists and the migration ran
+        assert hasattr(app.state, "db")
+        # And a simple query against the migrated schema works
+        r = client.get("/healthz")
+        assert r.status_code == 200
