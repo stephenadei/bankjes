@@ -20,6 +20,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.auth import router as auth_router
 from app.db import open_db, run_migrations
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
@@ -75,6 +76,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+app.include_router(auth_router)
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
