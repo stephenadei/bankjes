@@ -9,7 +9,7 @@ interpolation, GeoJSON/Overpass decoding) is now testable in isolation.
 import httpx
 import pytest
 
-from app.sources import DATASETS, DATASETS_BY_LABEL, DsoSource, OsmSource
+from app.sources import DATASETS, DATASETS_BY_LABEL, DsoSource, MergedBenchSource, OsmSource
 
 
 # ─── DsoSource ─────────────────────────────────────────────────────
@@ -201,11 +201,11 @@ def test_datasets_carry_required_metadata():
         assert d.label, f"{d} missing label"
         assert d.name, f"{d.label} missing name"
         assert d.color.startswith("#"), f"{d.label} color must be hex"
-        assert d.source_type in ("dso", "osm")
+        assert d.source_type in ("dso", "osm", "merged")
 
 
 def test_bench_dataset_uses_amsterdam_bronhouder():
     """If we ever drop the bronhouder filter, BGT data leaks neighbouring towns."""
     bench = DATASETS_BY_LABEL["bench"]
-    assert isinstance(bench, DsoSource)
-    assert bench.params.get("bronhouder") == "G0363"
+    assert isinstance(bench, MergedBenchSource)
+    assert bench.bgt.params.get("bronhouder") == "G0363"

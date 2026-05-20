@@ -6,6 +6,8 @@ exist today: DsoSource (Amsterdam DSO open-data API) and OsmSource
 adapter and appending it to DATASETS — nothing in main.py has to change.
 """
 
+import asyncio
+import math
 import os
 from dataclasses import dataclass, field
 from typing import Optional, Protocol
@@ -24,6 +26,65 @@ AMSTERDAM_API_KEY: Optional[str] = os.environ.get("AMSTERDAM_API_KEY") or None
 
 PAGE_SIZE = 1000
 MAX_PAGES = 50
+
+
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Distance in metres between two WGS84 coordinates.
+
+    Standard Haversine formula. Good to within ~0.5% at the scale we
+    use (sub-kilometre comparisons in Amsterdam).
+    """
+    r = 6_371_000.0  # mean Earth radius, metres
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def _dedup_by_proximity(
+    bgt_markers: list[Marker],
+    osm_markers: list[Marker],
+    radius_m: float,
+) -> list[Marker]:
+    """Merge two marker lists, dropping OSM markers within `radius_m` of any BGT marker.
+
+    BGT markers are kept unconditionally (they carry the official
+    identificatie field and are the canonical register). OSM markers
+    that fall outside the dedup radius are appended. Each surviving
+    BGT marker that absorbed one or more OSM matches gets a
+    `merged_replicas: int` prop so popups can surface the overlap
+    count.
+
+    O(n × m) — fine at n ≈ 345, m ≈ 7000 with 1h cache TTL.
+    """
+    out: list[Marker] = []
+    replica_counts: dict[str, int] = {}
+
+    for b in bgt_markers:
+        out.append(b)
+
+    for o in osm_markers:
+        absorbed = False
+        for b in bgt_markers:
+            if _haversine_m(b.lat, b.lon, o.lat, o.lon) <= radius_m:
+                replica_counts[b.id] = replica_counts.get(b.id, 0) + 1
+                absorbed = True
+                break
+        if not absorbed:
+            out.append(o)
+
+    # Re-emit BGT survivors with merged_replicas in props (Marker model
+    # is immutable-ish since props is a dict but we keep it explicit).
+    final: list[Marker] = []
+    for m in out:
+        if m.id in replica_counts:
+            new_props = {**m.props, "merged_replicas": replica_counts[m.id]}
+            final.append(Marker(id=m.id, lat=m.lat, lon=m.lon, props=new_props))
+        else:
+            final.append(m)
+    return final
 
 
 class DataSource(Protocol):
@@ -139,26 +200,53 @@ def _next_link(links) -> Optional[str]:
     return None
 
 
+@dataclass
+class MergedBenchSource:
+    """Composite DataSource: BGT + OSM benches, deduplicated by proximity.
+
+    Satisfies the DataSource Protocol (returns list[Marker]) so the
+    Dataset abstraction itself does not change. Implementation:
+    fetch both sources in parallel, drop OSM markers within `dedup_m`
+    of any BGT marker (BGT wins; see ADR-0002).
+    """
+
+    bgt: DsoSource
+    osm: OsmSource
+    dedup_m: int = 10
+    # DataSource Protocol fields
+    label: str = "bench"
+    name: str = "Banken"
+    color: str = "#5b7a3f"
+    source_type: str = "merged"
+    default_on: bool = True
+    featured: bool = True
+
+    async def fetch(self, client: httpx.AsyncClient) -> list[Marker]:
+        bgt_markers, osm_markers = await asyncio.gather(
+            self.bgt.fetch(client), self.osm.fetch(client)
+        )
+        return _dedup_by_proximity(bgt_markers, osm_markers, self.dedup_m)
+
+
 # ─── Registered datasets ──────────────────────────────────────────
 # Single source of truth for backend AND frontend. /api/datasets
 # returns this metadata; the map UI builds itself from it.
 
 DATASETS: list[DataSource] = [
-    DsoSource(
-        label="bench",
-        name="Banken",
-        color="#5b7a3f",
-        path="bgt/straatmeubilair",
-        params={"plusType": "bank", "bronhouder": "G0363"},
-        default_on=True,
-        featured=True,
-    ),
-    OsmSource(
-        label="bench_osm",
-        name="Banken (OSM)",
-        color="#4a5d6a",
-        overpass_query='[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
-        default_on=True,
+    MergedBenchSource(
+        bgt=DsoSource(
+            label="_bgt_bench",
+            name="BGT Banken (intern)",
+            color="#5b7a3f",
+            path="bgt/straatmeubilair",
+            params={"plusType": "bank", "bronhouder": "G0363"},
+        ),
+        osm=OsmSource(
+            label="_osm_bench",
+            name="OSM Banken (intern)",
+            color="#4a5d6a",
+            overpass_query='[out:json][timeout:30];node["amenity"="bench"]({s},{w},{n},{e});out;',
+        ),
     ),
     DsoSource(
         label="picnic_table",

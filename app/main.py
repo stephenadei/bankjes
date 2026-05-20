@@ -6,6 +6,8 @@ caching, and shaping the response.
 """
 
 import asyncio
+import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -15,20 +17,44 @@ from cachetools import TTLCache
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
 
-CACHE_TTL_SECONDS = 300
+# Benches don't move; an hour of staleness is fine and avoids
+# making the first visitor after idle pay the Overpass cold cost.
+CACHE_TTL_SECONDS = 3600
 
 cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
+# Photo lookups dwarf dataset count; a day of staleness is fine.
+photo_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
+
+MAPILLARY_TOKEN: Optional[str] = os.environ.get("MAPILLARY_TOKEN") or None
+
+log = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.client = httpx.AsyncClient(timeout=60.0)
+    # Pre-warm the cache for datasets the UI loads on first paint,
+    # so the first visitor sees warm timings instead of the ~2.4s
+    # Overpass cold call.
+    app.state.prewarm = asyncio.create_task(_prewarm(app.state.client))
     yield
+    app.state.prewarm.cancel()
     await app.state.client.aclose()
+
+
+async def _prewarm(client: httpx.AsyncClient) -> None:
+    targets = [ds for ds in DATASETS if ds.default_on]
+    for ds in targets:
+        try:
+            await _cached_fetch(ds, client)
+            log.info("prewarm: %s loaded (%d cached)", ds.label, len(cache[ds.label]))
+        except Exception as e:
+            log.warning("prewarm: %s failed: %s", ds.label, e)
 
 
 app = FastAPI(
@@ -38,6 +64,7 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 STATIC_DIR = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
@@ -119,3 +146,90 @@ async def items(
             ))
 
     return {"count": len(out), "items": [m.model_dump() for m in out]}
+
+
+@app.get("/api/coverage")
+async def coverage():
+    """Stats for the gap-analysis page: per-source counts + merged total."""
+    bench_ds = DATASETS_BY_LABEL["bench"]
+    if not hasattr(bench_ds, "bgt"):
+        # Defensive: if Banken is ever swapped back to a non-composite, return zeros.
+        return {"bgt_count": 0, "osm_count": 0, "merged_count": 0}
+    bgt_markers, osm_markers = await asyncio.gather(
+        bench_ds.bgt.fetch(app.state.client),
+        bench_ds.osm.fetch(app.state.client),
+    )
+    merged = await bench_ds.fetch(app.state.client)
+    return {
+        "bgt_count": len(bgt_markers),
+        "osm_count": len(osm_markers),
+        "merged_count": len(merged),
+    }
+
+
+@app.get("/api/photos")
+async def photos(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    radius: int = Query(default=50, ge=5, le=200, description="meters"),
+    limit: int = Query(default=3, ge=1, le=10),
+):
+    """Nearby street-level photos via Mapillary. Empty list if no token or no coverage."""
+    if not MAPILLARY_TOKEN:
+        return {"photos": []}
+
+    key = f"{lat:.5f},{lon:.5f},{radius},{limit}"
+    if key in photo_cache:
+        return photo_cache[key]
+
+    # Progressive radius: precise first, expand to ~3× if no coverage. Benches
+    # in side streets often have no drive-by within 50m but plenty within 150m.
+    raw: list = []
+    for try_radius in (radius, min(radius * 3, 200)):
+        delta = try_radius / 111000  # degrees per meter, good enough at NL latitudes
+        bbox = f"{lon - delta},{lat - delta},{lon + delta},{lat + delta}"
+        try:
+            r = await app.state.client.get(
+                "https://graph.mapillary.com/images",
+                params={
+                    # is_pano=false: skip 360° panoramas (sparser) so we get
+                    # ordinary street-level shots, which have far better coverage.
+                    "access_token": MAPILLARY_TOKEN,
+                    "bbox": bbox,
+                    "is_pano": "false",
+                    "limit": max(limit * 3, 10),
+                    "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
+                },
+                timeout=10.0,
+            )
+        except httpx.HTTPError as e:
+            log.warning("mapillary fetch failed: %s", e)
+            return {"photos": []}
+        if r.status_code != 200:
+            log.warning("mapillary %d: %s", r.status_code, r.text[:200])
+            return {"photos": []}
+        raw = r.json().get("data", [])
+        if raw:
+            break
+
+    def dist_sq(img: dict) -> float:
+        coords = (img.get("geometry") or {}).get("coordinates") or [0, 0]
+        return (coords[0] - lon) ** 2 + (coords[1] - lat) ** 2
+
+    raw.sort(key=dist_sq)
+
+    out = [
+        {
+            "id": img["id"],
+            "thumb": img.get("thumb_256_url"),
+            "large": img.get("thumb_1024_url"),
+            "captured_at": img.get("captured_at"),
+            "url": f"https://www.mapillary.com/app/?focus=photo&pKey={img['id']}",
+        }
+        for img in raw[:limit]
+        if img.get("thumb_256_url")
+    ]
+
+    result = {"photos": out}
+    photo_cache[key] = result
+    return result

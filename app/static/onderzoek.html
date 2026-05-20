@@ -179,6 +179,17 @@
     #compare-map { height: 360px; }
   }
 </style>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+
+<meta property="og:title" content="Stephen's Bankjes — BGT vs OSM coverage-analyse">
+<meta property="og:description" content="Een verkenning van banken, picknicktafels en afvalbakken in Amsterdam via DSO + OSM open-data.">
+<meta property="og:image" content="https://bankjes-acc.stephensprive.app/static/og-banner.png">
+<meta property="og:url" content="https://bankjes.stephensprive.app/onderzoek">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://bankjes-acc.stephensprive.app/static/og-banner.png">
 </head>
 <body>
 <div class="container">
@@ -194,25 +205,25 @@
   Wat de gemeente Amsterdam in haar eigen registratie ziet, en wat er werkelijk in de stad staat, verschilt met een factor 20.
 </p>
 
-<p>
-  Bij het bouwen van <a href="/">Stephen's Bankjes</a> kwam een ongemakkelijke discrepantie boven: de officiële Amsterdamse Basisregistratie Grootschalige Topografie (BGT) noemt <strong>345 banken</strong> binnen de gemeentegrens. OpenStreetMap, gemapt door burgers, kent er <strong>6.946</strong> in dezelfde rechthoek.
+<p id="coverage-text">
+  Bij het bouwen van <a href="/">Stephen's Bankjes</a> kwam een ongemakkelijke discrepantie boven: de officiële Amsterdamse Basisregistratie Grootschalige Topografie (BGT) en OpenStreetMap, gemapt door burgers, verschillen aanzienlijk in hun telling van banken in Amsterdam. Hieronder de actuele cijfers.
 </p>
 
-<div class="numbers">
+<div class="numbers" id="coverage-cards">
   <div class="num-card bgt">
-    <div class="big">345</div>
+    <div class="big" id="bgt-count">–</div>
     <div class="label">banken</div>
     <div class="source">BGT · gemeente</div>
   </div>
   <div class="num-card osm">
-    <div class="big">6.946</div>
+    <div class="big" id="osm-count">–</div>
     <div class="label">banken</div>
     <div class="source">OSM · burgers</div>
   </div>
 </div>
 
-<p class="ratio">
-  Verhouding: <strong>1 op 20</strong> · de gemeente registreert ongeveer <strong>5%</strong> van wat er feitelijk staat.
+<p class="ratio" id="coverage-ratio">
+  Cijfers laden…
 </p>
 
 <h2>Wat je ziet</h2>
@@ -323,6 +334,37 @@
   ]).then(([bgt, osm]) => {
     console.log(`bgt=${bgt} osm=${osm}`);
   });
+
+  // Fetch coverage stats dynamically
+  (async function () {
+    try {
+      const r = await fetch("/api/coverage");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+
+      // Format numbers with locale
+      const fmtBgt = d.bgt_count.toLocaleString("nl-NL");
+      const fmtOsm = d.osm_count.toLocaleString("nl-NL");
+      const fmtMerged = d.merged_count.toLocaleString("nl-NL");
+
+      // Fill the number cards
+      document.getElementById("bgt-count").textContent = fmtBgt;
+      document.getElementById("osm-count").textContent = fmtOsm;
+
+      // Calculate and display ratio
+      const ratio = d.osm_count / d.bgt_count;
+      const pct = Math.round((d.bgt_count / d.merged_count) * 100);
+      document.getElementById("coverage-ratio").innerHTML =
+        "Verhouding: <strong>1 op " + Math.round(ratio) + "</strong> · " +
+        "de gemeente registreert ongeveer <strong>" + pct + "%</strong> " +
+        "van wat er feitelijk staat.";
+    } catch (err) {
+      console.error("coverage fetch failed", err);
+      document.getElementById("bgt-count").textContent = "–";
+      document.getElementById("osm-count").textContent = "–";
+      document.getElementById("coverage-ratio").textContent = "Cijfers konden niet worden opgehaald.";
+    }
+  })();
 </script>
 </body>
 </html>

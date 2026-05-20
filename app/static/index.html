@@ -51,7 +51,12 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-  .hero .mark { font-size: 28px; line-height: 1; }
+  .hero .mark {
+    width: 28px;
+    height: 28px;
+    vertical-align: -4px;
+    display: inline-block;
+  }
   .hero .title {
     font-family: 'Fraunces', ui-serif, Georgia, serif;
     font-weight: 600;
@@ -150,6 +155,23 @@
     pointer-events: none;
   }
 
+  .sub-filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--muted);
+  }
+  .chip input { accent-color: var(--moss); }
+  .chip input:checked ~ span { color: var(--moss); font-weight: 500; }
+
   /* ========== Map ========== */
   #map {
     width: 100%;
@@ -222,29 +244,328 @@
   .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
   .pop-row .k { color: var(--muted); font-size: 11px; }
   .pop-row .v { font-size: 12px; word-break: break-word; }
+  .pop-photos {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0 4px;
+    min-height: 0;
+  }
+  .pop-photos.empty { display: none; }
+  .pop-photos a {
+    flex: 1;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+    line-height: 0;
+  }
+  .pop-photos a:hover {
+    opacity: 0.92;
+    border-color: var(--line-strong);
+  }
+  .pop-photos img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pop-photos .placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--cream);
+    animation: pop-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pop-pulse {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 0.85; }
+  }
+  .pop-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .pop-actions a {
+    font-size: 12px;
+    color: var(--moss);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--moss);
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .pop-actions a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
 
+  /* ========== Footer about-card (collapsible <details>) ========== */
+  details.about {
+    border-top: 1px dotted var(--line-strong);
+    background: var(--cream);
+    z-index: 0;
+  }
+  details.about summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 22px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  details.about summary::-webkit-details-marker { display: none; }
+  details.about summary .chev {
+    display: inline-block;
+    transition: transform 0.18s ease;
+    font-size: 10px;
+    color: var(--moss);
+  }
+  details.about[open] summary .chev { transform: rotate(90deg); }
+  details.about summary:hover { color: var(--ink); }
+  details.about summary:hover .chev { color: var(--ink); }
+  details.about .body {
+    padding: 4px 22px 24px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  details.about .body img {
+    width: 180px;
+    height: 180px;
+    flex-shrink: 0;
+    border-radius: 8px;
+  }
+  details.about .text { font-size: 14px; line-height: 1.55; max-width: 56ch; color: var(--ink); }
+  details.about .text h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 4px;
+    font-variation-settings: "opsz" 22;
+  }
+  details.about .text .role { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  details.about .text a {
+    color: var(--moss);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--moss);
+  }
+  details.about .text a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* ========== Nearby sheet (mobile bottom-sheet + desktop slide-down) ========== */
+  #nearby-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--paper);
+    border-top: 1px solid var(--line-strong);
+    box-shadow: 0 -4px 18px rgba(45, 42, 38, 0.10);
+    z-index: 600;
+    transition: transform 0.28s ease;
+    transform: translateY(calc(100% - 42px));  /* default: peek */
+  }
+  #nearby-sheet[data-state="full"] { transform: translateY(8%); }
+  #nearby-sheet[data-state="closed"] { transform: translateY(100%); }
+  #nearby-sheet .nearby-handle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 8px 22px 12px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink);
+  }
+  #nearby-sheet .grip {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    margin: 0 auto 6px;
+    display: block;
+  }
+  #nearby-sheet .label {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  #nearby-sheet .count {
+    margin-left: auto;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+  }
+  #nearby-sheet .nearby-body {
+    max-height: calc(92vh - 42px);
+    overflow-y: auto;
+    padding: 0 22px 22px;
+  }
+  #nearby-sheet #nearby-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #nearby-sheet #nearby-list li {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  #nearby-sheet #nearby-list li:last-child { border-bottom: none; }
+  #nearby-sheet #nearby-list .dist {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: var(--moss);
+    font-weight: 500;
+  }
+  #nearby-sheet #nearby-list .row-label {
+    font-size: 13px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    word-break: break-word;
+  }
+  #nearby-sheet #nearby-list .meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  #nearby-sheet #nearby-list .src-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  #nearby-sheet #nearby-list .rugleun {
+    font-size: 10px;
+    background: var(--cream);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 1px 6px;
+    color: var(--moss);
+  }
+
+  /* bottom-bar mobile */
   @media (max-width: 540px) {
-    header.topbar { padding: 14px 16px 12px; }
-    .hero .mark { font-size: 22px; }
-    .hero .title { font-size: 24px; }
-    .hero .subtitle { display: none; }
-    .filters { gap: 6px; margin-top: 11px; }
-    .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; }
+    header.topbar {
+      padding: 10px 16px 8px;
+    }
+    .hero { gap: 8px; }
+    .hero .mark { width: 22px; height: 22px; vertical-align: -3px; }
+    .hero .title { font-size: 22px; }
+    .hero .subtitle, .hero .status { display: none; }
+    /* Move filter pills to a bottom-sticky bar above the nearby-sheet handle */
+    .filters {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 42px;  /* sits directly above the nearby-sheet handle */
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: nowrap;
+      z-index: 550;
+      margin-top: 0;
+    }
+    .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; flex-shrink: 0; }
+    .sub-filters {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(42px + 44px + env(safe-area-inset-bottom));
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+      padding: 6px 14px;
+      margin-top: 0;
+      z-index: 549;
+      justify-content: flex-start;
+    }
+    /* Reserve room for bottom-bar + rugleun-chip + nearby-handle so map + footer don't get hidden */
+    body { padding-bottom: calc(42px + 56px + 32px + env(safe-area-inset-bottom)); }
+    /* Collapsible about-card floats above the bottom-bar on mobile */
+    details.about { margin-bottom: calc(42px + 56px + env(safe-area-inset-bottom)); }
+    details.about summary { padding: 9px 16px; font-size: 11px; }
+    details.about .body {
+      flex-direction: column;
+      padding: 4px 16px 18px;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    details.about .body img { width: 120px; height: 120px; }
   }
 </style>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+
+<meta property="og:title" content="Stephen's Bankjes — Amsterdam straatmeubilair">
+<meta property="og:description" content="Een verkenning van banken, picknicktafels en afvalbakken in Amsterdam via DSO + OSM open-data.">
+<meta property="og:image" content="https://bankjes-acc.stephensprive.app/static/og-banner.png">
+<meta property="og:url" content="https://bankjes.stephensprive.app/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://bankjes-acc.stephensprive.app/static/og-banner.png">
 </head>
 <body>
 <header class="topbar">
   <div class="hero">
-    <span class="mark">🪑</span>
+    <img class="mark" src="/static/silhouette.svg" alt="" width="28" height="28">
     <h1 class="title">Stephen's Bankjes</h1>
     <span class="subtitle">Amsterdam straatmeubilair</span>
     <a class="research-link" href="/onderzoek">onderzoek →</a>
     <span class="status" id="status">·</span>
   </div>
   <nav class="filters" id="filters"></nav>
+  <div class="sub-filters">
+    <label class="chip rugleun-chip">
+      <input type="checkbox" id="rugleun-filter">
+      <span>+ rugleuning</span>
+    </label>
+  </div>
 </header>
 <div id="map"></div>
+
+<aside id="nearby-sheet" aria-label="Bankjes in de buurt">
+  <button type="button" class="nearby-handle" aria-controls="nearby-list" aria-expanded="false">
+    <span class="grip"></span>
+    <span class="label">In de buurt</span>
+    <span class="count" id="nearby-count">—</span>
+  </button>
+  <div class="nearby-body">
+    <ul id="nearby-list" role="list"></ul>
+  </div>
+</aside>
+
+<details class="about">
+  <summary>
+    <span class="chev">▸</span>
+    <span>Over Stephen</span>
+  </summary>
+  <div class="body">
+    <img src="/static/portrait-halftone.png" alt="Portret Stephen Adei">
+    <div class="text">
+      <h2>Stephen Adei</h2>
+      <div class="role">Data engineer · Amsterdam</div>
+      <p>
+        Stephen's Bankjes begon als minor-opdracht aan de UvA en wordt sindsdien onderhouden als civic-tech-portfolio. Officiële BGT-data van data.amsterdam.nl staat voorop; OSM vult de gaten in het centrum. Lees de <a href="/onderzoek">coverage-analyse →</a>
+      </p>
+    </div>
+  </div>
+</details>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
@@ -349,12 +670,22 @@
       .slice(0, 6)
       .map(([k, v]) => `<div class="pop-row"><span class="k">${k}</span><span class="v">${String(v)}</span></div>`)
       .join("");
+    const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${item.lat},${item.lon}`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lon}`;
+    const photosBlock = `<div class="pop-photos" data-lat="${item.lat}" data-lon="${item.lon}">
+        <div class="placeholder"></div><div class="placeholder"></div><div class="placeholder"></div>
+      </div>`;
     return `
       <div class="pop-title">${meta.name}</div>
       <span class="pop-source">${sourceLabel}</span>
       ${addrBlock}
+      ${photosBlock}
       <div class="pop-id">${item.id ?? ""}</div>
       ${propRows}
+      <div class="pop-actions">
+        <a href="${streetViewUrl}" target="_blank" rel="noopener">↗ Street View</a>
+        <a href="${mapsUrl}" target="_blank" rel="noopener">↗ Open in Maps</a>
+      </div>
     `;
   }
 
@@ -379,15 +710,56 @@
     }
   }
 
+  const photoCache = new Map();
+
+  async function loadPhotos(photoEl) {
+    if (photoEl.dataset.loaded) return;
+    photoEl.dataset.loaded = "true";
+    const lat = parseFloat(photoEl.dataset.lat);
+    const lon = parseFloat(photoEl.dataset.lon);
+    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+    let data = photoCache.get(key);
+    if (!data) {
+      try {
+        const r = await fetch(`/api/photos?lat=${lat}&lon=${lon}&radius=50&limit=3`);
+        data = await r.json();
+        photoCache.set(key, data);
+      } catch (err) {
+        console.error("photo fetch", err);
+        photoEl.classList.add("empty");
+        return;
+      }
+    }
+    const photos = data.photos || [];
+    if (photos.length === 0) {
+      photoEl.classList.add("empty");
+      return;
+    }
+    photoEl.innerHTML = photos.map(p => {
+      const when = p.captured_at ? new Date(p.captured_at).toLocaleDateString("nl-NL", { year: "numeric", month: "short" }) : "";
+      return `<a href="${p.url}" target="_blank" rel="noopener" title="Mapillary · ${when}"><img src="${p.thumb}" loading="lazy" alt=""></a>`;
+    }).join("");
+  }
+
   map.on("popupopen", async (e) => {
-    const el = e.popup.getElement()?.querySelector(".pop-addr");
-    if (!el || el.dataset.loaded) return;
-    const lat = parseFloat(el.dataset.lat);
-    const lon = parseFloat(el.dataset.lon);
-    const addr = await reverseGeocode(lat, lon);
-    el.dataset.loaded = "true";
-    el.textContent = addr || "(geen adres in BAG)";
-    e.popup.update();
+    const root = e.popup.getElement();
+    if (!root) return;
+
+    const addrEl = root.querySelector(".pop-addr");
+    if (addrEl && !addrEl.dataset.loaded) {
+      const lat = parseFloat(addrEl.dataset.lat);
+      const lon = parseFloat(addrEl.dataset.lon);
+      const addr = await reverseGeocode(lat, lon);
+      addrEl.dataset.loaded = "true";
+      addrEl.textContent = addr || "(geen adres in BAG)";
+      e.popup.update();
+    }
+
+    const photoEl = root.querySelector(".pop-photos");
+    if (photoEl) {
+      await loadPhotos(photoEl);
+      e.popup.update();
+    }
   });
 
   function addItemsToCluster(key, items) {
@@ -474,6 +846,7 @@
         map.removeLayer(clusters[key]);
         updateStatus();
       }
+      if (typeof renderNearby === "function") renderNearby();
     });
     filtersEl.appendChild(btn);
   }
@@ -532,6 +905,129 @@
   await Promise.all(initial.map(ensureLoaded));
   // Auto-locate na laden — silent fail als gebruiker weigert of in headless context
   locate({ fly: true, silentFail: true });
+
+  // ========== Nearby sheet: open/close state ==========
+  const nearbySheet = document.getElementById("nearby-sheet");
+  const nearbyHandle = nearbySheet.querySelector(".nearby-handle");
+  nearbyHandle.addEventListener("click", () => {
+    const current = nearbySheet.dataset.state || "peek";
+    const next = current === "full" ? "peek" : "full";
+    nearbySheet.dataset.state = next;
+    nearbyHandle.setAttribute("aria-expanded", next === "full" ? "true" : "false");
+  });
+
+  // ========== Nearby list state ==========
+  const nearbyList = document.getElementById("nearby-list");
+  const nearbyCountEl = document.getElementById("nearby-count");
+  let userLatLng = null;
+
+  function distanceMetres(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dPhi = toRad(lat2 - lat1);
+    const dLam = toRad(lon2 - lon1);
+    const a = Math.sin(dPhi/2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLam/2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  function fmtDist(m) {
+    if (m < 1000) return Math.round(m / 10) * 10 + "m";
+    return (m / 1000).toFixed(1) + "km";
+  }
+
+  function collectVisibleItems() {
+    const items = [];
+    for (const [key, meta] of Object.entries(DATASETS)) {
+      if (!enabled[key] || !loaded[key]) continue;
+      clusters[key].eachLayer(layer => {
+        if (typeof layer.getLatLng !== "function") return;  // cluster nodes, not markers
+        const ll = layer.getLatLng();
+        items.push({
+          key,
+          meta,
+          lat: ll.lat,
+          lon: ll.lng,
+          layer,
+        });
+      });
+    }
+    return items;
+  }
+
+  function renderNearby() {
+    if (!nearbyList) return;
+    const origin = userLatLng || map.getCenter();
+    const items = collectVisibleItems();
+    for (const it of items) {
+      it._dist = distanceMetres(origin.lat, origin.lng, it.lat, it.lon);
+    }
+    items.sort((a, b) => a._dist - b._dist);
+    const top = items.slice(0, 50);
+    nearbyCountEl.textContent = items.length > 0
+      ? items.length.toLocaleString("nl-NL")
+      : "—";
+    nearbyList.innerHTML = top.map(it => {
+      const srcTag = it.meta.sourceType === "osm" ? "OSM"
+                  : it.meta.sourceType === "merged" ? "BGT"
+                  : "BGT";
+      const backrest = it.layer.feature?.properties?.backrest;
+      const rugleun = backrest === "yes" ? '<span class="rugleun">+ rugleuning</span>' : "";
+      return `<li data-lat="${it.lat}" data-lon="${it.lon}">
+        <span class="dist">${fmtDist(it._dist)}</span>
+        <span class="row-label">${it.meta.name}</span>
+        <span class="meta"><span class="src-tag">${srcTag}</span>${rugleun}</span>
+      </li>`;
+    }).join("");
+    for (const li of nearbyList.querySelectorAll("li")) {
+      li.addEventListener("click", () => {
+        const lat = parseFloat(li.dataset.lat);
+        const lon = parseFloat(li.dataset.lon);
+        map.flyTo([lat, lon], 17, { duration: 0.6 });
+      });
+    }
+  }
+
+  // Silent geolocate to anchor distances on user position
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => { userLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude }; renderNearby(); },
+      () => { renderNearby(); },
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+    );
+  } else {
+    renderNearby();
+  }
+
+  // Re-render when map view changes
+  map.on("moveend zoomend", renderNearby);
+
+  // ========== Rugleun filter ==========
+  const rugleun = document.getElementById("rugleun-filter");
+  function applyRugleunFilter() {
+    const onOnly = rugleun.checked;
+    localStorage.setItem("rugleun-filter", onOnly ? "1" : "0");
+    for (const [key, meta] of Object.entries(DATASETS)) {
+      if (meta.sourceType !== "merged" && meta.sourceType !== "osm") continue;
+      const cluster = clusters[key];
+      if (!cluster) continue;
+      cluster.eachLayer(layer => {
+        const has = layer.feature?.properties?.backrest === "yes";
+        if (onOnly && !has) {
+          cluster.removeLayer(layer);
+          layer._hiddenByRugleun = true;
+        } else if (!onOnly && layer._hiddenByRugleun) {
+          cluster.addLayer(layer);
+          delete layer._hiddenByRugleun;
+        }
+      });
+    }
+    if (typeof renderNearby === "function") renderNearby();
+  }
+  rugleun.checked = localStorage.getItem("rugleun-filter") === "1";
+  rugleun.addEventListener("change", applyRugleunFilter);
+  // Defer until datasets load (the initial fetch sequence in this IIFE populates clusters async)
+  setTimeout(applyRugleunFilter, 1500);
 
 })().catch(err => {
   console.error("init failed", err);
