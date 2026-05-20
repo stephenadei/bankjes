@@ -35,8 +35,11 @@ uvicorn app.main:app --reload
 | Env | URL | Branch | Compose file | Port (VPS) |
 |---|---|---|---|---|
 | dev | `http://localhost:4309` | feature branches | `docker-compose.yml` | n.v.t. (laptop) |
-| acc | `https://bankjes-acc.stephensprive.app` | `develop` | `docker-compose.acc.yml` | 4308 |
-| prd | `https://bankjes.stephensprive.app` | `master` | `docker-compose.prd.yml` | 4307 |
+| pre | `https://bankjes-pre.stephensprive.app` (intern) | `pre` | `docker-compose.pre.yml` | 4310 |
+| acc | `https://bankjes-acc.stephensprive.app` (intern) | `develop` | `docker-compose.acc.yml` | 4308 |
+| prd | **`https://bankjes.stephenadei.nl`** (public) + `https://bankjes.stephensprive.app` (intern alias) | `master` | `docker-compose.prd.yml` | 4307 |
+
+`bankjes.stephenadei.nl` is de publieke gezichts-URL voor delen + portfolio. De `*.stephensprive.app`-subdomeinen zijn voor interne dev/preview.
 
 Push naar `develop` → GHA bouwt `ghcr.io/stephenadei/bankjes:acc` en deployt naar acc.
 Push (PR-merge) naar `master` → idem voor `prd`.
