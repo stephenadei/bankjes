@@ -186,3 +186,96 @@ def test_create_spot_rejects_unknown_category(client):
         "lat": 52.37, "lon": 4.90, "label": "ok", "category": "spaceship",
     })
     assert r.status_code in (400, 422)
+
+
+def test_get_by_id_anonymous_404_on_private(client):
+    db = os.environ["BANKJES_DB_PATH"]
+    owner = _seed_user(db, "olga@example.com")
+    sid = _seed_spot(db, owner, 52.37, 4.90, "private")
+    r = client.get(f"/api/spots/{sid}")
+    assert r.status_code == 404
+
+
+def test_get_by_id_anonymous_sees_public_approved(client):
+    db = os.environ["BANKJES_DB_PATH"]
+    owner = _seed_user(db, "paco@example.com")
+    sid = _seed_spot(db, owner, 52.37, 4.90, "approved", "public", "approved")
+    r = client.get(f"/api/spots/{sid}")
+    assert r.status_code == 200
+    assert r.json()["label"] == "approved"
+
+
+def test_get_by_id_owner_sees_own_private(client):
+    _login_as(client, "quentin@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "private")
+    r = client.get(f"/api/spots/{sid}")
+    assert r.status_code == 200
+    assert r.json()["label"] == "private"
+
+
+def test_patch_requires_owner(client):
+    db = os.environ["BANKJES_DB_PATH"]
+    other = _seed_user(db, "other-patch@example.com")
+    sid = _seed_spot(db, other, 52.37, 4.90, "other's spot", "public", "approved")
+    _login_as(client, "non-owner@example.com")
+    r = client.patch(f"/api/spots/{sid}", json={"label": "hacked"})
+    assert r.status_code == 403
+
+
+def test_patch_owner_can_edit_label_desc_category(client):
+    _login_as(client, "rita@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "v1")
+    r = client.patch(f"/api/spots/{sid}", json={
+        "label": "v2", "description": "added", "category": "stoel",
+    })
+    assert r.status_code == 200
+    spot = r.json()
+    assert spot["label"] == "v2"
+    assert spot["description"] == "added"
+    assert spot["category"] == "stoel"
+
+
+def test_patch_cannot_change_visibility(client):
+    """Visibility transitions go through the dedicated request-public endpoints."""
+    _login_as(client, "sven@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "x")
+    r = client.patch(f"/api/spots/{sid}", json={"visibility": "public"})
+    # Either silently ignored or 4xx — both acceptable but field should not have changed
+    spot = client.get(f"/api/spots/{sid}").json()
+    assert spot["visibility"] == "private"
+
+
+def test_delete_owner(client):
+    _login_as(client, "tina@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "doomed")
+    r = client.delete(f"/api/spots/{sid}")
+    assert r.status_code == 200
+    # Confirm gone
+    assert client.get(f"/api/spots/{sid}").status_code == 404
+
+
+def test_delete_admin_can_delete_any(client, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")
+    db = os.environ["BANKJES_DB_PATH"]
+    other = _seed_user(db, "victim@example.com")
+    sid = _seed_spot(db, other, 52.37, 4.90, "anyone")
+    _login_as(client, "admin@example.com")
+    r = client.delete(f"/api/spots/{sid}")
+    assert r.status_code == 200
+
+
+def test_delete_non_owner_403(client):
+    db = os.environ["BANKJES_DB_PATH"]
+    other = _seed_user(db, "vault@example.com")
+    sid = _seed_spot(db, other, 52.37, 4.90, "their spot")
+    _login_as(client, "intruder@example.com")
+    r = client.delete(f"/api/spots/{sid}")
+    assert r.status_code == 403

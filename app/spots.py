@@ -30,6 +30,12 @@ class SpotCreate(BaseModel):
     category: Optional[str] = Field(default="anders")
 
 
+class SpotPatch(BaseModel):
+    label: Optional[str] = Field(default=None, min_length=1, max_length=60)
+    description: Optional[str] = Field(default=None, max_length=400)
+    category: Optional[str] = Field(default=None)
+
+
 def _spot_row_to_dict(row) -> dict:
     (sid, owner_id, lat, lon, label, description, category,
      visibility, public_status, created_at, owner_display_name) = row
@@ -123,3 +129,112 @@ async def create_spot(
     )
     row = await cur.fetchone()
     return _spot_row_to_dict(row)
+
+
+def _user_can_see(spot: dict, user: Optional[User]) -> bool:
+    """ACL check matching the list-query semantics, applied to one row."""
+    if spot["visibility"] == "public" and spot["public_status"] == "approved":
+        return True
+    if user and spot["owner"]["id"] == user.id:
+        return True
+    return False
+
+
+async def _fetch_spot(db, spot_id: str) -> Optional[dict]:
+    """Fetch a single spot by id with owner info, or None if not found."""
+    cur = await db.execute(
+        """
+        SELECT s.id, s.owner_id, s.lat, s.lon, s.label, s.description,
+               s.category, s.visibility, s.public_status, s.created_at,
+               u.display_name
+        FROM spots s
+        JOIN users u ON u.id = s.owner_id
+        WHERE s.id = ?
+        """,
+        (spot_id,),
+    )
+    row = await cur.fetchone()
+    return _spot_row_to_dict(row) if row else None
+
+
+@router.get("/api/spots/{spot_id}")
+async def get_spot(
+    spot_id: str,
+    request: Request,
+    user: Optional[User] = Depends(get_current_user),
+):
+    """Fetch a single spot by id.
+
+    - Anonymous: only visible if public + approved.
+    - Logged-in: above PLUS their own spots regardless of status.
+    """
+    spot = await _fetch_spot(request.app.state.db, spot_id)
+    if spot is None or not _user_can_see(spot, user):
+        raise HTTPException(status_code=404, detail="spot not found")
+    return spot
+
+
+@router.patch("/api/spots/{spot_id}")
+async def patch_spot(
+    spot_id: str,
+    payload: SpotPatch,
+    request: Request,
+    user: User = Depends(require_current_user),
+):
+    """Update a spot (label, description, category only).
+
+    Owner-only. Visibility cannot be changed via PATCH.
+    """
+    db = request.app.state.db
+    spot = await _fetch_spot(db, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="spot not found")
+    if spot["owner"]["id"] != user.id:
+        raise HTTPException(status_code=403, detail="not your spot")
+
+    # Build dynamic UPDATE clause from the present fields
+    sets = []
+    args: list = []
+    if payload.label is not None:
+        label = payload.label.strip()
+        if not label:
+            raise HTTPException(status_code=400, detail="label cannot be empty")
+        sets.append("label = ?")
+        args.append(label)
+    if payload.description is not None:
+        sets.append("description = ?")
+        args.append(payload.description)
+    if payload.category is not None:
+        if payload.category not in CATEGORIES:
+            raise HTTPException(status_code=400, detail=f"invalid category")
+        sets.append("category = ?")
+        args.append(payload.category)
+    if not sets:
+        return spot  # no-op
+
+    sets.append("updated_at = CURRENT_TIMESTAMP")
+    args.append(spot_id)
+    await db.execute(f"UPDATE spots SET {', '.join(sets)} WHERE id = ?", args)
+    await db.commit()
+    return await _fetch_spot(db, spot_id)
+
+
+@router.delete("/api/spots/{spot_id}")
+async def delete_spot(
+    spot_id: str,
+    request: Request,
+    user: User = Depends(require_current_user),
+):
+    """Delete a spot.
+
+    Owner-only, except admins can delete any spot.
+    """
+    db = request.app.state.db
+    spot = await _fetch_spot(db, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="spot not found")
+    if spot["owner"]["id"] != user.id and not user.is_admin:
+        raise HTTPException(status_code=403, detail="not your spot")
+    await db.execute("DELETE FROM spots WHERE id = ?", (spot_id,))
+    await db.commit()
+    return {"ok": True}
