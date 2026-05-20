@@ -1,25 +1,53 @@
 # Stephen's Bankjes
 
-Amsterdam straatmeubilair-explorer. FastAPI proxy over de Amsterdam DSO open-data
-API met een Leaflet-kaart als frontend. Geen database — alles in-memory gecached.
+> Een Amsterdam straatmeubilair-explorer. Officiële BGT-data van de
+> gemeente naast OpenStreetMap, met Mapillary-foto's per locatie en
+> "wat staat er in de buurt"-lijst.
 
-## Wat zit erin
+**Live**: [bankjes.stephenadei.nl](https://bankjes.stephenadei.nl)
+**Onderzoek**: [bankjes.stephenadei.nl/onderzoek](https://bankjes.stephenadei.nl/onderzoek) — de BGT vs OSM coverage-analyse die dit project gestart heeft
 
-| Categorie | Bron |
+![banner](app/static/og-banner.png)
+
+## Wat is dit
+
+In Amsterdam staan **345 banken** in het BGT-register van de gemeente.
+OpenStreetMap kent er **6.961**. Tussen die twee zit een ongemakkelijke
+discrepantie: het officiële register dekt vooral Weesp (sinds 2022 deel
+van Amsterdam), terwijl OSM het centrum vol heeft staan dankzij jaren
+crowd-sourcing.
+
+Bankjes laat beide bronnen op één kaart zien, gededupliceerd op
+10m-proximity zodat fysieke banken maar één keer geteld worden. Tap
+een bank → adres, foto's van de plek via Mapillary, "↗ Street View" /
+"↗ Open in Maps" links.
+
+Het project begon als hobby tijdens een minor programmeren aan de UvA;
+het concept bleef daarna in het curriculum maar de uitvoering niet.
+Dit is die uitvoering.
+
+## Stack
+
+| Component | Tech |
 |---|---|
-| Banken | `bgt/straatmeubilair?plusType=bank` |
-| Picknicktafels | `bgt/straatmeubilair?plusType=picknicktafel` |
-| Afvalcontainers | `huishoudelijkafval/containerlocatie` |
-| Fietspaaltjes | `fietspaaltjes/fietspaaltjes` |
-| Sportvoorzieningen | `sport/openbaresportplek` |
+| Backend | FastAPI · httpx · cachetools |
+| Frontend | Vanilla JS · Leaflet · Leaflet.markercluster |
+| Sources | DSO (`api.data.amsterdam.nl/v1`), OSM Overpass, Mapillary Graph API |
+| Hosting | Docker · nginx · Cloudflare (proxy + origin certs) |
+| Tests | pytest + `httpx.MockTransport` |
 
-Alle requests vragen `_format=geojson` zodat de DSO-API server-side van RD New (EPSG:28992) naar WGS84 (CRS84) projecteert.
+Geen database. Alles in-memory met TTL-cache; benches verplaatsen
+zelden genoeg om een DB te rechtvaardigen.
 
 ## Lokaal draaien
 
 ```bash
+cp .env.example .env
+# Vul AMSTERDAM_API_KEY in (https://keys.api.data.amsterdam.nl/clients/v1/)
+# Mapillary-token is optioneel (foto-blok in popup verdwijnt zonder)
+
 docker compose up --build
-# open http://localhost:4309
+# Open http://localhost:4309
 ```
 
 Of zonder Docker:
@@ -27,35 +55,31 @@ Of zonder Docker:
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
-# open http://localhost:8000
-```
-
-## Environments
-
-| Env | URL | Branch | Compose file | Port (VPS) |
-|---|---|---|---|---|
-| dev | `http://localhost:4309` | feature branches | `docker-compose.yml` | n.v.t. (laptop) |
-| pre | `https://bankjes-pre.stephensprive.app` (intern) | `pre` | `docker-compose.pre.yml` | 4310 |
-| acc | `https://bankjes-acc.stephensprive.app` (intern) | `develop` | `docker-compose.acc.yml` | 4308 |
-| prd | **`https://bankjes.stephenadei.nl`** (public) + `https://bankjes.stephensprive.app` (intern alias) | `master` | `docker-compose.prd.yml` | 4307 |
-
-`bankjes.stephenadei.nl` is de publieke gezichts-URL voor delen + portfolio. De `*.stephensprive.app`-subdomeinen zijn voor interne dev/preview.
-
-Push naar `develop` → GHA bouwt `ghcr.io/stephenadei/bankjes:acc` en deployt naar acc.
-Push (PR-merge) naar `master` → idem voor `prd`.
-
-Handmatige deploy op de VPS:
-
-```bash
-cd /home/stephen/projects/bankjes-acc   # of /home/stephen/projects/bankjes-prd
-git pull
-./scripts/deploy.sh acc   # of prd
+# Open http://localhost:8000
 ```
 
 ## Endpoints
 
 - `GET /` — Leaflet UI
+- `GET /onderzoek` — gap-analyse pagina met live coverage-cijfers
 - `GET /healthz` — liveness check
-- `GET /api/items` — alle features samengevoegd
+- `GET /api/datasets` — frontend's single source of truth voor categorieën
+- `GET /api/items` — alle markers
 - `GET /api/items?dataset=bench` — één categorie
 - `GET /api/items?bbox=south,west,north,east` — alleen binnen viewport
+- `GET /api/coverage` — BGT/OSM/merged tellingen voor de gap-analyse
+- `GET /api/photos?lat=&lon=&radius=&limit=` — Mapillary straat-foto's bij coords
+
+## Ontwerp-narratief
+
+De interessante technische keuze zit in **ADR-0001** (`docs/adr/`):
+hoe je twee registers die hetzelfde object soms dubbel beschrijven in
+één UI-categorie krijgt zonder een ervan stilletjes te dumpen. Korte
+versie: composite-source-pattern, BGT-wins-bij-collision op 10m
+proximity, OSM-only markers blijven staan waar BGT geen coverage heeft.
+De `/onderzoek`-page legt het visueel uit.
+
+## Licentie
+
+[MIT](LICENSE) — gebruik 't, fork 't, maak je eigen variant voor jouw
+stad. Het frame past op elke gemeente met open BGT-data.
