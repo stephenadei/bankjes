@@ -120,3 +120,69 @@ def test_get_spots_response_shape(client):
         assert field in spot, f"missing field: {field}"
     assert "owner" in spot
     assert spot["owner"]["display_name"] == "shape"
+
+
+def test_create_spot_requires_auth(client):
+    r = client.post("/api/spots", json={"lat": 52.37, "lon": 4.90, "label": "x"})
+    assert r.status_code == 401
+
+
+def test_create_spot_minimal_payload(client):
+    _login_as(client, "ivan@example.com")
+    r = client.post("/api/spots", json={"lat": 52.37, "lon": 4.90, "label": "Mijn stoel"})
+    assert r.status_code == 200, r.text
+    spot = r.json()
+    assert spot["lat"] == 52.37
+    assert spot["lon"] == 4.90
+    assert spot["label"] == "Mijn stoel"
+    assert spot["visibility"] == "private"
+    assert spot["public_status"] == "none"
+    assert spot["category"] == "anders"
+    assert "id" in spot
+    assert spot["owner"]["display_name"] == "ivan"
+
+
+def test_create_spot_with_all_optional_fields(client):
+    _login_as(client, "jenny@example.com")
+    payload = {
+        "lat": 52.37,
+        "lon": 4.90,
+        "label": "Klapstoel",
+        "description": "Voor de deur",
+        "category": "stoel",
+    }
+    r = client.post("/api/spots", json=payload)
+    assert r.status_code == 200
+    spot = r.json()
+    assert spot["description"] == "Voor de deur"
+    assert spot["category"] == "stoel"
+
+
+def test_create_spot_label_required(client):
+    _login_as(client, "kara@example.com")
+    r = client.post("/api/spots", json={"lat": 52.37, "lon": 4.90})
+    assert r.status_code in (400, 422)
+
+
+def test_create_spot_validates_lat_lon_ranges(client):
+    _login_as(client, "leo@example.com")
+    r = client.post("/api/spots", json={"lat": 999, "lon": 4.90, "label": "x"})
+    assert r.status_code in (400, 422)
+    r = client.post("/api/spots", json={"lat": 52.37, "lon": -999, "label": "x"})
+    assert r.status_code in (400, 422)
+
+
+def test_create_spot_rejects_overlong_label(client):
+    _login_as(client, "mia@example.com")
+    r = client.post("/api/spots", json={
+        "lat": 52.37, "lon": 4.90, "label": "x" * 200,
+    })
+    assert r.status_code in (400, 422)
+
+
+def test_create_spot_rejects_unknown_category(client):
+    _login_as(client, "ned@example.com")
+    r = client.post("/api/spots", json={
+        "lat": 52.37, "lon": 4.90, "label": "ok", "category": "spaceship",
+    })
+    assert r.status_code in (400, 422)
