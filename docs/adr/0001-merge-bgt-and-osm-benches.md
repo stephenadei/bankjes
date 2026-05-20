@@ -1,8 +1,8 @@
-# ADR-0002: Merge BGT and OSM benches into one category with proximity dedup
+# ADR-0001: Merge BGT and OSM benches into one category with proximity dedup
 
-**Status:** Proposed (2026-05-19)
+**Status:** Accepted (2026-05-19)
 **Decider:** Stephen Adei
-**Supersedes:** the implicit invariant in `CONTEXT.md` v0 that *"Each
+**Supersedes:** the implicit invariant in earlier `CONTEXT.md` that *"Each
 Dataset has exactly one DataSource"*.
 
 ## Context
@@ -140,5 +140,3 @@ existing TTLCache. A grid-bucket optimisation is unnecessary.
 - `app/sources.py` — the new `MergedBenchSource` lands here.
 - `app/static/onderzoek.html` — gap-analysis text needs the dedup
   number explained.
-- ADR-0001 — this decision is in the civic-tech domain; it does not
-  touch the social layer.
