@@ -279,3 +279,78 @@ def test_delete_non_owner_403(client):
     _login_as(client, "intruder@example.com")
     r = client.delete(f"/api/spots/{sid}")
     assert r.status_code == 403
+
+
+def test_request_public_owner_transitions_to_requested(client):
+    _login_as(client, "ulla@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "going public")
+
+    with patch("app.spots._tg_notify_request") as ping:
+        r = client.post(f"/api/spots/{sid}/request-public")
+
+    assert r.status_code == 200
+    spot = r.json()
+    assert spot["visibility"] == "public"
+    assert spot["public_status"] == "requested"
+    ping.assert_called_once()
+
+
+def test_request_public_non_owner_403(client):
+    db = os.environ["BANKJES_DB_PATH"]
+    other = _seed_user(db, "viola@example.com")
+    sid = _seed_spot(db, other, 52.37, 4.90, "theirs")
+    _login_as(client, "wim@example.com")
+    with patch("app.spots._tg_notify_request"):
+        r = client.post(f"/api/spots/{sid}/request-public")
+    assert r.status_code == 403
+
+
+def test_revoke_public_owner(client):
+    _login_as(client, "xenia@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "to revoke",
+                     "public", "approved")
+    r = client.post(f"/api/spots/{sid}/revoke-public")
+    assert r.status_code == 200
+    spot = r.json()
+    assert spot["public_status"] == "revoked"
+
+
+def test_revoke_public_returns_visibility_private(client):
+    """After revoke, the spot becomes private to its owner."""
+    _login_as(client, "yara@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    sid = _seed_spot(db, me_id, 52.37, 4.90, "downgrade",
+                     "public", "approved")
+    client.post(f"/api/spots/{sid}/revoke-public")
+    spot = client.get(f"/api/spots/{sid}").json()
+    assert spot["visibility"] == "private"
+
+
+def test_request_public_resubmit_after_denial(client):
+    """After denied, an owner can request again."""
+    _login_as(client, "zane@example.com")
+    me_id = client.get("/api/me").json()["id"]
+    db = os.environ["BANKJES_DB_PATH"]
+    # Seed as previously denied
+    async def seed():
+        from app.db import open_db
+        async with open_db(os.environ["BANKJES_DB_PATH"]) as conn:
+            sid = str(uuid.uuid4())
+            await conn.execute(
+                "INSERT INTO spots (id, owner_id, lat, lon, label, "
+                "visibility, public_status, denial_reason) "
+                "VALUES (?, ?, ?, ?, ?, 'private', 'denied', 'not yet')",
+                (sid, me_id, 52.37, 4.90, "retry"),
+            )
+            await conn.commit()
+            return sid
+    sid = asyncio.run(seed())
+    with patch("app.spots._tg_notify_request"):
+        r = client.post(f"/api/spots/{sid}/request-public")
+    assert r.status_code == 200
+    assert r.json()["public_status"] == "requested"
