@@ -576,6 +576,133 @@
     color: var(--moss);
   }
 
+  /* ========== Z v1: FAB + modals ========== */
+  #z1-fab {
+    position: fixed;
+    right: 14px;
+    bottom: calc(60px + env(safe-area-inset-bottom));
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--moss);
+    color: var(--paper);
+    border: none;
+    box-shadow: 0 4px 14px rgba(45,42,38,0.30);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 650;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s ease, box-shadow 0.18s ease;
+  }
+  #z1-fab:hover { box-shadow: 0 6px 18px rgba(45,42,38,0.36); }
+  #z1-fab:active { transform: scale(0.94); }
+  #z1-fab svg { display: block; }
+
+  #z1-login-modal, #z1-new-spot-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(45,42,38,0.55);
+    z-index: 900;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  @media (min-width: 541px) {
+    #z1-login-modal, #z1-new-spot-modal { align-items: center; padding: 24px; }
+  }
+  #z1-login-modal.show, #z1-new-spot-modal.show { display: flex; }
+
+  #z1-login-modal .card,
+  #z1-new-spot-modal .card {
+    background: var(--paper);
+    border-radius: 14px 14px 0 0;
+    padding: 22px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 -12px 36px rgba(45,42,38,0.30);
+  }
+  @media (min-width: 541px) {
+    #z1-login-modal .card, #z1-new-spot-modal .card { border-radius: 14px; }
+  }
+
+  #z1-login-modal h3, #z1-new-spot-modal h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0 0 4px;
+    font-variation-settings: "opsz" 22;
+    color: var(--ink);
+  }
+  #z1-login-modal p, #z1-new-spot-modal p {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
+  #z1-login-modal input[type="email"],
+  #z1-new-spot-modal input[type="text"],
+  #z1-new-spot-modal textarea,
+  #z1-new-spot-modal select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--cream);
+    margin-bottom: 12px;
+  }
+  #z1-login-modal input:focus,
+  #z1-new-spot-modal input:focus,
+  #z1-new-spot-modal textarea:focus,
+  #z1-new-spot-modal select:focus {
+    outline: 2px solid var(--moss);
+    outline-offset: -1px;
+  }
+  #z1-login-modal .actions, #z1-new-spot-modal .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  #z1-login-modal .primary, #z1-new-spot-modal .primary {
+    background: var(--moss);
+    color: var(--paper);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    flex: 1;
+  }
+  #z1-login-modal .secondary, #z1-new-spot-modal .secondary {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #z1-login-modal .success {
+    background: var(--cream);
+    border: 1px solid var(--moss);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+    display: none;
+  }
+  #z1-login-modal.sent .form { display: none; }
+  #z1-login-modal.sent .success { display: block; }
+
   /* bottom-bar mobile */
   @media (max-width: 540px) {
     header.topbar {
@@ -664,6 +791,34 @@
   </div>
 </header>
 <div id="map"></div>
+
+<button id="z1-fab" type="button" aria-label="Voeg plekje toe">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+<div id="z1-login-modal" role="dialog" aria-modal="true" aria-label="Inloggen">
+  <div class="card">
+    <div class="form">
+      <h3>Inloggen bij Bankjes</h3>
+      <p>Vul je email in — we sturen je een magic-link. Geen wachtwoord, geen gedoe.</p>
+      <input id="z1-login-email" type="email" name="email" placeholder="jouw@email.nl" autocomplete="email" required>
+      <div class="actions">
+        <button class="primary" type="button" id="z1-login-send">Stuur magic-link</button>
+        <button class="secondary" type="button" id="z1-login-cancel">Annuleer</button>
+      </div>
+    </div>
+    <div class="success">
+      <b>Mail verstuurd ✓</b><br>
+      Check je inbox (en spam-folder). De link is 30 minuten geldig.
+      <div class="actions" style="margin-top: 12px;">
+        <button class="secondary" type="button" id="z1-login-close">Sluiten</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <aside id="a2hs-banner" role="dialog" aria-label="Voeg toe aan home-scherm">
   <img class="icon" src="/static/icon-192.png" alt="">
@@ -1239,6 +1394,75 @@
       banner.classList.remove("show");
     });
   })();
+
+  // ========== Z v1: FAB + login modal ==========
+  const z1Fab = document.getElementById("z1-fab");
+  const z1LoginModal = document.getElementById("z1-login-modal");
+  const z1LoginEmail = document.getElementById("z1-login-email");
+
+  let cachedMe = null;
+
+  async function z1Me() {
+    if (cachedMe !== null) return cachedMe;
+    try {
+      const r = await fetch("/api/me");
+      cachedMe = r.ok ? await r.json() : false;
+    } catch (e) {
+      cachedMe = false;
+    }
+    return cachedMe;
+  }
+
+  z1Fab.addEventListener("click", async () => {
+    const me = await z1Me();
+    if (!me) {
+      z1LoginModal.classList.remove("sent");
+      z1LoginModal.classList.add("show");
+      setTimeout(() => z1LoginEmail.focus(), 50);
+    } else {
+      // Task 14 will populate this branch (new-spot modal). For now, fallback alert.
+      const nsm = document.getElementById("z1-new-spot-modal");
+      if (nsm) {
+        nsm.classList.add("show");
+      } else {
+        alert("Logged in as " + me.email + " — new-spot UI komt in Task 14.");
+      }
+    }
+  });
+
+  document.getElementById("z1-login-send").addEventListener("click", async () => {
+    const email = z1LoginEmail.value.trim();
+    if (!email || !email.includes("@")) {
+      z1LoginEmail.style.borderColor = "#a06a3f";
+      return;
+    }
+    z1LoginEmail.style.borderColor = "";
+    try {
+      const r = await fetch("/api/auth/request-magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (r.ok) {
+        z1LoginModal.classList.add("sent");
+      } else {
+        z1LoginEmail.style.borderColor = "#a06a3f";
+      }
+    } catch (e) {
+      console.error("magic-link request failed", e);
+    }
+  });
+
+  function closeLoginModal() {
+    z1LoginModal.classList.remove("show");
+  }
+  document.getElementById("z1-login-cancel").addEventListener("click", closeLoginModal);
+  document.getElementById("z1-login-close").addEventListener("click", closeLoginModal);
+
+  // Click-outside the card → close
+  z1LoginModal.addEventListener("click", (e) => {
+    if (e.target === z1LoginModal) closeLoginModal();
+  });
 
 })().catch(err => {
   console.error("init failed", err);
