@@ -24,6 +24,7 @@ from app.auth import router as auth_router
 from app.db import open_db, run_migrations
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
+from app.spots import router as spots_router
 
 # Benches don't move; an hour of staleness is fine and avoids
 # making the first visitor after idle pay the Overpass cold cost.
@@ -77,6 +78,7 @@ app = FastAPI(
 )
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.include_router(auth_router)
+app.include_router(spots_router)
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
