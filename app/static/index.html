@@ -1102,9 +1102,36 @@ map.on("click", function () {
 });
 
 // ============================================================
+// LOADER STATUS API (hoisted; loadDatasets/loadDataset call into it)
+// ============================================================
+var LOADER_START = Date.now();
+var _loaderLastSet = 0;
+const DATASET_LOADER_STATUS = {
+  bench:             "bankjes verzamelen…",
+  picnic_table:      "tafels rangschikken…",
+  trash_underground: "afvalbakken sorteren…",
+  trash_surface:     "afvalbakken sorteren…",
+  bicycle_parking:   "fietsenrekken inkleuren…",
+  speeltoestellen:   "speeltoestellen tellen…",
+};
+function setLoaderStatus(text) {
+  _loaderLastSet = Date.now();
+  const t = document.getElementById("bj-loader-text");
+  const overlay = document.getElementById("bj-loader");
+  if (!t || !overlay || overlay.classList.contains("bj-loader-done")) return;
+  if (t.textContent === text) return;
+  t.classList.add("fading");
+  setTimeout(() => {
+    t.textContent = text;
+    t.classList.remove("fading");
+  }, 180);
+}
+
+// ============================================================
 // DATASETS + ITEMS
 // ============================================================
 async function loadDatasets() {
+  setLoaderStatus("data.amsterdam aankloppen…");
   const list = await (await fetch("/api/datasets")).json();
   for (const d of list) {
     state.DATASETS[d.label] = d;
@@ -1143,6 +1170,7 @@ async function loadDatasets() {
     }
   }
 
+  setLoaderStatus("klustertjes vormen…");
   renderFilterRow();
   updateVisibleCount();
   renderNearbyList();
@@ -1150,9 +1178,11 @@ async function loadDatasets() {
 
 async function loadDataset(key) {
   if (!state.DATASETS[key]) return;
+  setLoaderStatus(DATASET_LOADER_STATUS[key] || `${(state.DATASETS[key].name || key).toLowerCase()} verzamelen…`);
   try {
     const resp = await (await fetch(`/api/items?dataset=${encodeURIComponent(key)}`)).json();
     state.itemsByDataset[key] = ((resp && resp.items) || []).map(normalizeItem);
+    if (key === "bench") setLoaderStatus("rugleuningen tellen…");
     rebuildCluster(key);
   } catch (e) {
     console.error("loadDataset", key, e);
@@ -2405,19 +2435,14 @@ async function init() {
 }
 
 // ========== Loader (silhouette fill + status text + catchphrase) ==========
+// LOADER_START + setLoaderStatus are hoisted above (used by loadDatasets too).
 const loaderEl  = document.getElementById("bj-loader");
 const loaderTxt = document.getElementById("bj-loader-text");
 const loaderFill = document.getElementById("bj-loader-fill");
-const LOADER_STATUSES = [
-  "bankjes verzamelen…",
+const LOADER_FALLBACK_STATUSES = [
   "buurten benoemen…",
   "kaart vouwen…",
-  "rugleuningen tellen…",
   "afstanden meten…",
-  "data.amsterdam aankloppen…",
-  "OSM uitpluizen…",
-  "tafels rangschikken…",
-  "afvalbakken sorteren…",
   "Mapillary verkennen…",
 ];
 const LOADER_CATCHPHRASES = [
@@ -2427,33 +2452,42 @@ const LOADER_CATCHPHRASES = [
   "Eerst zitten. Dan denken.",
   "Tijd voor een wandeling.",
 ];
+const LOADER_FILL_DURATION = 4500;
+const LOADER_MIN_DURATION  = 5000;
 
-let loaderStatusIdx = 0;
+// Cycle yields to real events: if setLoaderStatus() fired within 1.5s, skip tick.
+let loaderFallbackIdx = 0;
 const loaderStatusTimer = setInterval(() => {
-  if (!loaderTxt || loaderEl.classList.contains("bj-loader-done")) return;
-  loaderTxt.classList.add("fading");
-  setTimeout(() => {
-    loaderStatusIdx = (loaderStatusIdx + 1) % LOADER_STATUSES.length;
-    loaderTxt.textContent = LOADER_STATUSES[loaderStatusIdx];
-    loaderTxt.classList.remove("fading");
-  }, 180);
-}, 850);
+  if (loaderEl.classList.contains("bj-loader-done")) return;
+  if (Date.now() - _loaderLastSet < 1500) return;
+  loaderFallbackIdx = (loaderFallbackIdx + 1) % LOADER_FALLBACK_STATUSES.length;
+  setLoaderStatus(LOADER_FALLBACK_STATUSES[loaderFallbackIdx]);
+}, 1100);
 
-// Fake-progress fill: 0 → 88% over ~3s, then init() promise pushes to 100%.
-let loaderFillPct = 0;
+// Time-based ease-out ramp 0 → 90% over LOADER_FILL_DURATION, regardless of fetch speed.
 const loaderFillTimer = setInterval(() => {
-  if (!loaderFill || loaderFillPct >= 88) { clearInterval(loaderFillTimer); return; }
-  loaderFillPct += 2 + Math.random() * 3;
-  if (loaderFillPct > 88) loaderFillPct = 88;
-  loaderFill.style.clipPath = `inset(${100 - loaderFillPct}% 0 0 0)`;
-}, 120);
+  if (loaderEl.classList.contains("bj-loader-done")) {
+    clearInterval(loaderFillTimer);
+    return;
+  }
+  const elapsed = Date.now() - LOADER_START;
+  const t = Math.min(1, elapsed / LOADER_FILL_DURATION);
+  const eased = 1 - Math.pow(1 - t, 2);
+  const pct = eased * 90;
+  if (loaderFill) loaderFill.style.clipPath = `inset(${100 - pct}% 0 0 0)`;
+  if (t >= 1) clearInterval(loaderFillTimer);
+}, 60);
 
 async function hideLoader() {
   if (!loaderEl) return;
-  if (loaderFill) loaderFill.style.clipPath = "inset(0 0 0 0)";
+  // Honour 5s minimum so the playful intro isn't blink-and-gone on warm caches.
+  const elapsed = Date.now() - LOADER_START;
+  if (elapsed < LOADER_MIN_DURATION) {
+    await new Promise(r => setTimeout(r, LOADER_MIN_DURATION - elapsed));
+  }
   clearInterval(loaderStatusTimer);
   clearInterval(loaderFillTimer);
-  // Catchphrase swap
+  if (loaderFill) loaderFill.style.clipPath = "inset(0 0 0 0)";
   await new Promise(r => setTimeout(r, 350));
   loaderTxt.classList.add("fading");
   await new Promise(r => setTimeout(r, 180));
