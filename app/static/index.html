@@ -6,914 +6,15 @@
 <title>Stephen's Bankjes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-<style>
-  :root {
-    --cream:    #faf7f0;
-    --paper:    #fffdf6;
-    --moss:     #5b7a3f;
-    --moss-2:   #7a8a47;
-    --bark:     #6b5d4f;
-    --rust:     #a06a3f;
-    --plum:     #7a4a72;
-    --osm:      #4a5d6a;
-    --ink:      #2d2a26;
-    --muted:    #857d72;
-    --line:     rgba(45, 42, 38, 0.10);
-    --line-strong: rgba(45, 42, 38, 0.18);
-  }
+<link rel="stylesheet" href="/static/bankjes.css">
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body {
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    color: var(--ink);
-    background: var(--cream);
-    display: grid;
-    grid-template-rows: auto 1fr;
-  }
-
-  /* ========== Hero header ========== */
-  header.topbar {
-    background:
-      linear-gradient(180deg, rgba(255,253,246,1) 0%, rgba(255,253,246,0.96) 100%);
-    border-bottom: 1px solid var(--line);
-    padding: 18px 22px 14px;
-    position: relative;
-    z-index: 500;
-  }
-  .hero {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .hero .mark {
-    width: 28px;
-    height: 28px;
-    vertical-align: -4px;
-    display: inline-block;
-  }
-  .hero .title {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-weight: 600;
-    font-size: 30px;
-    line-height: 1.05;
-    color: var(--ink);
-    font-variation-settings: "opsz" 32;
-    letter-spacing: -0.015em;
-  }
-  .hero .subtitle {
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 400;
-    align-self: center;
-  }
-  .hero .research-link {
-    align-self: center;
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 12px;
-    border-bottom: 1px dotted var(--line-strong);
-    padding-bottom: 1px;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-  .hero .research-link:hover {
-    color: var(--moss);
-    border-bottom-color: var(--moss);
-  }
-  .hero .status {
-    margin-left: auto;
-    color: var(--muted);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    align-self: center;
-  }
-
-  .filters {
-    display: flex;
-    gap: 8px;
-    margin-top: 14px;
-    flex-wrap: wrap;
-  }
-  .filter-btn {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 10px 14px 10px 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.12s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.1;
-    box-shadow: 0 1px 2px rgba(45, 42, 38, 0.04);
-  }
-  .filter-btn:hover { border-color: var(--line-strong); }
-  .filter-btn:active { transform: scale(0.97); }
-  .filter-btn .swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .filter-btn .name { white-space: nowrap; }
-  .filter-btn .count {
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-    font-size: 11px;
-    font-weight: 500;
-  }
-  .filter-btn.on {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
-  }
-  .filter-btn.on .count { color: rgba(255, 253, 246, 0.7); }
-  .filter-btn.osm {
-    border-style: dashed;
-    border-color: var(--line-strong);
-  }
-  .filter-btn.osm .name::before {
-    content: "+ ";
-    color: var(--muted);
-    font-weight: 600;
-  }
-  .filter-btn.osm.on .name::before {
-    color: rgba(255, 253, 246, 0.7);
-  }
-  .filter-btn.loading {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  .sub-filters {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    user-select: none;
-    color: var(--muted);
-  }
-  .chip input { accent-color: var(--moss); }
-  .chip input:checked ~ span { color: var(--moss); font-weight: 500; }
-
-  /* ========== Map ========== */
-  #map {
-    width: 100%;
-    height: 100%;
-    background: var(--cream);
-  }
-  .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
-  .leaflet-control-attribution {
-    background: rgba(255, 253, 246, 0.85) !important;
-    color: var(--muted) !important;
-    font-family: 'Inter', sans-serif;
-    font-size: 10px !important;
-  }
-  .leaflet-control-attribution a { color: var(--moss) !important; }
-
-  /* ========== Locate-knop (rechtsonder) ========== */
-  .locate-btn {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: rgba(255, 253, 246, 0.96);
-    border: 1px solid var(--line-strong);
-    box-shadow: 0 2px 6px rgba(45, 42, 38, 0.18);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: transform 0.12s ease, background 0.18s ease;
-    color: var(--ink);
-  }
-  .locate-btn:hover { background: var(--paper); }
-  .locate-btn:active { transform: scale(0.94); }
-  .locate-btn.busy { opacity: 0.55; pointer-events: none; }
-  .locate-btn svg { display: block; }
-  .leaflet-control.locate-wrap { margin-bottom: 14px !important; margin-right: 14px !important; }
-
-  /* User-locatie marker (pulserend) */
-  .user-loc {
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--moss);
-    border: 3px solid var(--paper);
-    box-shadow: 0 0 0 4px rgba(91, 122, 63, 0.22), 0 1px 3px rgba(45, 42, 38, 0.4);
-  }
-
-  /* ========== Popups ========== */
-  .leaflet-popup-content-wrapper {
-    background: var(--paper);
-    border-radius: 12px;
-    box-shadow: 0 4px 18px rgba(45, 42, 38, 0.18), 0 0 0 1px var(--line);
-  }
-  .leaflet-popup-content { margin: 12px 14px; font-size: 12px; line-height: 1.5; min-width: 200px; }
-  .leaflet-popup-tip { background: var(--paper); }
-  .pop-title {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-weight: 500; font-size: 15px;
-    margin-bottom: 2px;
-    font-variation-settings: "opsz" 14;
-  }
-  .pop-source {
-    display: inline-block;
-    font-size: 9px; font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
-  }
-  .pop-id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; word-break: break-all; }
-  .pop-addr { font-size: 12px; color: var(--ink); margin-bottom: 6px; font-style: italic; }
-  .pop-addr[data-loaded="true"] { font-style: normal; }
-  .pop-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 1px 0; }
-  .pop-row .k { color: var(--muted); font-size: 11px; }
-  .pop-row .v { font-size: 12px; word-break: break-word; }
-  .pop-photos {
-    display: flex;
-    gap: 4px;
-    margin: 8px 0 4px;
-    min-height: 0;
-  }
-  .pop-photos.empty { display: none; }
-  .pop-photos a {
-    flex: 1;
-    aspect-ratio: 1;
-    overflow: hidden;
-    border-radius: 6px;
-    background: var(--cream);
-    border: 1px solid var(--line);
-    transition: opacity 0.15s ease, border-color 0.15s ease;
-    line-height: 0;
-  }
-  .pop-photos a:hover {
-    opacity: 0.92;
-    border-color: var(--line-strong);
-  }
-  .pop-photos img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .pop-photos .placeholder {
-    width: 100%;
-    height: 100%;
-    background: var(--cream);
-    animation: pop-pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes pop-pulse {
-    0%, 100% { opacity: 0.5; }
-    50%      { opacity: 0.85; }
-  }
-  .pop-actions {
-    display: flex;
-    gap: 14px;
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid var(--line);
-  }
-  .pop-actions a {
-    font-size: 12px;
-    color: var(--moss);
-    text-decoration: none;
-    border-bottom: 1px dotted var(--moss);
-    padding-bottom: 1px;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-  .pop-actions a:hover {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
-  }
-
-  .spot-popup-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 8px 0 4px;
-    padding-top: 8px;
-    border-top: 1px dotted var(--line);
-  }
-  .spot-popup-actions button {
-    background: var(--cream);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    padding: 5px 10px;
-    font: inherit;
-    font-size: 11px;
-    cursor: pointer;
-    color: var(--ink);
-  }
-  .spot-popup-actions button:hover {
-    border-color: var(--moss);
-    color: var(--moss);
-  }
-  .spot-popup-actions button.danger:hover {
-    border-color: var(--rust);
-    color: var(--rust);
-  }
-  .spot-visibility-badge {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--paper);
-    background: var(--moss);
-    border-radius: 4px;
-    padding: 1px 6px;
-    margin-left: 6px;
-    vertical-align: middle;
-  }
-  .spot-visibility-badge.private { background: var(--muted); }
-  .spot-visibility-badge.pending  { background: var(--rust); }
-
-  /* ========== Footer about-card (collapsible <details>) ========== */
-  details.about {
-    border-top: 1px dotted var(--line-strong);
-    background: var(--cream);
-    z-index: 0;
-  }
-  details.about summary {
-    list-style: none;
-    cursor: pointer;
-    padding: 10px 22px;
-    font-size: 12px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    user-select: none;
-  }
-  details.about summary::-webkit-details-marker { display: none; }
-  details.about summary .chev {
-    display: inline-block;
-    transition: transform 0.18s ease;
-    font-size: 10px;
-    color: var(--moss);
-  }
-  details.about[open] summary .chev { transform: rotate(90deg); }
-  details.about summary:hover { color: var(--ink); }
-  details.about summary:hover .chev { color: var(--ink); }
-  details.about .body {
-    padding: 4px 22px 24px;
-    display: flex;
-    gap: 24px;
-    align-items: center;
-  }
-  details.about .body img {
-    width: 180px;
-    height: 180px;
-    flex-shrink: 0;
-    border-radius: 8px;
-  }
-  details.about .text { font-size: 14px; line-height: 1.55; max-width: 56ch; color: var(--ink); }
-  details.about .text h2 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 20px;
-    margin-bottom: 4px;
-    font-variation-settings: "opsz" 22;
-  }
-  details.about .text .role { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
-  details.about .text a {
-    color: var(--moss);
-    text-decoration: none;
-    border-bottom: 1px dotted var(--moss);
-  }
-  details.about .text a:hover { color: var(--ink); border-bottom-color: var(--ink); }
-
-  /* ========== Add-to-Home-Screen banner ========== */
-  #a2hs-banner {
-    position: fixed;
-    left: 16px;
-    right: 16px;
-    bottom: calc(60px + env(safe-area-inset-bottom));
-    background: var(--paper);
-    border: 1px solid var(--line-strong);
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgba(45, 42, 38, 0.18);
-    padding: 12px 14px 12px 12px;
-    display: none;
-    align-items: center;
-    gap: 12px;
-    z-index: 700;
-    max-width: 480px;
-    margin: 0 auto;
-    transform: translateY(20px);
-    opacity: 0;
-    transition: transform 0.32s ease, opacity 0.32s ease;
-  }
-  #a2hs-banner.show {
-    display: flex;
-    transform: translateY(0);
-    opacity: 1;
-  }
-  #a2hs-banner .icon {
-    width: 40px; height: 40px;
-    flex-shrink: 0;
-    border-radius: 8px;
-  }
-  #a2hs-banner .copy { flex: 1; line-height: 1.35; min-width: 0; }
-  #a2hs-banner .copy .t {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--ink);
-    margin-bottom: 1px;
-    font-variation-settings: "opsz" 14;
-  }
-  #a2hs-banner .copy .s {
-    font-size: 11px;
-    color: var(--muted);
-  }
-  #a2hs-banner .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-  #a2hs-banner button {
-    border: none;
-    cursor: pointer;
-    font: inherit;
-  }
-  #a2hs-banner .install {
-    background: var(--moss);
-    color: var(--paper);
-    border-radius: 10px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  #a2hs-banner .install:active { transform: scale(0.96); }
-  #a2hs-banner .dismiss {
-    background: transparent;
-    color: var(--muted);
-    padding: 6px 8px;
-    font-size: 18px;
-    line-height: 1;
-  }
-  #a2hs-banner .dismiss:hover { color: var(--ink); }
-
-  /* iOS instructions overlay */
-  #a2hs-ios {
-    position: fixed;
-    inset: 0;
-    background: rgba(45, 42, 38, 0.55);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 800;
-    padding: 24px;
-  }
-  #a2hs-ios.show { display: flex; }
-  #a2hs-ios .card {
-    background: var(--paper);
-    border-radius: 14px;
-    padding: 22px;
-    max-width: 360px;
-    width: 100%;
-    box-shadow: 0 12px 36px rgba(45, 42, 38, 0.32);
-  }
-  #a2hs-ios h3 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 18px;
-    margin: 0 0 10px;
-    color: var(--ink);
-  }
-  #a2hs-ios p { font-size: 13px; color: var(--ink); line-height: 1.55; margin-bottom: 10px; }
-  #a2hs-ios .share-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: var(--cream);
-    border-radius: 8px;
-    margin: 10px 0;
-    font-size: 12px;
-    color: var(--ink);
-  }
-  #a2hs-ios .share-row svg { flex-shrink: 0; }
-  #a2hs-ios .close {
-    background: var(--ink);
-    color: var(--paper);
-    border: none;
-    border-radius: 10px;
-    padding: 9px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 4px;
-  }
-
-  /* ========== Nearby sheet (mobile bottom-sheet + desktop slide-down) ========== */
-  #nearby-sheet {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--paper);
-    border-top: 1px solid var(--line-strong);
-    box-shadow: 0 -4px 18px rgba(45, 42, 38, 0.10);
-    z-index: 600;
-    transition: transform 0.28s ease;
-    transform: translateY(calc(100% - 42px));  /* default: peek */
-  }
-  #nearby-sheet[data-state="full"] { transform: translateY(8%); }
-  #nearby-sheet[data-state="closed"] { transform: translateY(100%); }
-  #nearby-sheet .nearby-handle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    padding: 8px 22px 12px;
-    cursor: pointer;
-    font: inherit;
-    color: var(--ink);
-  }
-  #nearby-sheet .grip {
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--line-strong);
-    margin: 0 auto 6px;
-    display: block;
-  }
-  #nearby-sheet .label {
-    font-family: 'Fraunces', serif;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  #nearby-sheet .count {
-    margin-left: auto;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-    font-size: 12px;
-  }
-  #nearby-sheet .nearby-body {
-    max-height: calc(92vh - 42px);
-    overflow-y: auto;
-    padding: 0 22px 22px;
-  }
-  #nearby-sheet .sheet-tabs {
-    display: flex;
-    gap: 14px;
-    padding: 4px 0 14px;
-    border-bottom: 1px dotted var(--line);
-    margin-bottom: 12px;
-  }
-  #nearby-sheet .sheet-tabs .tab {
-    background: transparent;
-    border: none;
-    padding: 4px 0;
-    cursor: pointer;
-    font-family: 'Fraunces', serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
-    font-variation-settings: "opsz" 14;
-    border-bottom: 2px solid transparent;
-  }
-  #nearby-sheet .sheet-tabs .tab.active {
-    color: var(--ink);
-    border-bottom-color: var(--moss);
-  }
-  #nearby-sheet .sheet-pane[hidden] { display: none; }
-  #nearby-sheet #nearby-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  #nearby-sheet #nearby-list li {
-    display: grid;
-    grid-template-columns: 64px 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    cursor: pointer;
-  }
-  #nearby-sheet #nearby-list li:last-child { border-bottom: none; }
-  #nearby-sheet #nearby-list .dist {
-    font-variant-numeric: tabular-nums;
-    font-size: 13px;
-    color: var(--moss);
-    font-weight: 500;
-  }
-  #nearby-sheet #nearby-list .row-label {
-    font-size: 13px;
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    font-weight: 400;
-    word-break: break-word;
-  }
-  #nearby-sheet #nearby-list .meta {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  #nearby-sheet #nearby-list .src-tag {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-  #nearby-sheet #nearby-list .rugleun {
-    font-size: 10px;
-    background: var(--cream);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    padding: 1px 6px;
-    color: var(--moss);
-  }
-
-  #nearby-sheet #mijn-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  #nearby-sheet #mijn-list li {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    cursor: pointer;
-  }
-  #nearby-sheet #mijn-list li:last-child { border-bottom: none; }
-  #nearby-sheet #mijn-list .row-label {
-    font-size: 13px;
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    word-break: break-word;
-  }
-  #nearby-sheet #mijn-list .row-meta {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-shrink: 0;
-  }
-  #nearby-sheet #mijn-list .badge {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--paper);
-    background: var(--moss);
-    border-radius: 4px;
-    padding: 1px 6px;
-    text-transform: uppercase;
-  }
-  #nearby-sheet #mijn-list .badge.private { background: var(--muted); }
-  #nearby-sheet #mijn-list .badge.pending  { background: var(--rust); }
-  #nearby-sheet #mijn-list .empty {
-    font-size: 13px;
-    color: var(--muted);
-    padding: 16px 0;
-    text-align: center;
-  }
-
-  /* ========== Z v1: FAB + modals ========== */
-  #z1-fab {
-    position: fixed;
-    right: 14px;
-    bottom: calc(60px + env(safe-area-inset-bottom));
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: var(--moss);
-    color: var(--paper);
-    border: none;
-    box-shadow: 0 4px 14px rgba(45,42,38,0.30);
-    font-size: 28px;
-    line-height: 1;
-    cursor: pointer;
-    z-index: 650;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.12s ease, box-shadow 0.18s ease;
-  }
-  #z1-fab:hover { box-shadow: 0 6px 18px rgba(45,42,38,0.36); }
-  #z1-fab:active { transform: scale(0.94); }
-  #z1-fab svg { display: block; }
-
-  #z1-login-modal, #z1-new-spot-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(45,42,38,0.55);
-    z-index: 900;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 0;
-  }
-  @media (min-width: 541px) {
-    #z1-login-modal, #z1-new-spot-modal { align-items: center; padding: 24px; }
-  }
-  #z1-login-modal.show, #z1-new-spot-modal.show { display: flex; }
-
-  #z1-login-modal .card,
-  #z1-new-spot-modal .card {
-    background: var(--paper);
-    border-radius: 14px 14px 0 0;
-    padding: 22px;
-    max-width: 480px;
-    width: 100%;
-    box-shadow: 0 -12px 36px rgba(45,42,38,0.30);
-  }
-  @media (min-width: 541px) {
-    #z1-login-modal .card, #z1-new-spot-modal .card { border-radius: 14px; }
-  }
-
-  #z1-login-modal h3, #z1-new-spot-modal h3 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 20px;
-    margin: 0 0 4px;
-    font-variation-settings: "opsz" 22;
-    color: var(--ink);
-  }
-  #z1-login-modal p, #z1-new-spot-modal p {
-    font-size: 13px;
-    color: var(--muted);
-    margin: 0 0 14px;
-    line-height: 1.5;
-  }
-  #z1-login-modal input[type="email"],
-  #z1-new-spot-modal input[type="text"],
-  #z1-new-spot-modal textarea,
-  #z1-new-spot-modal select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    font: inherit;
-    font-size: 14px;
-    color: var(--ink);
-    background: var(--cream);
-    margin-bottom: 12px;
-  }
-  #z1-login-modal input:focus,
-  #z1-new-spot-modal input:focus,
-  #z1-new-spot-modal textarea:focus,
-  #z1-new-spot-modal select:focus {
-    outline: 2px solid var(--moss);
-    outline-offset: -1px;
-  }
-  #z1-login-modal .actions, #z1-new-spot-modal .actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-  }
-  #z1-login-modal .primary, #z1-new-spot-modal .primary {
-    background: var(--moss);
-    color: var(--paper);
-    border: none;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font: inherit;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    flex: 1;
-  }
-  #z1-login-modal .secondary, #z1-new-spot-modal .secondary {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  #z1-login-modal .success {
-    background: var(--cream);
-    border: 1px solid var(--moss);
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 13px;
-    color: var(--ink);
-    line-height: 1.5;
-    display: none;
-  }
-  #z1-login-modal.sent .form { display: none; }
-  #z1-login-modal.sent .success { display: block; }
-
-  /* bottom-bar mobile */
-  @media (max-width: 540px) {
-    header.topbar {
-      padding: 10px 16px 8px;
-    }
-    .hero { gap: 8px; }
-    .hero .mark { width: 22px; height: 22px; vertical-align: -3px; }
-    .hero .title { font-size: 22px; }
-    .hero .subtitle, .hero .status { display: none; }
-    /* Move filter pills to a bottom-sticky bar above the nearby-sheet handle */
-    .filters {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 42px;  /* sits directly above the nearby-sheet handle */
-      background: var(--paper);
-      border-top: 1px solid var(--line);
-      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-      gap: 6px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      flex-wrap: nowrap;
-      z-index: 550;
-      margin-top: 0;
-    }
-    .filter-btn { padding: 8px 11px 8px 10px; font-size: 12px; flex-shrink: 0; }
-    .sub-filters {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: calc(42px + 44px + env(safe-area-inset-bottom));
-      background: var(--paper);
-      border-top: 1px solid var(--line);
-      padding: 6px 14px;
-      margin-top: 0;
-      z-index: 549;
-      justify-content: flex-start;
-    }
-    /* Reserve room for bottom-bar + rugleun-chip + nearby-handle so map + footer don't get hidden */
-    body { padding-bottom: calc(42px + 56px + 32px + env(safe-area-inset-bottom)); }
-    /* Collapsible about-card floats above the bottom-bar on mobile */
-    details.about { margin-bottom: calc(42px + 56px + env(safe-area-inset-bottom)); }
-    details.about summary { padding: 9px 16px; font-size: 11px; }
-    details.about .body {
-      flex-direction: column;
-      padding: 4px 16px 18px;
-      gap: 14px;
-      align-items: flex-start;
-    }
-    details.about .body img { width: 120px; height: 120px; }
-  }
-
-  #z1-mini-map {
-    width: 100%;
-    height: 220px;
-    border-radius: 10px;
-    margin: 4px 0 14px;
-    overflow: hidden;
-  }
-  #z1-new-spot-modal .row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: var(--ink);
-  }
-  #z1-new-spot-modal .row label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    user-select: none;
-  }
-  #z1-new-spot-modal .row input[type="radio"] { accent-color: var(--moss); }
-  #z1-new-spot-modal textarea {
-    min-height: 56px;
-    resize: vertical;
-    font-family: inherit;
-  }
-  #z1-new-spot-modal .hint {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: -8px;
-    margin-bottom: 12px;
-  }
-  #z1-new-spot-modal .error {
-    color: var(--rust);
-    font-size: 12px;
-    margin-top: -8px;
-    margin-bottom: 8px;
-    display: none;
-  }
-  #z1-new-spot-modal.has-error .error { display: block; }
-</style>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-
 <link rel="manifest" href="/static/manifest.webmanifest">
 <meta name="theme-color" content="#5b7a3f">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -927,796 +28,2157 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://bankjes.stephenadei.nl/static/og-banner.png">
+
+<style>
+/* Leaflet cluster override — keeps the default cluster ring hidden in favour of our custom divIcons */
+.leaflet-cluster-anim .leaflet-marker-icon,
+.leaflet-cluster-anim .leaflet-marker-shadow { transition: transform 0.3s ease, opacity 0.3s ease; }
+.marker-cluster { background: transparent !important; box-shadow: none !important; }
+.marker-cluster div { background: transparent !important; }
+
+/* Mobile popup as bottom-sheet */
+@media (max-width: 720px) {
+  .bj-popup-wrap.mobile {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    z-index: 800;
+  }
+  .bj-popup-wrap.mobile .bj-popup {
+    border-radius: 22px 22px 0 0;
+    border: none;
+    border-top: 1px solid var(--line);
+    animation: bj-sheet-up 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes bj-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .bj-popup-wrap::after { display: none; }
+  .bj-popup-close { display: flex !important; }
+  .bj-pull-tab, .bj-sidebar { display: none !important; }
+  .bj-count { display: none; }
+}
+
+/* Backdrop behind mobile popup */
+.bj-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 42, 38, 0.32);
+  z-index: 790;
+}
+
+/* Mobile filter sheet overlay */
+.bj-mobile-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 42, 38, 0.45);
+  z-index: 900;
+  display: flex;
+  align-items: flex-end;
+}
+.bj-mobile-sheet {
+  background: var(--paper);
+  border-radius: 22px 22px 0 0;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-4);
+  animation: bj-sheet-up 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bj-mobile-sheet-handle {
+  width: 36px; height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
+  margin: 10px auto 0;
+}
+.bj-mobile-sheet-head {
+  display: flex;
+  align-items: center;
+  padding: 14px 22px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.bj-mobile-sheet-head h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 18px;
+  font-variation-settings: "opsz" 22;
+  flex: 1;
+  margin: 0;
+  color: var(--ink);
+}
+.bj-mobile-sheet-close {
+  background: var(--paper-2);
+  border: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 0 2px;
+}
+.bj-mobile-sheet-body {
+  overflow-y: auto;
+  padding: 14px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bj-mf-group { display: flex; flex-direction: column; gap: 8px; }
+.bj-mf-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bj-mf-label span { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.7; margin-left: 4px; }
+.bj-mf-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.bj-mobile-sheet-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--line);
+}
+.bj-mobile-sheet-apply {
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  border: 0;
+  border-radius: 10px;
+  padding: 13px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bj-mobile-sheet-apply:active { transform: scale(0.98); }
+
+/* Mod compact variant (mobile filter row) */
+.bj-mod.compact { padding: 6px 12px; font-size: 12px; min-height: 36px; }
+.bj-mod.compact .bj-mod-marker { display: none; }
+
+/* Mobile filter row */
+.bj-filter-row-mobile {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+  overflow-x: auto;
+}
+.bj-mobile-filter-btn {
+  background: var(--ink);
+  color: var(--paper);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.bj-mobile-filter-ct {
+  background: rgba(255,253,246,0.22);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+}
+.bj-mobile-count {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.bj-mobile-count b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .bj-filter-row { display: none !important; }
+  .bj-filter-row-mobile { display: flex !important; }
+  .bj-sheet { display: flex; }
+}
+@media (min-width: 721px) {
+  .bj-sheet { display: none !important; }
+  .bj-filter-row-mobile { display: none !important; }
+}
+
+/* Login affordance in header */
+.bj-login-area {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.bj-login-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.14s ease;
+}
+.bj-login-btn:hover { color: var(--bj-moss); }
+.bj-login-display {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.bj-logout-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.14s ease;
+}
+.bj-logout-btn:hover { color: var(--bj-moss); }
+
+/* Login modal */
+.bj-login-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 42, 38, 0.45);
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.bj-login-modal-overlay[hidden] { display: none; }
+.bj-login-modal-card {
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: var(--shadow-4);
+  border: 1px solid var(--line);
+}
+.bj-login-modal-card h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 20px;
+  font-variation-settings: "opsz" 24;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.bj-login-modal-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+.bj-login-modal-card input[type="email"] {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.bj-login-modal-card input[type="email"]:focus {
+  border-color: rgba(91,122,63,0.5);
+  box-shadow: 0 0 0 4px rgba(91,122,63,0.12);
+}
+.bj-login-modal-actions { display: flex; gap: 8px; }
+.bj-login-modal-actions .primary {
+  flex: 1;
+  background: var(--ink);
+  color: var(--paper);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.bj-login-modal-actions .primary:hover { background: var(--ink-2); }
+.bj-login-modal-actions .secondary {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.bj-login-modal-actions .secondary:hover { background: var(--paper-2); }
+.bj-login-modal-success {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.bj-login-modal-success p {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.bj-login-modal-success .check {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+/* User location dot */
+.user-loc {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--bj-moss);
+  border: 3px solid #fffdf6;
+  box-shadow: 0 0 0 4px rgba(91, 122, 63, 0.22), 0 1px 3px rgba(45, 42, 38, 0.4);
+}
+
+/* Locate FAB inside map shell */
+.bj-locate-fab {
+  position: absolute;
+  bottom: 24px;
+  right: 52px;
+  z-index: 570;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 253, 246, 0.96);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--ink);
+  transition: transform 0.12s ease, background 0.18s ease;
+}
+.bj-locate-fab:hover { background: var(--paper); }
+.bj-locate-fab:active { transform: scale(0.94); }
+.bj-locate-fab.busy { opacity: 0.55; pointer-events: none; }
+
+@media (max-width: 720px) {
+  .bj-locate-fab { bottom: 110px; right: 14px; }
+}
+
+/* Sidebar noloc-banner */
+.bj-sidebar-noloc-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(160, 106, 63, 0.10);
+  color: var(--bj-rust);
+  padding: 8px 22px;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.bj-sidebar-noloc-banner span { flex: 1; }
+.bj-sidebar-noloc-banner button {
+  background: var(--bj-rust);
+  color: var(--paper);
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Sidebar tabs */
+.bj-sidebar-tabs {
+  display: flex;
+  gap: 18px;
+  padding: 8px 22px 0;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.bj-sidebar-tab {
+  background: transparent;
+  border: 0;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bj-sidebar-tab:hover { color: var(--ink); }
+.bj-sidebar-tab.on { color: var(--ink); font-weight: 600; }
+.bj-sidebar-tab.on::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--bj-moss);
+  border-radius: 1px;
+}
+.bj-sidebar-tab-ct {
+  background: var(--paper-2);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.bj-sidebar-tab.on .bj-sidebar-tab-ct { background: var(--bj-moss-soft); color: var(--bj-moss); }
+.bj-sidebar-list {
+  overflow-y: auto;
+  padding: 4px 14px 22px;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+.bj-sidebar-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted);
+}
+.bj-sidebar-empty p {
+  font-size: 13px;
+  max-width: 28ch;
+  margin: 12px auto 0;
+  line-height: 1.5;
+}
+
+/* Photo image in popup hero */
+.bj-popup-photo-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.bj-popup-hero.placeholder {
+  background: linear-gradient(135deg, #d8d0c0, #c4b99a);
+}
+</style>
 </head>
 <body>
-<header class="topbar">
-  <div class="hero">
-    <img class="mark" src="/static/silhouette.svg" alt="" width="28" height="28">
-    <h1 class="title">Stephen's Bankjes</h1>
-    <span class="subtitle">Amsterdam straatmeubilair</span>
-    <a class="research-link" href="/onderzoek">onderzoek →</a>
-    <span class="status" id="status">·</span>
-  </div>
-  <nav class="filters" id="filters"></nav>
-  <div class="sub-filters">
-    <label class="chip rugleun-chip">
-      <input type="checkbox" id="rugleun-filter">
-      <span>+ rugleuning</span>
-    </label>
-  </div>
-</header>
-<div id="map"></div>
+<div id="root">
+  <div class="bj-app" id="bj-app">
 
-<button id="z1-fab" type="button" aria-label="Voeg plekje toe">
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-</button>
+    <!-- ===== HEADER ===== -->
+    <header class="bj-header" id="bj-header">
+      <div class="bj-header-row">
+        <a class="bj-mark" href="/" aria-label="Stephen's Bankjes">
+          <span class="bj-mark-glyph" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="#fffdf6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/>
+            </svg>
+          </span>
+          <span class="bj-mark-text">Bankjes</span>
+        </a>
 
-<div id="z1-login-modal" role="dialog" aria-modal="true" aria-label="Inloggen">
-  <div class="card">
-    <div class="form">
+        <nav class="bj-tabs" role="tablist">
+          <button class="bj-tab on" role="tab" aria-selected="true" id="tab-kaart">Kaart</button>
+          <a class="bj-tab" role="tab" href="/onderzoek" id="tab-onderzoek">Onderzoek</a>
+        </nav>
+
+        <div class="bj-search" id="bj-search">
+          <span class="bj-search-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+            </svg>
+          </span>
+          <input type="text" id="bj-search-input"
+                 placeholder="Zoek een plek, straat of postcode in Amsterdam…"
+                 aria-label="Zoek een plek in Amsterdam"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="bj-search-clear" id="bj-search-clear" aria-label="Zoekveld wissen" hidden>×</button>
+          <span class="bj-search-div" aria-hidden="true"></span>
+          <button class="bj-locate-cta" id="bj-locate-cta" aria-label="Mijn locatie tonen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            </svg>
+            <span>Mijn locatie</span>
+          </button>
+
+          <div class="bj-suggest" id="bj-suggest" role="listbox" hidden></div>
+        </div>
+
+        <div class="bj-header-meta">
+          <span class="bj-count"><b id="bj-visible-count">—</b> zichtbaar</span>
+        </div>
+
+        <div class="bj-login-area" id="bj-login-area">
+          <button class="bj-login-btn" id="bj-login-btn">Inloggen</button>
+        </div>
+      </div>
+
+      <!-- Desktop filter row -->
+      <div class="bj-filter-row" id="bj-filter-row">
+        <!-- Injected by JS after /api/datasets -->
+      </div>
+
+      <!-- Mobile filter row -->
+      <div class="bj-filter-row-mobile" id="bj-filter-row-mobile">
+        <button class="bj-mobile-filter-btn" id="bj-mobile-filter-btn" aria-label="Filters openen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18M7 12h10M10 18h4"/>
+          </svg>
+          <span>Filters</span>
+          <span class="bj-mobile-filter-ct" id="bj-mobile-filter-ct">0</span>
+        </button>
+        <button class="bj-mod compact" id="bj-rugleun-mobile" aria-pressed="false" title="Alleen banken met rugleuning">
+          <span class="bj-mod-text">+ rugleuning</span>
+        </button>
+        <span class="bj-mobile-count"><b id="bj-mobile-visible-count">—</b> zichtbaar</span>
+      </div>
+    </header>
+
+    <!-- ===== MAP SHELL ===== -->
+    <div class="bj-map-shell" id="bj-map-shell">
+      <div id="map" class="bj-map" aria-label="Kaart van Amsterdam"></div>
+
+      <!-- Popup container (injected on marker click) -->
+      <!-- id=bj-popup-wrap injected dynamically -->
+
+      <!-- Locate FAB -->
+      <button class="bj-locate-fab" id="bj-locate-fab" aria-label="Ga naar mijn locatie">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        </svg>
+      </button>
+
+      <!-- Desktop pull-tab + sidebar -->
+      <button class="bj-pull-tab" id="bj-pull-tab"
+              aria-expanded="false" aria-controls="bj-sidebar"
+              title="Toon bankjes in de buurt">
+        <span class="bj-pull-tab-chev" aria-hidden="true" id="bj-pull-tab-chev">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </span>
+        <span class="bj-pull-tab-label">In de buurt</span>
+        <span class="bj-pull-tab-count" id="bj-pull-tab-count"></span>
+      </button>
+
+      <aside class="bj-sidebar" id="bj-sidebar" aria-label="Bankjes in de buurt" aria-hidden="true">
+        <div class="bj-sidebar-inner">
+          <header class="bj-sidebar-head">
+            <div class="bj-sidebar-titlewrap">
+              <h2 class="bj-sidebar-title">In de buurt</h2>
+              <span class="bj-sidebar-sub" id="bj-sidebar-sub">—</span>
+            </div>
+            <button class="bj-sidebar-close" id="bj-sidebar-close" aria-label="Sluiten">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 6 18 18"/><path d="M18 6 6 18"/>
+              </svg>
+            </button>
+          </header>
+
+          <div class="bj-sidebar-noloc-banner" id="bj-sidebar-noloc" style="display:none">
+            <span>Schakel locatie in voor exacte afstanden vanaf je positie</span>
+            <button id="bj-sidebar-enable-loc">Schakel in</button>
+          </div>
+
+          <div class="bj-sidebar-tabs" role="tablist">
+            <button class="bj-sidebar-tab on" id="bj-sidebar-tab-nearest"
+                    role="tab" aria-selected="true">
+              Dichtstbijzijnd
+              <span class="bj-sidebar-tab-ct" id="bj-sidebar-ct-nearest">0</span>
+            </button>
+            <button class="bj-sidebar-tab" id="bj-sidebar-tab-saved"
+                    role="tab" aria-selected="false">
+              Bewaard
+              <span class="bj-sidebar-tab-ct" id="bj-sidebar-ct-saved">0</span>
+            </button>
+          </div>
+
+          <div class="bj-sidebar-list" id="bj-sidebar-list" role="list"></div>
+        </div>
+      </aside>
+
+      <!-- Mobile bottom-sheet -->
+      <aside class="bj-sheet bj-sheet-peek" id="bj-sheet" aria-label="Bankjes in de buurt">
+        <button class="bj-sheet-handle" id="bj-sheet-handle"
+                aria-expanded="false" aria-controls="bj-sheet-body">
+          <span class="bj-sheet-grip" aria-hidden="true"></span>
+          <span class="bj-sheet-head">
+            <span class="bj-sheet-lbl">In de buurt</span>
+            <span class="bj-sheet-ct" id="bj-sheet-ct">—</span>
+          </span>
+        </button>
+
+        <div class="bj-sheet-preview" id="bj-sheet-preview" role="button" tabindex="0">
+          <span class="bj-sheet-preview-dist" id="bj-sheet-preview-dist">—</span>
+          <span class="bj-sheet-preview-info">
+            <span class="bj-sheet-preview-name" id="bj-sheet-preview-name">—</span>
+            <span class="bj-sheet-preview-meta" id="bj-sheet-preview-meta"></span>
+          </span>
+          <span class="bj-sheet-preview-cta" aria-hidden="true">↑</span>
+        </div>
+
+        <div class="bj-sheet-noloc-banner" id="bj-sheet-noloc" style="display:none">
+          <span>Schakel locatie in voor exacte afstanden</span>
+          <button id="bj-sheet-enable-loc">Schakel in</button>
+        </div>
+
+        <div class="bj-sheet-tabs" id="bj-sheet-body" role="tablist">
+          <button class="bj-sheet-tab on" id="bj-sheet-tab-nearest"
+                  role="tab" aria-selected="true">
+            Dichtstbijzijnd
+            <span class="bj-sheet-tab-ct" id="bj-sheet-ct-nearest">0</span>
+          </button>
+          <button class="bj-sheet-tab" id="bj-sheet-tab-saved"
+                  role="tab" aria-selected="false">
+            Bewaard
+            <span class="bj-sheet-tab-ct" id="bj-sheet-ct-saved">0</span>
+          </button>
+        </div>
+
+        <div class="bj-sheet-list" id="bj-sheet-list" role="list"></div>
+      </aside>
+    </div>
+
+  </div>
+</div>
+
+<!-- Login modal -->
+<div class="bj-login-modal-overlay" id="bj-login-modal" hidden role="dialog" aria-modal="true" aria-label="Inloggen">
+  <div class="bj-login-modal-card">
+    <div id="bj-login-form-view">
       <h3>Inloggen bij Bankjes</h3>
       <p>Vul je email in — we sturen je een magic-link. Geen wachtwoord, geen gedoe.</p>
-      <input id="z1-login-email" type="email" name="email" placeholder="jouw@email.nl" autocomplete="email" required>
-      <div class="actions">
-        <button class="primary" type="button" id="z1-login-send">Stuur magic-link</button>
-        <button class="secondary" type="button" id="z1-login-cancel">Annuleer</button>
+      <input type="email" id="bj-login-email" name="email" placeholder="jouw@email.nl"
+             autocomplete="email" required>
+      <div class="bj-login-modal-actions">
+        <button class="primary" id="bj-login-send">Stuur magic-link</button>
+        <button class="secondary" id="bj-login-cancel">Annuleer</button>
       </div>
     </div>
-    <div class="success">
-      <b>Mail verstuurd ✓</b><br>
-      Check je inbox (en spam-folder). De link is 30 minuten geldig.
-      <div class="actions" style="margin-top: 12px;">
-        <button class="secondary" type="button" id="z1-login-close">Sluiten</button>
+    <div id="bj-login-success-view" hidden>
+      <div class="bj-login-modal-success">
+        <div class="check">✓</div>
+        <p><b>Mail verstuurd</b><br>Check je inbox (en spam-folder). De link is 30 minuten geldig.</p>
+        <div class="bj-login-modal-actions" style="margin-top:16px">
+          <button class="secondary" id="bj-login-close" style="flex:1">Sluiten</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div id="z1-new-spot-modal" role="dialog" aria-modal="true" aria-label="Nieuw plekje toevoegen">
-  <div class="card">
-    <h3>Nieuw plekje</h3>
-    <p>Sleep de pin naar de exacte locatie.</p>
-    <div id="z1-mini-map"></div>
-
-    <input id="z1-spot-label" type="text" placeholder="Naam / korte titel (verplicht)" maxlength="60" required>
-    <textarea id="z1-spot-description" placeholder="Beschrijving (optioneel)" maxlength="400"></textarea>
-
-    <select id="z1-spot-category">
-      <option value="anders">Anders</option>
-      <option value="bank">Bank</option>
-      <option value="stoel">Stoel</option>
-      <option value="picknicktafel">Picknicktafel</option>
-      <option value="krukje">Krukje</option>
-    </select>
-
-    <div class="row">
-      <label><input type="radio" name="z1-visibility" id="z1-spot-visibility-private" value="private" checked> Privé (alleen ik)</label>
-      <label><input type="radio" name="z1-visibility" value="public"> Publiek (vraag aan)</label>
+<!-- Mobile filter sheet -->
+<div class="bj-mobile-sheet-overlay" id="bj-mobile-filter-overlay" hidden role="dialog" aria-modal="true" aria-label="Filters">
+  <div class="bj-mobile-sheet">
+    <div class="bj-mobile-sheet-handle" aria-hidden="true"></div>
+    <div class="bj-mobile-sheet-head">
+      <h2>Filters</h2>
+      <button class="bj-mobile-sheet-close" id="bj-mobile-sheet-close" aria-label="Sluiten">×</button>
     </div>
-    <div class="hint">Publiek-plekjes verschijnen pas op de hoofdkaart na approval.</div>
-
-    <div class="error">Vul minimaal een label in.</div>
-
-    <div class="actions">
-      <button class="primary" type="button" id="z1-spot-save">Opslaan</button>
-      <button class="secondary" type="button" id="z1-spot-cancel">Annuleer</button>
+    <div class="bj-mobile-sheet-body" id="bj-mobile-sheet-body">
+      <!-- Injected by JS -->
+    </div>
+    <div class="bj-mobile-sheet-foot">
+      <button class="bj-mobile-sheet-apply" id="bj-mobile-sheet-apply">Toon op de kaart</button>
     </div>
   </div>
 </div>
-
-<aside id="a2hs-banner" role="dialog" aria-label="Voeg toe aan home-scherm">
-  <img class="icon" src="/static/icon-192.png" alt="">
-  <div class="copy">
-    <div class="t">Open als app</div>
-    <div class="s">Voeg toe aan je home-scherm</div>
-  </div>
-  <div class="actions">
-    <button class="install" type="button">Toevoegen</button>
-    <button class="dismiss" type="button" aria-label="Sluiten">×</button>
-  </div>
-</aside>
-
-<div id="a2hs-ios" role="dialog" aria-modal="true">
-  <div class="card">
-    <h3>Voeg toe aan home-scherm</h3>
-    <p>Open Bankjes als een echte app: druk op de share-knop in Safari, scroll, en kies <b>Aan beginscherm toevoegen</b>.</p>
-    <div class="share-row">
-      <svg width="20" height="22" viewBox="0 0 20 22" fill="none" stroke="#5b7a3f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10 1v14M5 6l5-5 5 5M3 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
-      </svg>
-      <span>Tik <b>delen</b> (onderaan Safari) → scroll → <b>Aan beginscherm toevoegen</b>.</span>
-    </div>
-    <button class="close" type="button">Begrepen</button>
-  </div>
-</div>
-
-<aside id="nearby-sheet" aria-label="Bankjes in de buurt">
-  <button type="button" class="nearby-handle" aria-controls="nearby-list" aria-expanded="false">
-    <span class="grip"></span>
-    <span class="label">In de buurt</span>
-    <span class="count" id="nearby-count">—</span>
-  </button>
-  <div class="nearby-body">
-    <div class="sheet-tabs">
-      <button type="button" class="tab active" id="sheet-tab-nearby" data-tab="nearby">In de buurt</button>
-      <button type="button" class="tab" id="sheet-tab-mijn" data-tab="mijn" hidden>Mijn plekjes</button>
-    </div>
-    <ul id="nearby-list" class="sheet-pane" data-pane="nearby" role="list"></ul>
-    <ul id="mijn-list" class="sheet-pane" data-pane="mijn" role="list" hidden></ul>
-  </div>
-</aside>
-
-<details class="about">
-  <summary>
-    <span class="chev">▸</span>
-    <span>Over Stephen</span>
-  </summary>
-  <div class="body">
-    <img src="/static/portrait-halftone.png" alt="Portret Stephen Adei">
-    <div class="text">
-      <h2>Stephen Adei</h2>
-      <div class="role">Data engineer · Amsterdam</div>
-      <p>
-        Stephen's Bankjes begon als minor-opdracht aan de UvA en wordt sindsdien onderhouden als civic-tech-portfolio. Officiële BGT-data van data.amsterdam.nl staat voorop; OSM vult de gaten in het centrum. Lees de <a href="/onderzoek">coverage-analyse →</a>
-      </p>
-    </div>
-  </div>
-</details>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-(async function () {
-  // Single source of truth: server. /api/datasets levert label, name, color,
-  // sourceType ("dso"|"osm"), defaultOn, featured — geen dataset-config in JS.
-  const datasetList = await (await fetch("/api/datasets")).json();
-  const DATASETS = Object.fromEntries(datasetList.map(d => [d.label, d]));
+(function () {
+"use strict";
 
-  const map = L.map("map", {
-    zoomControl: false,
-    zoomAnimation: true,
-    fadeAnimation: true,
-    inertia: true,
-    inertiaDeceleration: 2500,
-    zoomAnimationDuration: 0.35,
-  }).setView([52.3676, 4.9041], 13);
+// ============================================================
+// STATE
+// ============================================================
+const SAVED_KEY    = "bj-saved-v1";
+const FILTERS_KEY  = "bj-filters-v1";
+const AMS_CENTER   = { lat: 52.3676, lng: 4.9041 };
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    maxZoom: 19,
-    subdomains: "abcd",
-    attribution: '&copy; <a href="https://carto.com/" target="_blank" rel="noopener">CARTO</a> &middot; OSM &middot; <a href="https://api.data.amsterdam.nl/v1/" target="_blank" rel="noopener">data.amsterdam.nl</a>',
-  }).addTo(map);
+const state = {
+  DATASETS:        {},       // key → dataset meta from /api/datasets
+  itemsByDataset:  {},       // key → array of items
+  enabled:         {},       // key → bool
+  sourceFilter:    {},       // key → "BGT" | "OSM" | null
+  rugleun:         false,
+  openItem:        null,
+  savedIds:        new Set(),
+  userLatLng:      null,
+  hasLocation:     false,
+  mapCenter:       AMS_CENTER,
+  mapBounds:       null,
+  sheetState:      "peek",
+  sidebarOpen:     false,
+  sidebarTab:      "nearest",
+  sheetTab:        "nearest",
+  isMobile:        window.matchMedia("(max-width: 720px)").matches,
+  mobileFiltersOpen: false,
+  me:              null,     // {id, email, display_name, is_admin} or null
+  searchQuery:     "",
+  suggestHighlight: 0,
+  suggestFocused:  false,
+};
 
-  function benchSvg(color, size) {
-    size = size || 16;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
+// ============================================================
+// PERSIST: load saved IDs + filter prefs
+// ============================================================
+try {
+  const savedArr = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
+  state.savedIds = new Set(savedArr);
+} catch (e) {}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtDist(m) {
+  if (m < 1000) return Math.round(m / 10) * 10 + "m";
+  return (m / 1000).toFixed(1) + "km";
+}
+
+function distanceMetres(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dPhi = toRad(lat2 - lat1);
+  const dLam = toRad(lon2 - lon1);
+  const a = Math.sin(dPhi / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLam / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function inlineAddress(props) {
+  const street = props.straatnaam || props.openbareruimte || props["addr:street"];
+  const num    = props.huisnummer || props["addr:housenumber"];
+  const pc     = props.postcode   || props["addr:postcode"];
+  if (street && num) return pc ? `${street} ${num}, ${pc}` : `${street} ${num}`;
+  if (street)        return pc ? `${street}, ${pc}` : street;
+  return null;
+}
+
+function humanizeProps(item) {
+  const out = [];
+  const p = item.props || {};
+  const ds = item.dataset;
+  if (ds === "bench" || ds === "banken") {
+    const backrest = p.backrest === true || p.backrest === "yes";
+    const noBackrest = p.backrest === false || p.backrest === "no";
+    if (backrest) out.push({ k: "rugleuning", v: "ja", accent: true });
+    else if (noBackrest) out.push({ k: "rugleuning", v: "nee" });
+    if (p.material) out.push({ k: "materiaal", v: p.material });
+    if (p.capacity) out.push({ k: "zitplaatsen", v: String(p.capacity) });
+  } else if (ds === "picknicktafels" || ds === "picnic_table") {
+    if (p.material) out.push({ k: "materiaal", v: p.material });
+    if (p.capacity) out.push({ k: "zitplaatsen", v: String(p.capacity) });
+  } else if (ds === "afvalbakken" || ds === "trash_underground" || ds === "trash_surface") {
+    if (p.capacity_l) out.push({ k: "inhoud", v: `${p.capacity_l} L` });
+  } else if (ds === "fietsenrekken") {
+    if (p.capacity) out.push({ k: "fietsen", v: String(p.capacity) });
+  } else if (ds === "speeltoestellen") {
+    if (p.type) out.push({ k: "soort", v: p.type });
   }
+  return out;
+}
 
-  function dotIcon(color, size) {
-    size = size || 9;
+function titleForItem(item) {
+  const ds = item.dataset;
+  const p = item.props || {};
+  const backrest = p.backrest === true || p.backrest === "yes";
+  if ((ds === "bench" || ds === "banken") && backrest) return "Bank met rugleuning";
+  const MAP = {
+    bench: "Bank", banken: "Bank",
+    picnic_table: "Picknicktafel", picknicktafels: "Picknicktafel",
+    trash_underground: "Afvalbak", trash_surface: "Afvalbak", afvalbakken: "Afvalbak",
+    fietsenrekken: "Fietsenrek",
+    speeltoestellen: "Speeltoestel",
+  };
+  return MAP[ds] || (state.DATASETS[ds] && state.DATASETS[ds].name) || "Object";
+}
+
+function normalizeItem(raw) {
+  const sourceType = raw.sourceType
+    || (raw.dataset && raw.dataset.endsWith("_osm") ? "OSM" : "BGT");
+  return {
+    id: raw.id,
+    dataset: raw.dataset,
+    sourceType,
+    lat: raw.lat,
+    lon: raw.lon,
+    props: {
+      street: (raw.props || {}).straatnaam || (raw.props || {}).openbareruimte || (raw.props || {})["addr:street"] || null,
+      housenumber: (raw.props || {}).huisnummer || (raw.props || {})["addr:housenumber"] || null,
+      postcode: (raw.props || {}).postcode || (raw.props || {})["addr:postcode"] || null,
+      neighborhood: (raw.props || {}).buurt || null,
+      backrest: (raw.props || {}).backrest === "yes" || (raw.props || {}).backrest === true
+        ? true
+        : ((raw.props || {}).backrest === "no" || (raw.props || {}).backrest === false ? false : null),
+      material: (raw.props || {}).material || null,
+      capacity: (raw.props || {}).capacity ? parseInt((raw.props || {}).capacity, 10) : null,
+      capacity_l: (raw.props || {}).capacity_l || null,
+      type: (raw.props || {}).type || null,
+      // pass-through all original props too for address lookup
+      ...raw.props,
+    },
+  };
+}
+
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// ============================================================
+// ICONS
+// ============================================================
+function iconSvg(dataset, color, size) {
+  size = size || 16;
+  const sw = "2.2";
+  const attrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${escapeHtml(color)}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"`;
+  const ds = dataset;
+  if (ds === "bench" || ds === "banken")
+    return `<svg ${attrs}><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
+  if (ds === "picnic_table" || ds === "picknicktafels")
+    return `<svg ${attrs}><path d="M3 10h18"/><path d="M3 14h18"/><path d="M6 10v8"/><path d="M18 10v8"/></svg>`;
+  if (ds === "trash_underground" || ds === "trash_surface" || ds === "afvalbakken")
+    return `<svg ${attrs}><path d="M5 7h14l-1 13H6L5 7z"/><path d="M3 7h18"/><path d="M9 4h6"/></svg>`;
+  if (ds === "fietsenrekken")
+    return `<svg ${attrs}><circle cx="6" cy="16" r="4"/><circle cx="18" cy="16" r="4"/><path d="m9 16 3-7 4 7"/><path d="M12 9h-3"/></svg>`;
+  if (ds === "speeltoestellen")
+    return `<svg ${attrs}><path d="M4 21V9l8-5 8 5v12"/><path d="M10 21v-6h4v6"/></svg>`;
+  // fallback bench
+  return `<svg ${attrs}><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
+}
+
+function heartSvg(filled, size) {
+  size = size || 16;
+  const fill = filled ? "#b04a3a" : "none";
+  const stroke = filled ? "#b04a3a" : "currentColor";
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+}
+
+function externalSvg(size) {
+  size = size || 12;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>`;
+}
+
+function buildDivIcon(meta, sourceType) {
+  const color = meta.color;
+  if (sourceType === "OSM") {
     return L.divIcon({
-      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:1.5px solid rgba(255,253,246,0.95);box-shadow:0 1px 2px rgba(45,42,38,0.35)"></div>`,
+      html: `<div style="width:11px;height:11px;border-radius:50%;background:rgba(255,253,246,0.92);border:2px solid ${color};box-shadow:0 1px 2px rgba(45,42,38,0.2)"></div>`,
       className: "",
-      iconSize: [size, size],
+      iconSize: [11, 11],
     });
   }
+  return L.divIcon({
+    html: `<div style="width:11px;height:11px;border-radius:50%;background:${color};border:1.5px solid rgba(255,253,246,0.95);box-shadow:0 1px 2px rgba(45,42,38,0.35)"></div>`,
+    className: "",
+    iconSize: [11, 11],
+  });
+}
 
-  function ringIcon(color, size) {
-    size = size || 9;
-    return L.divIcon({
-      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(255,253,246,0.85);border:2px solid ${color};box-shadow:0 1px 1px rgba(45,42,38,0.20)"></div>`,
-      className: "",
-      iconSize: [size, size],
-    });
+function buildClusterIcon(cluster, meta) {
+  const n = cluster.getChildCount();
+  const size = n >= 100 ? 40 : n >= 25 ? 34 : 30;
+  return L.divIcon({
+    html: `<div style="background:${meta.color};color:#fffdf6;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;font-family:Inter,sans-serif;border:2px solid rgba(255,253,246,0.95);box-shadow:0 1px 3px rgba(45,42,38,0.30)">${n}</div>`,
+    className: "",
+    iconSize: [size, size],
+  });
+}
+
+// ============================================================
+// LEAFLET MAP
+// ============================================================
+const map = L.map("map", {
+  zoomControl: false,
+  zoomAnimation: true,
+  fadeAnimation: true,
+  inertia: true,
+  inertiaDeceleration: 2500,
+  attributionControl: true,
+}).setView([AMS_CENTER.lat, AMS_CENTER.lng], 13);
+
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+  maxZoom: 19,
+  subdomains: "abcd",
+  attribution: '&copy; CARTO &middot; OSM',
+}).addTo(map);
+
+state.mapBounds = map.getBounds();
+
+const clusters = {};  // key → L.markerClusterGroup
+let userMarker = null;
+
+map.on("moveend zoomend", debounce(function () {
+  state.mapCenter = { lat: map.getCenter().lat, lng: map.getCenter().lng };
+  state.mapBounds = map.getBounds();
+  updateVisibleCount();
+  renderNearbyList();
+}, 100));
+
+map.on("click", function () {
+  if (state.openItem) closePopup();
+});
+
+// ============================================================
+// DATASETS + ITEMS
+// ============================================================
+async function loadDatasets() {
+  const list = await (await fetch("/api/datasets")).json();
+  for (const d of list) {
+    state.DATASETS[d.label] = d;
+    state.itemsByDataset[d.label] = [];
+    // sourceTypes array: if server doesn't provide it, infer from sourceType
+    if (!d.sourceTypes) {
+      d.sourceTypes = d.sourceType === "osm" ? ["OSM"] : ["BGT"];
+    }
   }
 
-  function benchMarkerIcon(color) {
-    return L.divIcon({
-      html: `<div style="width:22px;height:22px;border-radius:50%;background:rgba(255,253,246,0.97);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1.5px solid ${color}55">${benchSvg(color, 14)}</div>`,
-      className: "",
-      iconSize: [22, 22],
-    });
+  // Load filter prefs from localStorage after we know the datasets
+  try {
+    const stored = JSON.parse(localStorage.getItem(FILTERS_KEY) || "null");
+    if (stored && typeof stored === "object") {
+      state.enabled = stored;
+    } else {
+      for (const [k, m] of Object.entries(state.DATASETS)) state.enabled[k] = !!m.defaultOn;
+    }
+  } catch (e) {
+    for (const [k, m] of Object.entries(state.DATASETS)) state.enabled[k] = !!m.defaultOn;
   }
 
-  // Cluster groups per dataset
-  const clusters = {};
-  const enabled = {};
-  const loaded = {};
-  for (const [key, meta] of Object.entries(DATASETS)) {
-    enabled[key] = !!meta.defaultOn;
-    loaded[key]  = false;
-    clusters[key] = L.markerClusterGroup({
+  // Create cluster groups
+  for (const [key, meta] of Object.entries(state.DATASETS)) {
+    const clusterGroup = L.markerClusterGroup({
       chunkedLoading: true,
       animateAddingMarkers: false,
-      iconCreateFunction: (cluster) => {
-        const n = cluster.getChildCount();
-        const size = meta.featured ? 36 : 30;
-        return L.divIcon({
-          html: `<div style="background:${meta.color};color:#fffdf6;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;font-family:Inter,sans-serif;border:2px solid rgba(255,253,246,0.95);box-shadow:0 1px 3px rgba(45,42,38,0.30)">${n}</div>`,
-          className: "",
-          iconSize: [size, size],
-        });
-      },
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      iconCreateFunction: (c) => buildClusterIcon(c, meta),
     });
-    if (enabled[key]) clusters[key].addTo(map);
+    clusters[key] = clusterGroup;
+    if (state.enabled[key]) {
+      clusterGroup.addTo(map);
+      await loadDataset(key);
+    }
   }
 
-  function inlineAddress(props) {
-    // Sommige datasets hebben straatnaam/huisnummer/postcode native
-    const street = props.straatnaam || props.openbareruimte || props["addr:street"];
-    const num    = props.huisnummer || props["addr:housenumber"];
-    const pc     = props.postcode   || props["addr:postcode"];
-    if (street && num) return pc ? `${street} ${num}, ${pc}` : `${street} ${num}`;
-    if (street)        return pc ? `${street}, ${pc}` : street;
+  renderFilterRow();
+  updateVisibleCount();
+  renderNearbyList();
+}
+
+async function loadDataset(key) {
+  if (!state.DATASETS[key]) return;
+  try {
+    const items = await (await fetch(`/api/items?dataset=${encodeURIComponent(key)}`)).json();
+    state.itemsByDataset[key] = (items || []).map(normalizeItem);
+    rebuildCluster(key);
+  } catch (e) {
+    console.error("loadDataset", key, e);
+  }
+}
+
+function rebuildCluster(key) {
+  const cg = clusters[key];
+  if (!cg) return;
+  cg.clearLayers();
+  if (!state.enabled[key]) {
+    if (map.hasLayer(cg)) map.removeLayer(cg);
+    return;
+  }
+  if (!map.hasLayer(cg)) cg.addTo(map);
+
+  const meta = state.DATASETS[key];
+  const items = getFilteredItemsForDataset(key);
+  const markers = items.map(item => {
+    const icon = buildDivIcon(meta, item.sourceType);
+    const m = L.marker([item.lat, item.lon], { icon });
+    m.on("click", function () {
+      openPopup(item);
+    });
+    return m;
+  });
+  cg.addLayers(markers);
+}
+
+function getFilteredItemsForDataset(key) {
+  const items = state.itemsByDataset[key] || [];
+  const srcF = state.sourceFilter[key];
+  return items.filter(item => {
+    if (srcF && srcF !== item.sourceType) return false;
+    if (state.rugleun && (item.dataset === "bench" || item.dataset === "banken")) {
+      const p = item.props || {};
+      if (p.backrest !== true) return false;
+    }
+    return true;
+  });
+}
+
+function getAllFilteredItems() {
+  const out = [];
+  for (const [key, items] of Object.entries(state.itemsByDataset)) {
+    if (!state.enabled[key]) continue;
+    out.push(...getFilteredItemsForDataset(key));
+  }
+  return out;
+}
+
+function rebuildAllClusters() {
+  for (const key of Object.keys(clusters)) {
+    rebuildCluster(key);
+  }
+  updateVisibleCount();
+  renderNearbyList();
+}
+
+// ============================================================
+// VISIBLE COUNT
+// ============================================================
+function updateVisibleCount() {
+  const bounds = state.mapBounds;
+  const all = getAllFilteredItems();
+  const n = bounds ? all.filter(it => bounds.contains([it.lat, it.lon])).length : all.length;
+  document.getElementById("bj-visible-count").textContent = n.toLocaleString("nl-NL");
+  document.getElementById("bj-mobile-visible-count").textContent = n.toLocaleString("nl-NL");
+}
+
+// ============================================================
+// FILTER ROW RENDERING
+// ============================================================
+function renderFilterRow() {
+  const datasets = Object.entries(state.DATASETS);
+  const bgtDatasets = datasets.filter(([, m]) => (m.sourceTypes || []).includes("BGT"));
+  const osmDatasets = datasets.filter(([, m]) => (m.sourceTypes || []).includes("OSM"));
+
+  let html = "";
+
+  if (bgtDatasets.length > 0) {
+    html += `<div class="bj-filter-group">
+      <span class="bj-filter-label">Officieel <span class="bj-filter-label-meta">BGT · data.amsterdam.nl</span></span>
+      <div class="bj-filter-pills">`;
+    for (const [key, meta] of bgtDatasets) {
+      const isOn = state.enabled[key] && state.sourceFilter[key] !== "OSM";
+      const cnt = (state.itemsByDataset[key] || []).filter(i => i.sourceType === "BGT").length;
+      html += pillHtml(key, meta, "BGT", isOn, cnt);
+    }
+    html += `</div></div>`;
+  }
+
+  if (bgtDatasets.length > 0 && osmDatasets.length > 0) {
+    html += `<div class="bj-filter-divider" aria-hidden="true"></div>`;
+  }
+
+  if (osmDatasets.length > 0) {
+    html += `<div class="bj-filter-group">
+      <span class="bj-filter-label">OpenStreetMap <span class="bj-filter-label-meta">crowd-sourced</span></span>
+      <div class="bj-filter-pills">`;
+    for (const [key, meta] of osmDatasets) {
+      const isOn = state.enabled[key] && state.sourceFilter[key] !== "BGT";
+      const cnt = (state.itemsByDataset[key] || []).filter(i => i.sourceType === "OSM").length;
+      html += pillHtml(key, meta, "OSM", isOn, cnt);
+    }
+    html += `</div></div>`;
+  }
+
+  html += `<div class="bj-filter-modifiers">
+    <button class="bj-mod ${state.rugleun ? "on" : ""}" id="bj-rugleun"
+            aria-pressed="${state.rugleun}" title="Toon alleen banken met rugleuning">
+      <span class="bj-mod-marker">AND</span>
+      <span class="bj-mod-text">+ rugleuning</span>
+    </button>
+  </div>`;
+
+  document.getElementById("bj-filter-row").innerHTML = html;
+  wirePillEvents();
+
+  // Mobile filter sheet body
+  renderMobileFilterSheet();
+  updateMobileFilterCount();
+}
+
+function pillHtml(key, meta, source, isOn, cnt) {
+  const isOsm = source === "OSM";
+  const cntFmt = cnt >= 1000 ? (cnt / 1000).toFixed(1) + "k" : cnt;
+  const swatchInner = isOsm
+    ? `<span class="bj-pill-ring" style="border-color:${escapeHtml(meta.color)}"></span>`
+    : "";
+  return `<button type="button"
+    class="bj-pill${isOn ? " on" : ""}${isOsm ? " src-osm" : " src-bgt"}"
+    aria-pressed="${isOn}"
+    data-key="${escapeHtml(key)}"
+    data-source="${escapeHtml(source)}"
+    title="${escapeHtml(meta.name)} · ${escapeHtml(source)}">
+    <span class="bj-pill-swatch" style="background:${escapeHtml(meta.color)}">${swatchInner}</span>
+    <span class="bj-pill-name">${escapeHtml(meta.name)}</span>
+    <span class="bj-pill-count">${escapeHtml(String(cntFmt))}</span>
+  </button>`;
+}
+
+function renderMobileFilterSheet() {
+  const datasets = Object.entries(state.DATASETS);
+  const bgtDatasets = datasets.filter(([, m]) => (m.sourceTypes || []).includes("BGT"));
+  const osmDatasets = datasets.filter(([, m]) => (m.sourceTypes || []).includes("OSM"));
+  let html = "";
+
+  if (bgtDatasets.length > 0) {
+    html += `<section class="bj-mf-group">
+      <h3 class="bj-mf-label">Officieel <span>BGT · data.amsterdam.nl</span></h3>
+      <div class="bj-mf-pills">`;
+    for (const [key, meta] of bgtDatasets) {
+      const isOn = state.enabled[key] && state.sourceFilter[key] !== "OSM";
+      const cnt = (state.itemsByDataset[key] || []).filter(i => i.sourceType === "BGT").length;
+      html += pillHtml(key, meta, "BGT", isOn, cnt);
+    }
+    html += `</div></section>`;
+  }
+  if (osmDatasets.length > 0) {
+    html += `<section class="bj-mf-group">
+      <h3 class="bj-mf-label">OpenStreetMap <span>crowd-sourced</span></h3>
+      <div class="bj-mf-pills">`;
+    for (const [key, meta] of osmDatasets) {
+      const isOn = state.enabled[key] && state.sourceFilter[key] !== "BGT";
+      const cnt = (state.itemsByDataset[key] || []).filter(i => i.sourceType === "OSM").length;
+      html += pillHtml(key, meta, "OSM", isOn, cnt);
+    }
+    html += `</div></section>`;
+  }
+  html += `<section class="bj-mf-group">
+    <h3 class="bj-mf-label">Modifiers</h3>
+    <button class="bj-mod ${state.rugleun ? "on" : ""}" id="bj-rugleun-msheet"
+            aria-pressed="${state.rugleun}">
+      <span class="bj-mod-marker">AND</span>
+      <span class="bj-mod-text">Alleen banken met rugleuning</span>
+    </button>
+  </section>`;
+
+  document.getElementById("bj-mobile-sheet-body").innerHTML = html;
+
+  // Wire pill events for mobile sheet
+  document.getElementById("bj-mobile-sheet-body").querySelectorAll(".bj-pill").forEach(btn => {
+    btn.addEventListener("click", function () {
+      handleToggle(this.dataset.key, this.dataset.source);
+    });
+  });
+  const msheetMod = document.getElementById("bj-rugleun-msheet");
+  if (msheetMod) {
+    msheetMod.addEventListener("click", function () {
+      state.rugleun = !state.rugleun;
+      rebuildAllClusters();
+      renderFilterRow();
+      document.getElementById("bj-rugleun-mobile").classList.toggle("on", state.rugleun);
+      document.getElementById("bj-rugleun-mobile").setAttribute("aria-pressed", String(state.rugleun));
+    });
+  }
+}
+
+function wirePillEvents() {
+  // Desktop filter row pills
+  document.getElementById("bj-filter-row").querySelectorAll(".bj-pill").forEach(btn => {
+    btn.addEventListener("click", function () {
+      handleToggle(this.dataset.key, this.dataset.source);
+    });
+  });
+  // Desktop rugleun mod
+  const mod = document.getElementById("bj-rugleun");
+  if (mod) {
+    mod.addEventListener("click", function () {
+      state.rugleun = !state.rugleun;
+      this.classList.toggle("on", state.rugleun);
+      this.setAttribute("aria-pressed", String(state.rugleun));
+      const mobMod = document.getElementById("bj-rugleun-mobile");
+      if (mobMod) {
+        mobMod.classList.toggle("on", state.rugleun);
+        mobMod.setAttribute("aria-pressed", String(state.rugleun));
+      }
+      rebuildAllClusters();
+    });
+  }
+}
+
+function handleToggle(key, source) {
+  const meta = state.DATASETS[key];
+  if (!meta) return;
+  const isOn = state.enabled[key];
+  const srcF = state.sourceFilter[key] || null;
+
+  if (meta.sourceTypes.length <= 1) {
+    // single-source dataset: just flip enabled
+    state.enabled[key] = !isOn;
+    if (state.enabled[key] && !state.itemsByDataset[key]?.length) {
+      loadDataset(key).then(() => { rebuildCluster(key); updateVisibleCount(); renderNearbyList(); });
+    }
+  } else {
+    // multi-source: toggle just this source
+    if (!isOn) {
+      state.enabled[key] = true;
+      state.sourceFilter[key] = source;
+    } else {
+      const currentSources = srcF ? new Set([srcF]) : new Set(meta.sourceTypes);
+      if (currentSources.has(source)) currentSources.delete(source);
+      else currentSources.add(source);
+      if (currentSources.size === 0) {
+        state.enabled[key] = false;
+        state.sourceFilter[key] = null;
+      } else if (currentSources.size === 1) {
+        state.sourceFilter[key] = [...currentSources][0];
+      } else {
+        state.sourceFilter[key] = null;
+      }
+    }
+    if (state.enabled[key] && !state.itemsByDataset[key]?.length) {
+      loadDataset(key).then(() => { rebuildCluster(key); updateVisibleCount(); renderNearbyList(); });
+    }
+  }
+
+  localStorage.setItem(FILTERS_KEY, JSON.stringify(state.enabled));
+  rebuildCluster(key);
+  updateVisibleCount();
+  renderNearbyList();
+  renderFilterRow();
+}
+
+function updateMobileFilterCount() {
+  let n = 0;
+  for (const [k, on] of Object.entries(state.enabled)) {
+    if (!on) continue;
+    const meta = state.DATASETS[k];
+    const srcF = state.sourceFilter[k];
+    if (meta && meta.sourceTypes && meta.sourceTypes.length > 1 && !srcF) n += 2;
+    else n += 1;
+  }
+  if (state.rugleun) n += 1;
+  const el = document.getElementById("bj-mobile-filter-ct");
+  if (el) el.textContent = String(n);
+}
+
+// ============================================================
+// NEARBY LIST (sidebar + sheet)
+// ============================================================
+let nearbyListDebounceTimer = null;
+function renderNearbyList() {
+  clearTimeout(nearbyListDebounceTimer);
+  nearbyListDebounceTimer = setTimeout(_renderNearbyList, 100);
+}
+
+function _renderNearbyList() {
+  const bounds = state.mapBounds;
+  const all = getAllFilteredItems();
+  const inView = bounds ? all.filter(it => bounds.contains([it.lat, it.lon])) : all;
+  const origin = state.userLatLng || state.mapCenter;
+
+  const enriched = inView.map(it => ({
+    ...it,
+    _dist: distanceMetres(origin.lat, origin.lng, it.lat, it.lon),
+  })).sort((a, b) => a._dist - b._dist);
+
+  const savedItems = enriched.filter(it => state.savedIds.has(it.id));
+
+  // Pull-tab count
+  const pullCount = document.getElementById("bj-pull-tab-count");
+  if (pullCount) {
+    const closest = enriched[0];
+    pullCount.textContent = state.hasLocation && closest
+      ? fmtDist(closest._dist)
+      : String(enriched.length);
+  }
+
+  // Sheet count
+  const sheetCt = document.getElementById("bj-sheet-ct");
+  if (sheetCt) {
+    sheetCt.textContent = state.hasLocation
+      ? `${enriched.length.toLocaleString("nl-NL")} binnen kaart`
+      : '<span class="bj-sheet-noloc">vanaf kaart-midden</span>';
+  }
+
+  // Sheet noloc
+  const sheetNoloc = document.getElementById("bj-sheet-noloc");
+  if (sheetNoloc) sheetNoloc.style.display = (!state.hasLocation && state.sheetState !== "peek") ? "" : "none";
+
+  // Sheet preview (peek state: show closest)
+  const closest = enriched[0];
+  const previewDist = document.getElementById("bj-sheet-preview-dist");
+  const previewName = document.getElementById("bj-sheet-preview-name");
+  const previewMeta = document.getElementById("bj-sheet-preview-meta");
+  if (previewDist && closest) {
+    previewDist.textContent = state.hasLocation ? fmtDist(closest._dist) : "—";
+    previewName.textContent = titleForItem(closest);
+    const addr = inlineAddress(closest.props || {});
+    const srcBadge = `<span class="bj-sheet-src ${closest.sourceType.toLowerCase()}">${closest.sourceType}</span>`;
+    previewMeta.innerHTML = escapeHtml(addr || "") + " " + srcBadge;
+  }
+
+  // Sheet tab counts
+  const elNearest = document.getElementById("bj-sheet-ct-nearest");
+  const elSaved   = document.getElementById("bj-sheet-ct-saved");
+  if (elNearest) elNearest.textContent = String(enriched.length);
+  if (elSaved)   elSaved.textContent   = String(savedItems.length);
+
+  // Sheet list
+  const displaySheet = state.sheetTab === "nearest" ? enriched.slice(0, 60) : savedItems;
+  const sheetList = document.getElementById("bj-sheet-list");
+  if (sheetList) {
+    sheetList.innerHTML = renderNearbyRows(displaySheet, state.sheetTab, enriched.length);
+    wireNearbyRowEvents(sheetList, enriched);
+  }
+
+  // Sidebar sub
+  const sidebarSub = document.getElementById("bj-sidebar-sub");
+  if (sidebarSub) {
+    sidebarSub.innerHTML = state.hasLocation
+      ? `<b>${enriched.length.toLocaleString("nl-NL")}</b> binnen kaart`
+      : `<span class="bj-sidebar-noloc">afstand vanaf kaart-midden</span>`;
+  }
+
+  // Sidebar noloc
+  const sidebarNoloc = document.getElementById("bj-sidebar-noloc");
+  if (sidebarNoloc) sidebarNoloc.style.display = state.hasLocation ? "none" : "";
+
+  // Sidebar tab counts
+  const sbNearest = document.getElementById("bj-sidebar-ct-nearest");
+  const sbSaved   = document.getElementById("bj-sidebar-ct-saved");
+  if (sbNearest) sbNearest.textContent = String(enriched.length);
+  if (sbSaved)   sbSaved.textContent   = String(savedItems.length);
+
+  // Sidebar list
+  const displaySidebar = state.sidebarTab === "nearest" ? enriched.slice(0, 80) : savedItems;
+  const sidebarList = document.getElementById("bj-sidebar-list");
+  if (sidebarList) {
+    sidebarList.innerHTML = renderNearbyRows(displaySidebar, state.sidebarTab, enriched.length);
+    wireNearbyRowEvents(sidebarList, enriched);
+  }
+}
+
+function renderNearbyRows(list, tab, totalNearest) {
+  if (list.length === 0) {
+    if (tab === "saved") {
+      return `<div class="bj-sheet-empty">
+        ${heartSvg(false, 24)}
+        <p>Nog niets bewaard. Tik op het hartje in een popup om een plek te onthouden.</p>
+      </div>`;
+    }
+    return `<div class="bj-sheet-empty">
+      <p>Geen items in het zichtbare kaartgebied. Verschuif of zoom uit.</p>
+    </div>`;
+  }
+  return list.map(it => {
+    const meta = state.DATASETS[it.dataset] || { color: "#5b7a3f" };
+    const title = titleForItem(it);
+    const addr = inlineAddress(it.props || {});
+    const saved = state.savedIds.has(it.id);
+    const srcClass = (it.sourceType || "BGT").toLowerCase();
+    return `<div class="bj-sheet-row" data-item-id="${escapeHtml(it.id)}" role="button" tabindex="0">
+      <span class="bj-sheet-dist">${state.hasLocation ? fmtDist(it._dist) : "—"}</span>
+      <span class="bj-sheet-icon" style="background:${escapeHtml(meta.color)}22;color:${escapeHtml(meta.color)}">
+        ${iconSvg(it.dataset, meta.color, 16)}
+      </span>
+      <span class="bj-sheet-info">
+        <span class="bj-sheet-name">${escapeHtml(title)}</span>
+        <span class="bj-sheet-meta">
+          ${escapeHtml(addr || "")}
+          <span class="bj-sheet-src ${escapeHtml(srcClass)}">${escapeHtml(it.sourceType || "")}</span>
+        </span>
+      </span>
+      <button class="bj-sheet-save ${saved ? "on" : ""}"
+              data-item-id="${escapeHtml(it.id)}"
+              aria-pressed="${saved}"
+              aria-label="${saved ? "Verwijder uit bewaard" : "Bewaar"}">
+        ${heartSvg(saved, 14)}
+      </button>
+    </div>`;
+  }).join("");
+}
+
+function wireNearbyRowEvents(container, enriched) {
+  container.querySelectorAll(".bj-sheet-row").forEach(row => {
+    const id = row.dataset.itemId;
+    row.addEventListener("click", function (e) {
+      if (e.target.closest(".bj-sheet-save")) return;
+      const item = enriched.find(it => it.id === id);
+      if (item) {
+        openPopup(item);
+        map.flyTo([item.lat, item.lon], 17, { duration: 0.6 });
+        if (state.isMobile) setSheetState("peek");
+      }
+    });
+    row.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") this.click();
+    });
+    const saveBtn = row.querySelector(".bj-sheet-save");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleSaved(id);
+      });
+    }
+  });
+}
+
+// ============================================================
+// POPUP
+// ============================================================
+let popupTracker = null;
+
+function openPopup(item) {
+  state.openItem = item;
+  removeExistingPopup();
+
+  const isMobile = state.isMobile;
+  const meta = state.DATASETS[item.dataset] || { color: "#5b7a3f", name: "" };
+  const title = titleForItem(item);
+  const tags = humanizeProps(item);
+  const saved = state.savedIds.has(item.id);
+  const sourceType = item.sourceType || "BGT";
+  const sourceLabel = sourceType === "OSM" ? "OSM · OpenStreetMap" : "BGT · data.amsterdam.nl";
+  const addr = inlineAddress(item.props || {});
+  const streetView = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${item.lat},${item.lon}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lon}`;
+
+  const tagsHtml = tags.map(t => {
+    const label = (t.k === "rugleuning" && t.accent) ? "+ rugleuning" : `${t.k}: ${t.v}`;
+    return `<span class="bj-popup-tag${t.accent ? " accent" : ""}">${escapeHtml(label)}</span>`;
+  }).join("");
+
+  const popupHtml = `
+    <div class="bj-popup" role="dialog" aria-label="${escapeHtml(title)}">
+      <div class="bj-popup-hero" id="bj-popup-hero">
+        <span class="bj-popup-src ${sourceType === "OSM" ? "osm" : "bgt"}">${escapeHtml(sourceLabel)}</span>
+        <button class="bj-popup-save ${saved ? "saved" : ""}"
+                id="bj-popup-save"
+                aria-pressed="${saved}"
+                aria-label="${saved ? "Verwijderen uit bewaard" : "Bewaren"}">
+          ${heartSvg(saved)}
+        </button>
+        <button class="bj-popup-close" id="bj-popup-close" aria-label="Sluiten">×</button>
+      </div>
+      <div class="bj-popup-body">
+        <h3 class="bj-popup-title">${escapeHtml(title)}</h3>
+        <div class="bj-popup-addr">
+          ${addr
+            ? `<span class="bj-popup-street">${escapeHtml(addr)}</span>`
+            : `<span class="bj-popup-street" id="bj-popup-addr-pending" data-lat="${item.lat}" data-lon="${item.lon}" style="font-style:italic;color:var(--muted)">Adres opzoeken…</span>`}
+        </div>
+        ${tagsHtml ? `<div class="bj-popup-tags">${tagsHtml}</div>` : ""}
+        <div class="bj-popup-actions">
+          <a class="bj-popup-act primary" href="${escapeHtml(streetView)}" target="_blank" rel="noopener">
+            <span>Street View</span>${externalSvg()}
+          </a>
+          <a class="bj-popup-act ghost" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener">
+            <span>Open in Maps</span>${externalSvg()}
+          </a>
+        </div>
+      </div>
+    </div>`;
+
+  // Position
+  let wrap;
+  if (isMobile) {
+    // Backdrop
+    const backdrop = document.createElement("div");
+    backdrop.className = "bj-popup-backdrop";
+    backdrop.id = "bj-popup-backdrop";
+    backdrop.addEventListener("click", closePopup);
+    document.getElementById("bj-map-shell").appendChild(backdrop);
+
+    wrap = document.createElement("div");
+    wrap.className = "bj-popup-wrap mobile";
+    wrap.id = "bj-popup-wrap";
+  } else {
+    wrap = document.createElement("div");
+    wrap.className = "bj-popup-wrap";
+    wrap.id = "bj-popup-wrap";
+    // Initial position
+    const pt = map.latLngToContainerPoint([item.lat, item.lon]);
+    wrap.style.left = pt.x + "px";
+    wrap.style.top  = pt.y + "px";
+  }
+
+  wrap.innerHTML = popupHtml;
+  document.getElementById("bj-map-shell").appendChild(wrap);
+
+  // Load photo async
+  loadPopupPhoto(item);
+
+  // Start popup position tracker (desktop only)
+  if (!isMobile) {
+    const updatePos = function () {
+      const w = document.getElementById("bj-popup-wrap");
+      if (!w) return;
+      const pt = map.latLngToContainerPoint([item.lat, item.lon]);
+      w.style.left = pt.x + "px";
+      w.style.top  = pt.y + "px";
+    };
+    map.on("move", updatePos);
+    map.on("zoom", updatePos);
+    popupTracker = updatePos;
+  }
+
+  // Wire popup buttons
+  const saveBtn = document.getElementById("bj-popup-save");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () { toggleSaved(item.id); });
+  }
+  const closeBtn = document.getElementById("bj-popup-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closePopup);
+  }
+
+  // Reverse geocode if no address
+  const addrPending = document.getElementById("bj-popup-addr-pending");
+  if (addrPending) {
+    reverseGeocode(item.lat, item.lon).then(addr => {
+      const el = document.getElementById("bj-popup-addr-pending");
+      if (el) {
+        el.textContent = addr || "Adres onbekend";
+        el.style.fontStyle = "";
+        el.style.color = "";
+        el.id = "bj-popup-addr-resolved";
+      }
+    });
+  }
+}
+
+async function loadPopupPhoto(item) {
+  const heroEl = document.getElementById("bj-popup-hero");
+  if (!heroEl) return;
+  try {
+    const res = await fetch(`/api/photos?lat=${item.lat}&lon=${item.lon}&radius=50&limit=3`);
+    if (!res.ok) { heroEl.classList.add("placeholder"); return; }
+    const data = await res.json();
+    const photos = data.photos || [];
+    if (!photos.length) { heroEl.classList.add("placeholder"); return; }
+    const img = document.createElement("img");
+    img.className = "bj-popup-photo-img";
+    img.alt = "";
+    img.loading = "lazy";
+    img.src = photos[0].thumb || photos[0].url || "";
+    img.onerror = () => heroEl.classList.add("placeholder");
+    // Insert behind chips
+    heroEl.insertBefore(img, heroEl.firstChild);
+    // Add capture-date chip if available
+    if (photos[0].captured_at) {
+      const date = new Date(photos[0].captured_at);
+      const label = date.toLocaleDateString("nl-NL", { month: "short", year: "numeric" });
+      const dateMeta = document.createElement("span");
+      dateMeta.className = "bj-popup-photo-meta";
+      dateMeta.textContent = `Mapillary · ${label}`;
+      heroEl.appendChild(dateMeta);
+    }
+    // Thumbnail buttons
+    if (photos.length > 1) {
+      const thumbs = document.createElement("div");
+      thumbs.className = "bj-popup-thumbs";
+      for (let i = 1; i < Math.min(photos.length, 3); i++) {
+        const btn = document.createElement("button");
+        btn.className = "bj-popup-thumb";
+        btn.style.backgroundImage = `url(${escapeHtml(photos[i].thumb || photos[i].url || "")})`;
+        btn.style.backgroundSize = "cover";
+        btn.setAttribute("aria-label", `Foto ${i + 1}`);
+        btn.addEventListener("click", function () {
+          const mainImg = document.querySelector(".bj-popup-photo-img");
+          if (mainImg) mainImg.src = photos[i].thumb || photos[i].url || "";
+        });
+        thumbs.appendChild(btn);
+      }
+      heroEl.appendChild(thumbs);
+    }
+  } catch (e) {
+    if (heroEl) heroEl.classList.add("placeholder");
+  }
+}
+
+function removeExistingPopup() {
+  if (popupTracker) {
+    map.off("move", popupTracker);
+    map.off("zoom", popupTracker);
+    popupTracker = null;
+  }
+  const old = document.getElementById("bj-popup-wrap");
+  if (old) old.remove();
+  const oldBackdrop = document.getElementById("bj-popup-backdrop");
+  if (oldBackdrop) oldBackdrop.remove();
+}
+
+function closePopup() {
+  state.openItem = null;
+  removeExistingPopup();
+}
+
+// ============================================================
+// SAVE HEART
+// ============================================================
+function toggleSaved(id) {
+  if (state.savedIds.has(id)) state.savedIds.delete(id);
+  else state.savedIds.add(id);
+  localStorage.setItem(SAVED_KEY, JSON.stringify([...state.savedIds]));
+
+  // Update all heart buttons with this id
+  document.querySelectorAll(`[data-item-id="${id}"].bj-sheet-save`).forEach(btn => {
+    const saved = state.savedIds.has(id);
+    btn.classList.toggle("on", saved);
+    btn.setAttribute("aria-pressed", String(saved));
+    btn.setAttribute("aria-label", saved ? "Verwijder uit bewaard" : "Bewaar");
+    btn.innerHTML = heartSvg(saved, 14);
+  });
+  // Popup save button
+  const popupSave = document.getElementById("bj-popup-save");
+  if (popupSave && state.openItem && state.openItem.id === id) {
+    const saved = state.savedIds.has(id);
+    popupSave.classList.toggle("saved", saved);
+    popupSave.setAttribute("aria-pressed", String(saved));
+    popupSave.setAttribute("aria-label", saved ? "Verwijderen uit bewaard" : "Bewaren");
+    popupSave.innerHTML = heartSvg(saved);
+  }
+  renderNearbyList();
+}
+
+// ============================================================
+// GEOLOCATION
+// ============================================================
+let locating = false;
+
+function silentGeolocate() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      state.userLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      state.hasLocation = true;
+      renderNearbyList();
+    },
+    () => { state.hasLocation = false; },
+    { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+  );
+}
+
+function handleLocate() {
+  if (locating) return;
+  if (!navigator.geolocation) return;
+  locating = true;
+  const fab = document.getElementById("bj-locate-fab");
+  const cta = document.getElementById("bj-locate-cta");
+  if (fab) fab.classList.add("busy");
+  if (cta) cta.classList.add("busy");
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      locating = false;
+      const ll = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      state.userLatLng = ll;
+      state.hasLocation = true;
+      map.flyTo([ll.lat, ll.lng], 16, { duration: 0.9 });
+      if (userMarker) map.removeLayer(userMarker);
+      userMarker = L.marker([ll.lat, ll.lng], {
+        icon: L.divIcon({
+          className: "",
+          html: `<div class="user-loc"></div>`,
+          iconSize: [14, 14],
+        }),
+        interactive: false,
+      }).addTo(map);
+      if (fab) fab.classList.remove("busy");
+      if (cta) cta.classList.remove("busy");
+      renderNearbyList();
+    },
+    err => {
+      locating = false;
+      if (fab) fab.classList.remove("busy");
+      if (cta) cta.classList.remove("busy");
+      console.warn("geolocation:", err.message);
+    }
+  );
+}
+
+// ============================================================
+// SEARCH + AUTOCOMPLETE
+// ============================================================
+const PLACES = [
+  { label: "Vondelpark", sub: "Park · Oud-West", lat: 52.3582, lon: 4.8686, zoom: 15 },
+  { label: "Amsterdam Centraal", sub: "Station · Centrum", lat: 52.3791, lon: 4.9003, zoom: 15 },
+  { label: "Dam", sub: "Plein · Centrum", lat: 52.3731, lon: 4.8933, zoom: 16 },
+  { label: "Museumplein", sub: "Plein · Oud-Zuid", lat: 52.3581, lon: 4.8818, zoom: 15 },
+  { label: "Albert Cuypmarkt", sub: "Markt · De Pijp", lat: 52.3556, lon: 4.8969, zoom: 16 },
+  { label: "Westerpark", sub: "Park · Westerpark", lat: 52.3868, lon: 4.8730, zoom: 15 },
+  { label: "Oosterpark", sub: "Park · Oost", lat: 52.3606, lon: 4.9196, zoom: 15 },
+  { label: "Sarphatipark", sub: "Park · De Pijp", lat: 52.3536, lon: 4.9005, zoom: 16 },
+  { label: "NDSM-werf", sub: "Cultureel · Noord", lat: 52.4028, lon: 4.8951, zoom: 15 },
+  { label: "Rembrandtplein", sub: "Plein · Centrum", lat: 52.3663, lon: 4.8965, zoom: 16 },
+  { label: "Leidseplein", sub: "Plein · Centrum", lat: 52.3642, lon: 4.8832, zoom: 16 },
+  { label: "Prinsengracht", sub: "Gracht · Centrum", lat: 52.3730, lon: 4.8810, zoom: 15 },
+];
+
+const pdokCache = new Map();
+
+async function fetchPdokSuggest(q) {
+  if (pdokCache.has(q)) return pdokCache.get(q);
+  try {
+    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/suggest?q=${encodeURIComponent(q)}&rows=6&fq=type:(adres OR weg OR gemeente OR woonplaats)`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const suggestions = (data.response?.docs || []).map(doc => ({
+      label: doc.weergavenaam || doc.straatnaam || doc.woonplaatsnaam || q,
+      sub: doc.type || "",
+      id: doc.id,
+      lat: null, lon: null, zoom: 15,
+      _pdok: true,
+    }));
+    pdokCache.set(q, suggestions);
+    return suggestions;
+  } catch (e) {
+    return [];
+  }
+}
+
+async function resolvePdokPlace(place) {
+  if (!place._pdok || !place.id) return place;
+  try {
+    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/lookup?id=${encodeURIComponent(place.id)}&fl=centroide_ll`;
+    const res = await fetch(url);
+    if (!res.ok) return place;
+    const data = await res.json();
+    const doc = data.response?.docs?.[0];
+    if (!doc?.centroide_ll) return place;
+    // centroide_ll = "POINT(lon lat)"
+    const m = doc.centroide_ll.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+    if (!m) return place;
+    return { ...place, lon: parseFloat(m[1]), lat: parseFloat(m[2]) };
+  } catch (e) {
+    return place;
+  }
+}
+
+let searchDebounceTimer = null;
+
+async function updateSuggestions() {
+  const q = state.searchQuery.trim().toLowerCase();
+  const suggestEl = document.getElementById("bj-suggest");
+  const headText = q ? "Resultaten" : "Populair in Amsterdam";
+
+  let suggestions;
+  if (!q) {
+    suggestions = PLACES.slice(0, 5);
+  } else {
+    const local = PLACES.filter(p =>
+      p.label.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q)
+    ).slice(0, 3);
+    const pdok = await fetchPdokSuggest(q);
+    suggestions = [...local, ...pdok].slice(0, 6);
+  }
+
+  if (!state.suggestFocused || suggestions.length === 0) {
+    suggestEl.hidden = true;
+    return;
+  }
+
+  let html = `<div class="bj-suggest-head">${escapeHtml(headText)}</div>`;
+  suggestions.forEach((s, i) => {
+    const isHl = i === state.suggestHighlight;
+    html += `<button class="bj-suggest-row ${isHl ? "hl" : ""}"
+        role="option" aria-selected="${isHl}"
+        data-suggest-idx="${i}">
+      <span class="bj-suggest-ico" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z"/>
+          <circle cx="12" cy="10" r="2.4"/>
+        </svg>
+      </span>
+      <span class="bj-suggest-text">
+        <span class="bj-suggest-label">${escapeHtml(s.label)}</span>
+        <span class="bj-suggest-sub">${escapeHtml(s.sub)}</span>
+      </span>
+      <span class="bj-suggest-key">↵</span>
+    </button>`;
+  });
+  suggestEl.innerHTML = html;
+  suggestEl.hidden = false;
+
+  // Wire click events
+  suggestEl.querySelectorAll(".bj-suggest-row").forEach((btn, i) => {
+    btn.addEventListener("mousedown", e => e.preventDefault()); // prevent blur before click
+    btn.addEventListener("click", async () => {
+      const place = suggestions[i];
+      let resolved = place;
+      if (place._pdok) resolved = await resolvePdokPlace(place);
+      if (resolved.lat && resolved.lon) {
+        document.getElementById("bj-search-input").value = resolved.label;
+        state.searchQuery = resolved.label;
+        map.flyTo([resolved.lat, resolved.lon], resolved.zoom || 15, { duration: 0.9 });
+      }
+      closeSuggest();
+    });
+    btn.addEventListener("mouseenter", () => {
+      state.suggestHighlight = i;
+      updateSuggestHighlight();
+    });
+  });
+}
+
+function updateSuggestHighlight() {
+  document.querySelectorAll(".bj-suggest-row").forEach((btn, i) => {
+    btn.classList.toggle("hl", i === state.suggestHighlight);
+    btn.setAttribute("aria-selected", String(i === state.suggestHighlight));
+  });
+}
+
+function closeSuggest() {
+  state.suggestFocused = false;
+  const el = document.getElementById("bj-suggest");
+  if (el) el.hidden = true;
+}
+
+// ============================================================
+// MOBILE SHEET DRAG
+// ============================================================
+function setSheetState(newState) {
+  state.sheetState = newState;
+  const sheet = document.getElementById("bj-sheet");
+  if (!sheet) return;
+  sheet.classList.remove("bj-sheet-peek", "bj-sheet-half", "bj-sheet-full");
+  sheet.classList.add("bj-sheet-" + newState);
+
+  const handle = document.getElementById("bj-sheet-handle");
+  if (handle) handle.setAttribute("aria-expanded", String(newState !== "peek"));
+
+  // Show/hide noloc banner
+  const noloc = document.getElementById("bj-sheet-noloc");
+  if (noloc) noloc.style.display = (!state.hasLocation && newState !== "peek") ? "" : "none";
+
+  renderNearbyList();
+}
+
+// ============================================================
+// REVERSE GEOCODE
+// ============================================================
+const addrCache = new Map();
+async function reverseGeocode(lat, lon) {
+  const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+  if (addrCache.has(key)) return addrCache.get(key);
+  try {
+    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?lat=${lat}&lon=${lon}&rows=1&fl=weergavenaam,straatnaam,huisnummer,postcode`;
+    const r = await fetch(url);
+    if (!r.ok) { addrCache.set(key, null); return null; }
+    const data = await r.json();
+    const doc = data.response?.docs?.[0];
+    if (!doc) { addrCache.set(key, null); return null; }
+    const parts = [];
+    if (doc.straatnaam) parts.push(doc.straatnaam);
+    if (doc.huisnummer) parts.push(doc.huisnummer);
+    if (doc.postcode) parts.push(doc.postcode);
+    const result = parts.join(" ") || doc.weergavenaam || null;
+    addrCache.set(key, result);
+    return result;
+  } catch (e) {
+    addrCache.set(key, null);
     return null;
   }
+}
 
-  function popupHtml(item) {
-    const meta = DATASETS[item.dataset] || { name: item.dataset, source: "?" };
-    const sourceLabel = meta.sourceType === "osm"
-      ? "Bron · OpenStreetMap"
-      : "Bron · data.amsterdam.nl";
-    const inline = inlineAddress(item.props || {});
-    const addrBlock = inline
-      ? `<div class="pop-addr" data-loaded="true">${inline}</div>`
-      : `<div class="pop-addr" data-lat="${item.lat}" data-lon="${item.lon}">Adres opzoeken…</div>`;
-    const propRows = Object.entries(item.props || {})
-      .filter(([k, v]) => v != null && typeof v !== "object" && !k.startsWith("_"))
-      .filter(([k]) => !["straatnaam", "huisnummer", "postcode", "openbareruimte"].includes(k))
-      .slice(0, 6)
-      .map(([k, v]) => `<div class="pop-row"><span class="k">${k}</span><span class="v">${String(v)}</span></div>`)
-      .join("");
-    const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${item.lat},${item.lon}`;
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lon}`;
-    const photosBlock = `<div class="pop-photos" data-lat="${item.lat}" data-lon="${item.lon}">
-        <div class="placeholder"></div><div class="placeholder"></div><div class="placeholder"></div>
-      </div>`;
-    return `
-      <div class="pop-title">${meta.name}</div>
-      <span class="pop-source">${sourceLabel}</span>
-      ${addrBlock}
-      ${photosBlock}
-      <div class="pop-id">${item.id ?? ""}</div>
-      ${propRows}
-      <div class="pop-actions">
-        <a href="${streetViewUrl}" target="_blank" rel="noopener">↗ Street View</a>
-        <a href="${mapsUrl}" target="_blank" rel="noopener">↗ Open in Maps</a>
-      </div>
-    `;
+// ============================================================
+// AUTH
+// ============================================================
+async function fetchMe() {
+  try {
+    const r = await fetch("/api/me");
+    state.me = r.ok ? await r.json() : null;
+  } catch (e) {
+    state.me = null;
   }
+  renderLoginArea();
+}
 
-  // Cache voor reverse-geocode: lat,lon → adres
-  const addrCache = new Map();
-
-  async function reverseGeocode(lat, lon) {
-    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
-    if (addrCache.has(key)) return addrCache.get(key);
-    try {
-      const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?lat=${lat}&lon=${lon}&rows=1&fl=weergavenaam,straatnaam,huisnummer,postcode`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error(r.status);
-      const d = await r.json();
-      const doc = (d.response?.docs || [])[0];
-      const result = doc?.weergavenaam ?? null;
-      addrCache.set(key, result);
-      return result;
-    } catch (e) {
-      addrCache.set(key, null);
-      return null;
-    }
-  }
-
-  const photoCache = new Map();
-
-  async function loadPhotos(photoEl) {
-    if (photoEl.dataset.loaded) return;
-    photoEl.dataset.loaded = "true";
-    const lat = parseFloat(photoEl.dataset.lat);
-    const lon = parseFloat(photoEl.dataset.lon);
-    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
-    let data = photoCache.get(key);
-    if (!data) {
-      try {
-        const r = await fetch(`/api/photos?lat=${lat}&lon=${lon}&radius=50&limit=3`);
-        data = await r.json();
-        photoCache.set(key, data);
-      } catch (err) {
-        console.error("photo fetch", err);
-        photoEl.classList.add("empty");
-        return;
-      }
-    }
-    const photos = data.photos || [];
-    if (photos.length === 0) {
-      photoEl.classList.add("empty");
-      return;
-    }
-    photoEl.innerHTML = photos.map(p => {
-      const when = p.captured_at ? new Date(p.captured_at).toLocaleDateString("nl-NL", { year: "numeric", month: "short" }) : "";
-      return `<a href="${p.url}" target="_blank" rel="noopener" title="Mapillary · ${when}"><img src="${p.thumb}" loading="lazy" alt=""></a>`;
-    }).join("");
-  }
-
-  map.on("popupopen", async (e) => {
-    const root = e.popup.getElement();
-    if (!root) return;
-
-    const addrEl = root.querySelector(".pop-addr");
-    if (addrEl && !addrEl.dataset.loaded) {
-      const lat = parseFloat(addrEl.dataset.lat);
-      const lon = parseFloat(addrEl.dataset.lon);
-      const addr = await reverseGeocode(lat, lon);
-      addrEl.dataset.loaded = "true";
-      addrEl.textContent = addr || "(geen adres in BAG)";
-      e.popup.update();
-    }
-
-    const photoEl = root.querySelector(".pop-photos");
-    if (photoEl) {
-      await loadPhotos(photoEl);
-      e.popup.update();
-    }
-  });
-
-  function addItemsToCluster(key, items) {
-    const meta = DATASETS[key];
-    let icon;
-    if (meta.featured)            icon = (item) => benchMarkerIcon(meta.color);
-    else if (meta.sourceType === "osm") icon = (item) => ringIcon(meta.color, 8);
-    else                          icon = (item) => dotIcon(meta.color);
-
-    const markers = [];
-    for (const item of items) {
-      if (item.lat == null || item.lon == null) continue;
-      const m = L.marker([item.lat, item.lon], { icon: icon(item) });
-      m.bindPopup(popupHtml({ ...item, dataset: key }));
-      markers.push(m);
-    }
-    clusters[key].addLayers(markers);
-    return markers.length;
-  }
-
-  // Lazy load: alleen ophalen wanneer toggle aan staat en nog niet geladen
-  async function ensureLoaded(key) {
-    if (loaded[key]) return;
-    const btn = document.querySelector(`.filter-btn[data-key="${key}"]`);
-    btn?.classList.add("loading");
-    try {
-      const r = await fetch(`/api/items?dataset=${encodeURIComponent(key)}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      const n = addItemsToCluster(key, data.items);
-      loaded[key] = true;
-      const countEl = document.getElementById(`count-${key}`);
-      if (countEl) countEl.textContent = formatCount(n);
-      updateStatus();
-    } catch (err) {
-      console.error("load error", key, err);
-      const countEl = document.getElementById(`count-${key}`);
-      if (countEl) countEl.textContent = "fout";
-    } finally {
-      btn?.classList.remove("loading");
-    }
-  }
-
-  function formatCount(n) {
-    return n >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(n);
-  }
-
-  function updateStatus() {
-    let total = 0;
-    for (const key of Object.keys(DATASETS)) {
-      if (enabled[key] && loaded[key]) {
-        total += clusters[key].getLayers().length;
-      }
-    }
-    document.getElementById("status").textContent = total
-      ? `${total.toLocaleString("nl-NL")} zichtbaar`
-      : "niets aan";
-  }
-
-  // Bouw filter-buttons
-  const filtersEl = document.getElementById("filters");
-  for (const [key, meta] of Object.entries(DATASETS)) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "filter-btn"
-      + (enabled[key] ? " on" : "")
-      + (meta.sourceType === "osm" ? " osm" : "");
-    btn.dataset.key = key;
-    btn.title = meta.sourceType === "osm"
-      ? `${meta.name} — secundaire bron, crowd-sourced`
-      : meta.name;
-    btn.innerHTML = `
-      <span class="swatch" style="background:${meta.color}"></span>
-      <span class="name">${meta.name}</span>
-      <span class="count" id="count-${key}">…</span>
-    `;
-    btn.addEventListener("click", async () => {
-      enabled[key] = !enabled[key];
-      btn.classList.toggle("on", enabled[key]);
-      if (enabled[key]) {
-        clusters[key].addTo(map);
-        await ensureLoaded(key);
-      } else {
-        map.removeLayer(clusters[key]);
-        updateStatus();
-      }
-      if (typeof renderNearby === "function") renderNearby();
-    });
-    filtersEl.appendChild(btn);
-  }
-
-  // ========== Locate-knop + auto-locate bij opening ==========
-  const LocateControl = L.Control.extend({
-    options: { position: "bottomright" },
-    onAdd: function () {
-      L.DomUtil.create("div");
-      const wrap = L.DomUtil.create("div", "leaflet-control locate-wrap");
-      const btn = L.DomUtil.create("button", "locate-btn", wrap);
-      btn.type = "button";
-      btn.title = "Mijn locatie";
-      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>`;
-      L.DomEvent.disableClickPropagation(wrap);
-      L.DomEvent.on(btn, "click", () => locate({ fly: true }));
-      this._btn = btn;
-      return wrap;
-    },
-    setBusy(busy) { if (this._btn) this._btn.classList.toggle("busy", !!busy); },
-  });
-  const locateControl = new LocateControl();
-  locateControl.addTo(map);
-
-  let userMarker = null;
-
-  function locate({ fly = true, silentFail = false } = {}) {
-    if (!navigator.geolocation) {
-      if (!silentFail) console.warn("Geolocation niet beschikbaar");
-      return;
-    }
-    locateControl.setBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const ll = [latitude, longitude];
-        if (userMarker) map.removeLayer(userMarker);
-        userMarker = L.marker(ll, {
-          icon: L.divIcon({ className: "", html: `<div class="user-loc"></div>`, iconSize: [14, 14] }),
-          interactive: false,
-          keyboard: false,
-        }).addTo(map);
-        if (fly) map.flyTo(ll, 16, { duration: 0.9 });
-        locateControl.setBusy(false);
-      },
-      (err) => {
-        locateControl.setBusy(false);
-        if (!silentFail) console.warn("Geolocation fout:", err.message);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-    );
-  }
-
-  // Initieel: laad alleen wat default-on staat, en probeer locatie
-  const initial = Object.keys(DATASETS).filter(k => enabled[k]);
-  await Promise.all(initial.map(ensureLoaded));
-  // Auto-locate na laden — silent fail als gebruiker weigert of in headless context
-  locate({ fly: true, silentFail: true });
-
-  // ========== Nearby sheet: open/close state ==========
-  const nearbySheet = document.getElementById("nearby-sheet");
-  const nearbyHandle = nearbySheet.querySelector(".nearby-handle");
-  nearbyHandle.addEventListener("click", () => {
-    const current = nearbySheet.dataset.state || "peek";
-    const next = current === "full" ? "peek" : "full";
-    nearbySheet.dataset.state = next;
-    nearbyHandle.setAttribute("aria-expanded", next === "full" ? "true" : "false");
-  });
-
-  // ========== Nearby list state ==========
-  const nearbyList = document.getElementById("nearby-list");
-  const nearbyCountEl = document.getElementById("nearby-count");
-  let userLatLng = null;
-
-  function distanceMetres(lat1, lon1, lat2, lon2) {
-    const R = 6371000;
-    const toRad = d => d * Math.PI / 180;
-    const dPhi = toRad(lat2 - lat1);
-    const dLam = toRad(lon2 - lon1);
-    const a = Math.sin(dPhi/2) ** 2 +
-              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLam/2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(a));
-  }
-
-  function fmtDist(m) {
-    if (m < 1000) return Math.round(m / 10) * 10 + "m";
-    return (m / 1000).toFixed(1) + "km";
-  }
-
-  function collectVisibleItems() {
-    const items = [];
-    for (const [key, meta] of Object.entries(DATASETS)) {
-      if (!enabled[key] || !loaded[key]) continue;
-      clusters[key].eachLayer(layer => {
-        if (typeof layer.getLatLng !== "function") return;  // cluster nodes, not markers
-        const ll = layer.getLatLng();
-        items.push({
-          key,
-          meta,
-          lat: ll.lat,
-          lon: ll.lng,
-          layer,
-        });
+function renderLoginArea() {
+  const area = document.getElementById("bj-login-area");
+  if (!area) return;
+  if (state.me) {
+    area.innerHTML = `<span class="bj-login-display">${escapeHtml(state.me.display_name || state.me.email)}</span>
+      <button class="bj-logout-btn" id="bj-logout-btn">Uitloggen</button>`;
+    const logoutBtn = document.getElementById("bj-logout-btn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        try {
+          await fetch("/api/auth/logout", { method: "POST" });
+        } catch (e) {}
+        state.me = null;
+        renderLoginArea();
       });
     }
-    return items;
-  }
-
-  function renderNearby() {
-    if (!nearbyList) return;
-    const origin = userLatLng || map.getCenter();
-    const items = collectVisibleItems();
-    for (const it of items) {
-      it._dist = distanceMetres(origin.lat, origin.lng, it.lat, it.lon);
-    }
-    items.sort((a, b) => a._dist - b._dist);
-    const top = items.slice(0, 50);
-    nearbyCountEl.textContent = items.length > 0
-      ? items.length.toLocaleString("nl-NL")
-      : "—";
-    nearbyList.innerHTML = top.map(it => {
-      const srcTag = it.meta.sourceType === "osm" ? "OSM"
-                  : it.meta.sourceType === "merged" ? "BGT"
-                  : "BGT";
-      const backrest = it.layer.feature?.properties?.backrest;
-      const rugleun = backrest === "yes" ? '<span class="rugleun">+ rugleuning</span>' : "";
-      return `<li data-lat="${it.lat}" data-lon="${it.lon}">
-        <span class="dist">${fmtDist(it._dist)}</span>
-        <span class="row-label">${it.meta.name}</span>
-        <span class="meta"><span class="src-tag">${srcTag}</span>${rugleun}</span>
-      </li>`;
-    }).join("");
-    for (const li of nearbyList.querySelectorAll("li")) {
-      li.addEventListener("click", () => {
-        const lat = parseFloat(li.dataset.lat);
-        const lon = parseFloat(li.dataset.lon);
-        map.flyTo([lat, lon], 17, { duration: 0.6 });
-      });
-    }
-  }
-
-  // Silent geolocate to anchor distances on user position
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => { userLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude }; renderNearby(); },
-      () => { renderNearby(); },
-      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
-    );
   } else {
-    renderNearby();
-  }
-
-  // Re-render when map view changes
-  map.on("moveend zoomend", renderNearby);
-
-  // ========== Rugleun filter ==========
-  const rugleun = document.getElementById("rugleun-filter");
-  function applyRugleunFilter() {
-    const onOnly = rugleun.checked;
-    localStorage.setItem("rugleun-filter", onOnly ? "1" : "0");
-    for (const [key, meta] of Object.entries(DATASETS)) {
-      if (meta.sourceType !== "merged" && meta.sourceType !== "osm") continue;
-      const cluster = clusters[key];
-      if (!cluster) continue;
-      cluster.eachLayer(layer => {
-        const has = layer.feature?.properties?.backrest === "yes";
-        if (onOnly && !has) {
-          cluster.removeLayer(layer);
-          layer._hiddenByRugleun = true;
-        } else if (!onOnly && layer._hiddenByRugleun) {
-          cluster.addLayer(layer);
-          delete layer._hiddenByRugleun;
-        }
+    area.innerHTML = `<button class="bj-login-btn" id="bj-login-btn">Inloggen</button>`;
+    const loginBtn = document.getElementById("bj-login-btn");
+    if (loginBtn) {
+      loginBtn.addEventListener("click", () => {
+        document.getElementById("bj-login-form-view").hidden = false;
+        document.getElementById("bj-login-success-view").hidden = true;
+        document.getElementById("bj-login-email").value = "";
+        document.getElementById("bj-login-modal").hidden = false;
+        setTimeout(() => document.getElementById("bj-login-email").focus(), 50);
       });
     }
-    if (typeof renderNearby === "function") renderNearby();
   }
-  rugleun.checked = localStorage.getItem("rugleun-filter") === "1";
-  rugleun.addEventListener("change", applyRugleunFilter);
-  // Defer until datasets load (the initial fetch sequence in this IIFE populates clusters async)
-  setTimeout(applyRugleunFilter, 1500);
+}
 
-  // ========== Add-to-Home-Screen banner ==========
-  (function setupA2HS() {
-    const banner = document.getElementById("a2hs-banner");
-    const iosOverlay = document.getElementById("a2hs-ios");
-    if (!banner) return;
+// ============================================================
+// UTILITY
+// ============================================================
+function debounce(fn, ms) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
 
-    // Skip if already running as installed PWA
-    const standalone = window.matchMedia("(display-mode: standalone)").matches
-      || window.navigator.standalone === true;
-    if (standalone) return;
+// ============================================================
+// EVENT WIRING
+// ============================================================
+function wireEvents() {
+  // Locate buttons
+  document.getElementById("bj-locate-fab").addEventListener("click", handleLocate);
+  document.getElementById("bj-locate-cta").addEventListener("click", handleLocate);
 
-    // Skip if user dismissed before
-    if (localStorage.getItem("a2hs-dismissed") === "1") return;
+  // Search input
+  const searchInput = document.getElementById("bj-search-input");
+  const searchClear = document.getElementById("bj-search-clear");
+  const searchWrap  = document.getElementById("bj-search");
 
-    const ua = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-    const isAndroid = /Android/.test(ua);
-
-    let deferredPrompt = null;
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-    });
-
-    // Only meaningful on mobile (Android Chrome captures beforeinstallprompt;
-    // iOS needs manual instructions; everything else: skip).
-    if (!isIOS && !isAndroid) return;
-
-    setTimeout(() => banner.classList.add("show"), 10000);
-
-    banner.querySelector(".install").addEventListener("click", async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === "accepted") {
-          localStorage.setItem("a2hs-dismissed", "1");
-        }
-        deferredPrompt = null;
-        banner.classList.remove("show");
-      } else if (isIOS) {
-        iosOverlay.classList.add("show");
-      } else {
-        // Android without prompt event — show iOS-like instructions anyway
-        iosOverlay.classList.add("show");
-      }
-    });
-
-    banner.querySelector(".dismiss").addEventListener("click", () => {
-      localStorage.setItem("a2hs-dismissed", "1");
-      banner.classList.remove("show");
-    });
-
-    iosOverlay.querySelector(".close").addEventListener("click", () => {
-      iosOverlay.classList.remove("show");
-      localStorage.setItem("a2hs-dismissed", "1");
-      banner.classList.remove("show");
-    });
-  })();
-
-  // ========== Z v1: FAB + login modal ==========
-  const z1Fab = document.getElementById("z1-fab");
-  const z1LoginModal = document.getElementById("z1-login-modal");
-  const z1LoginEmail = document.getElementById("z1-login-email");
-
-  let cachedMe = null;
-
-  async function z1Me() {
-    if (cachedMe !== null) return cachedMe;
-    try {
-      const r = await fetch("/api/me");
-      cachedMe = r.ok ? await r.json() : false;
-    } catch (e) {
-      cachedMe = false;
-    }
-    return cachedMe;
-  }
-
-  // ========== Z v1: new-spot modal ==========
-  const z1NewSpotModal = document.getElementById("z1-new-spot-modal");
-  const z1SpotLabel = document.getElementById("z1-spot-label");
-  const z1SpotDesc = document.getElementById("z1-spot-description");
-  const z1SpotCat = document.getElementById("z1-spot-category");
-  const z1SaveBtn = document.getElementById("z1-spot-save");
-
-  let z1MiniMap = null;
-  let z1MiniPin = null;
-
-  function z1OpenNewSpotModal() {
-    z1NewSpotModal.classList.add("show");
-    z1NewSpotModal.classList.remove("has-error");
-    z1SpotLabel.value = "";
-    z1SpotDesc.value = "";
-    z1SpotCat.value = "anders";
-    const radios = z1NewSpotModal.querySelectorAll('input[name="z1-visibility"]');
-    radios.forEach(r => { r.checked = (r.value === "private"); });
-
-    // Defer Leaflet init until the modal is visible so the container has size
+  searchInput.addEventListener("focus", () => {
+    state.suggestFocused = true;
+    searchWrap.classList.add("focus");
+    updateSuggestions();
+  });
+  searchInput.addEventListener("blur", () => {
     setTimeout(() => {
-      const startLat = (userLatLng && userLatLng.lat) || map.getCenter().lat;
-      const startLng = (userLatLng && userLatLng.lng) || map.getCenter().lng;
-      if (z1MiniMap === null) {
-        z1MiniMap = L.map("z1-mini-map", { zoomControl: false, attributionControl: false })
-          .setView([startLat, startLng], 17);
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-          maxZoom: 19,
-          subdomains: "abcd",
-        }).addTo(z1MiniMap);
-        z1MiniPin = L.marker([startLat, startLng], { draggable: true }).addTo(z1MiniMap);
-      } else {
-        z1MiniMap.setView([startLat, startLng], 17);
-        z1MiniPin.setLatLng([startLat, startLng]);
-        z1MiniMap.invalidateSize();
-      }
-      setTimeout(() => z1SpotLabel.focus(), 60);
-    }, 40);
-  }
-
-  function z1CloseNewSpotModal() {
-    z1NewSpotModal.classList.remove("show");
-  }
-
-  z1SaveBtn.addEventListener("click", async () => {
-    const label = z1SpotLabel.value.trim();
-    if (!label) {
-      z1NewSpotModal.classList.add("has-error");
-      return;
+      state.suggestFocused = false;
+      closeSuggest();
+      searchWrap.classList.remove("focus");
+    }, 150);
+  });
+  searchInput.addEventListener("input", () => {
+    state.searchQuery = searchInput.value;
+    state.suggestHighlight = 0;
+    searchClear.hidden = !state.searchQuery;
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(updateSuggestions, 200);
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    const rows = document.querySelectorAll(".bj-suggest-row");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      state.suggestHighlight = Math.min(rows.length - 1, state.suggestHighlight + 1);
+      updateSuggestHighlight();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      state.suggestHighlight = Math.max(0, state.suggestHighlight - 1);
+      updateSuggestHighlight();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const hl = document.querySelector(".bj-suggest-row.hl");
+      if (hl) hl.click();
+    } else if (e.key === "Escape") {
+      searchInput.blur();
     }
-    const visibilityRadio = z1NewSpotModal.querySelector('input[name="z1-visibility"]:checked');
-    const wantsPublic = visibilityRadio && visibilityRadio.value === "public";
-    const ll = z1MiniPin.getLatLng();
-    const payload = {
-      lat: ll.lat,
-      lon: ll.lng,
-      label,
-      description: z1SpotDesc.value.trim() || null,
-      category: z1SpotCat.value,
-    };
-    try {
-      const r = await fetch("/api/spots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!r.ok) {
-        z1NewSpotModal.classList.add("has-error");
-        return;
-      }
-      const created = await r.json();
-      if (wantsPublic) {
-        // Promote to public-request
-        await fetch(`/api/spots/${created.id}/request-public`, { method: "POST" });
-      }
-      z1CloseNewSpotModal();
-      // Trigger spots-layer refresh if Task 15 wired one; otherwise a window reload picks it up
-      if (typeof window.z1RefreshSpots === "function") {
-        window.z1RefreshSpots();
-      }
-    } catch (e) {
-      console.error("save spot failed", e);
-      z1NewSpotModal.classList.add("has-error");
+  });
+  searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    state.searchQuery = "";
+    searchClear.hidden = true;
+    searchInput.focus();
+    updateSuggestions();
+  });
+
+  // Sidebar pull-tab
+  document.getElementById("bj-pull-tab").addEventListener("click", () => {
+    state.sidebarOpen = !state.sidebarOpen;
+    const sidebar = document.getElementById("bj-sidebar");
+    const pullTab  = document.getElementById("bj-pull-tab");
+    const chevEl   = document.getElementById("bj-pull-tab-chev");
+
+    sidebar.classList.toggle("open", state.sidebarOpen);
+    sidebar.setAttribute("aria-hidden", String(!state.sidebarOpen));
+    pullTab.classList.toggle("open", state.sidebarOpen);
+    pullTab.setAttribute("aria-expanded", String(state.sidebarOpen));
+
+    // Flip chevron
+    if (chevEl) {
+      const svg = chevEl.querySelector("svg path");
+      if (svg) svg.setAttribute("d", state.sidebarOpen ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6");
     }
   });
 
-  document.getElementById("z1-spot-cancel").addEventListener("click", z1CloseNewSpotModal);
-  z1NewSpotModal.addEventListener("click", (e) => {
-    if (e.target === z1NewSpotModal) z1CloseNewSpotModal();
-  });
-
-  // Expose so the FAB-handler can use it
-  window.z1OpenNewSpotModal = z1OpenNewSpotModal;
-
-  z1Fab.addEventListener("click", async () => {
-    const me = await z1Me();
-    if (!me) {
-      z1LoginModal.classList.remove("sent");
-      z1LoginModal.classList.add("show");
-      setTimeout(() => z1LoginEmail.focus(), 50);
-    } else if (typeof window.z1OpenNewSpotModal === "function") {
-      window.z1OpenNewSpotModal();
+  document.getElementById("bj-sidebar-close").addEventListener("click", () => {
+    state.sidebarOpen = false;
+    document.getElementById("bj-sidebar").classList.remove("open");
+    document.getElementById("bj-sidebar").setAttribute("aria-hidden", "true");
+    document.getElementById("bj-pull-tab").classList.remove("open");
+    document.getElementById("bj-pull-tab").setAttribute("aria-expanded", "false");
+    const chevEl = document.getElementById("bj-pull-tab-chev");
+    if (chevEl) {
+      const svg = chevEl.querySelector("svg path");
+      if (svg) svg.setAttribute("d", "m15 18-6-6 6-6");
     }
   });
 
-  document.getElementById("z1-login-send").addEventListener("click", async () => {
-    const email = z1LoginEmail.value.trim();
+  // Sidebar tabs
+  document.getElementById("bj-sidebar-tab-nearest").addEventListener("click", () => {
+    state.sidebarTab = "nearest";
+    document.getElementById("bj-sidebar-tab-nearest").classList.add("on");
+    document.getElementById("bj-sidebar-tab-nearest").setAttribute("aria-selected", "true");
+    document.getElementById("bj-sidebar-tab-saved").classList.remove("on");
+    document.getElementById("bj-sidebar-tab-saved").setAttribute("aria-selected", "false");
+    renderNearbyList();
+  });
+  document.getElementById("bj-sidebar-tab-saved").addEventListener("click", () => {
+    state.sidebarTab = "saved";
+    document.getElementById("bj-sidebar-tab-saved").classList.add("on");
+    document.getElementById("bj-sidebar-tab-saved").setAttribute("aria-selected", "true");
+    document.getElementById("bj-sidebar-tab-nearest").classList.remove("on");
+    document.getElementById("bj-sidebar-tab-nearest").setAttribute("aria-selected", "false");
+    renderNearbyList();
+  });
+
+  // Sidebar enable-location
+  document.getElementById("bj-sidebar-enable-loc").addEventListener("click", handleLocate);
+
+  // Mobile sheet handle
+  const sheetHandle = document.getElementById("bj-sheet-handle");
+  let sheetStartY = null;
+  let sheetStartState = null;
+
+  sheetHandle.addEventListener("click", () => {
+    if (sheetStartY !== null) return; // was a drag, not a click
+    const s = state.sheetState;
+    setSheetState(s === "peek" ? "half" : s === "half" ? "full" : "peek");
+  });
+  sheetHandle.addEventListener("pointerdown", (e) => {
+    sheetStartY = e.clientY;
+    sheetStartState = state.sheetState;
+    sheetHandle.setPointerCapture(e.pointerId);
+  });
+  sheetHandle.addEventListener("pointermove", (e) => {
+    if (sheetStartY == null) return;
+    const dy = sheetStartY - e.clientY;
+    const s = sheetStartState;
+    if (dy > 60  && s === "peek") setSheetState("half");
+    if (dy > 160 && s === "peek") setSheetState("full");
+    if (dy > 80  && s === "half") setSheetState("full");
+    if (dy < -60  && s === "full") setSheetState("half");
+    if (dy < -120 && s === "full") setSheetState("peek");
+    if (dy < -60  && s === "half") setSheetState("peek");
+  });
+  sheetHandle.addEventListener("pointerup", () => {
+    setTimeout(() => { sheetStartY = null; }, 50);
+  });
+
+  // Mobile sheet: peek preview click → fly to closest
+  document.getElementById("bj-sheet-preview").addEventListener("click", () => {
+    const origin = state.userLatLng || state.mapCenter;
+    const all = getAllFilteredItems();
+    const enriched = all.map(it => ({
+      ...it,
+      _dist: distanceMetres(origin.lat, origin.lng, it.lat, it.lon),
+    })).sort((a, b) => a._dist - b._dist);
+    const closest = enriched[0];
+    if (closest) {
+      openPopup(closest);
+      map.flyTo([closest.lat, closest.lon], 17, { duration: 0.6 });
+      setSheetState("peek");
+    }
+  });
+  document.getElementById("bj-sheet-preview").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.currentTarget.click();
+  });
+
+  // Mobile sheet tabs
+  document.getElementById("bj-sheet-tab-nearest").addEventListener("click", () => {
+    state.sheetTab = "nearest";
+    document.getElementById("bj-sheet-tab-nearest").classList.add("on");
+    document.getElementById("bj-sheet-tab-nearest").setAttribute("aria-selected", "true");
+    document.getElementById("bj-sheet-tab-saved").classList.remove("on");
+    document.getElementById("bj-sheet-tab-saved").setAttribute("aria-selected", "false");
+    renderNearbyList();
+  });
+  document.getElementById("bj-sheet-tab-saved").addEventListener("click", () => {
+    state.sheetTab = "saved";
+    document.getElementById("bj-sheet-tab-saved").classList.add("on");
+    document.getElementById("bj-sheet-tab-saved").setAttribute("aria-selected", "true");
+    document.getElementById("bj-sheet-tab-nearest").classList.remove("on");
+    document.getElementById("bj-sheet-tab-nearest").setAttribute("aria-selected", "false");
+    renderNearbyList();
+  });
+
+  // Mobile sheet enable-location
+  document.getElementById("bj-sheet-enable-loc").addEventListener("click", handleLocate);
+
+  // Mobile filter btn
+  document.getElementById("bj-mobile-filter-btn").addEventListener("click", () => {
+    document.getElementById("bj-mobile-filter-overlay").hidden = false;
+  });
+  document.getElementById("bj-mobile-sheet-close").addEventListener("click", () => {
+    document.getElementById("bj-mobile-filter-overlay").hidden = true;
+  });
+  document.getElementById("bj-mobile-sheet-apply").addEventListener("click", () => {
+    document.getElementById("bj-mobile-filter-overlay").hidden = true;
+  });
+  document.getElementById("bj-mobile-filter-overlay").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("bj-mobile-filter-overlay")) {
+      document.getElementById("bj-mobile-filter-overlay").hidden = true;
+    }
+  });
+
+  // Mobile rugleuning pill
+  document.getElementById("bj-rugleun-mobile").addEventListener("click", function () {
+    state.rugleun = !state.rugleun;
+    this.classList.toggle("on", state.rugleun);
+    this.setAttribute("aria-pressed", String(state.rugleun));
+    rebuildAllClusters();
+    renderFilterRow();
+  });
+
+  // Login modal
+  document.getElementById("bj-login-send").addEventListener("click", async () => {
+    const emailInput = document.getElementById("bj-login-email");
+    const email = emailInput.value.trim();
     if (!email || !email.includes("@")) {
-      z1LoginEmail.style.borderColor = "#a06a3f";
+      emailInput.style.borderColor = "#a06a3f";
       return;
     }
-    z1LoginEmail.style.borderColor = "";
+    emailInput.style.borderColor = "";
     try {
       const r = await fetch("/api/auth/request-magic-link", {
         method: "POST",
@@ -1724,229 +2186,85 @@
         body: JSON.stringify({ email }),
       });
       if (r.ok) {
-        z1LoginModal.classList.add("sent");
+        document.getElementById("bj-login-form-view").hidden = true;
+        document.getElementById("bj-login-success-view").hidden = false;
       } else {
-        z1LoginEmail.style.borderColor = "#a06a3f";
+        emailInput.style.borderColor = "#a06a3f";
       }
     } catch (e) {
       console.error("magic-link request failed", e);
     }
   });
-
-  function closeLoginModal() {
-    z1LoginModal.classList.remove("show");
-  }
-  document.getElementById("z1-login-cancel").addEventListener("click", closeLoginModal);
-  document.getElementById("z1-login-close").addEventListener("click", closeLoginModal);
-
-  // Click-outside the card → close
-  z1LoginModal.addEventListener("click", (e) => {
-    if (e.target === z1LoginModal) closeLoginModal();
+  document.getElementById("bj-login-cancel").addEventListener("click", () => {
+    document.getElementById("bj-login-modal").hidden = true;
+  });
+  document.getElementById("bj-login-close").addEventListener("click", () => {
+    document.getElementById("bj-login-modal").hidden = true;
+  });
+  document.getElementById("bj-login-modal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("bj-login-modal")) {
+      document.getElementById("bj-login-modal").hidden = true;
+    }
+  });
+  document.getElementById("bj-login-email").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("bj-login-send").click();
   });
 
-  // ========== Z v1: Plekjes-laag op de kaart ==========
-  const z1SpotsCluster = L.markerClusterGroup({
-    chunkedLoading: true,
-    iconCreateFunction: (cluster) => {
-      const n = cluster.getChildCount();
-      return L.divIcon({
-        html: `<div style="background:#a06a3f;color:#fffdf6;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;font-family:Inter,sans-serif;border:2px solid rgba(255,253,246,0.95);box-shadow:0 1px 3px rgba(45,42,38,0.30)">${n}</div>`,
-        className: "",
-        iconSize: [32, 32],
-      });
-    },
-  });
-  z1SpotsCluster.addTo(map);
+  // Login area initial render
+  renderLoginArea();
 
-  function z1SpotIcon(spot, isOwn) {
-    const isApproved = spot.public_status === "approved";
-    const isPending = spot.public_status === "requested";
-    const color = "#a06a3f";   // rust accent, distinct from bench-moss
-    const bg = isApproved ? color : "rgba(255,253,246,0.97)";
-    const border = isPending ? "#a06a3f dashed" : color;
-    const txt = isApproved ? "#fffdf6" : color;
-    return L.divIcon({
-      html: `<div style="width:22px;height:22px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:${txt};box-shadow:0 1px 3px rgba(45,42,38,0.35);border:1.5px solid ${border}">+</div>`,
-      className: "",
-      iconSize: [22, 22],
+  // Wire initial login btn (before fetchMe replaces it)
+  const initLoginBtn = document.getElementById("bj-login-btn");
+  if (initLoginBtn) {
+    initLoginBtn.addEventListener("click", () => {
+      document.getElementById("bj-login-form-view").hidden = false;
+      document.getElementById("bj-login-success-view").hidden = true;
+      document.getElementById("bj-login-email").value = "";
+      document.getElementById("bj-login-modal").hidden = false;
+      setTimeout(() => document.getElementById("bj-login-email").focus(), 50);
     });
   }
 
-  function z1VisibilityBadge(spot) {
-    if (spot.public_status === "approved") return '<span class="spot-visibility-badge">publiek</span>';
-    if (spot.public_status === "requested") return '<span class="spot-visibility-badge pending">in beoordeling</span>';
-    return '<span class="spot-visibility-badge private">privé</span>';
-  }
-
-  function z1SpotPopup(spot, isOwn) {
-    const streetView = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${spot.lat},${spot.lon}`;
-    const maps = `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lon}`;
-    let html =
-      `<div class="pop-title">${escapeHtml(spot.label)}${z1VisibilityBadge(spot)}</div>` +
-      `<span class="pop-source">Plekje · ${escapeHtml(spot.owner.display_name)}</span>`;
-    if (spot.description) {
-      html += `<div style="font-size:12px;color:var(--ink);margin:6px 0;">${escapeHtml(spot.description)}</div>`;
+  // Global Escape key handler
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (state.openItem) { closePopup(); return; }
+      if (state.sidebarOpen) {
+        state.sidebarOpen = false;
+        document.getElementById("bj-sidebar").classList.remove("open");
+        document.getElementById("bj-sidebar").setAttribute("aria-hidden", "true");
+        document.getElementById("bj-pull-tab").classList.remove("open");
+        document.getElementById("bj-pull-tab").setAttribute("aria-expanded", "false");
+      }
+      if (!document.getElementById("bj-login-modal").hidden) {
+        document.getElementById("bj-login-modal").hidden = true;
+      }
+      if (!document.getElementById("bj-mobile-filter-overlay").hidden) {
+        document.getElementById("bj-mobile-filter-overlay").hidden = true;
+      }
     }
-    if (spot.denial_reason) {
-      html += `<div style="font-size:11px;color:var(--rust);margin:6px 0;"><b>Afgewezen:</b> ${escapeHtml(spot.denial_reason)}</div>`;
-    }
-    html += `<div class="pop-actions">
-      <a href="${streetView}" target="_blank" rel="noopener">↗ Street View</a>
-      <a href="${maps}" target="_blank" rel="noopener">↗ Open in Maps</a>
-    </div>`;
-    if (isOwn) {
-      const reqLabel = spot.public_status === "approved" || spot.public_status === "requested"
-        ? "Trek aanvraag in" : "Verzoek publicatie";
-      const reqAction = spot.public_status === "approved" || spot.public_status === "requested"
-        ? "revoke" : "request";
-      html += `<div class="spot-popup-actions">
-        <button data-spot-id="${spot.id}" data-action="${reqAction}">${reqLabel}</button>
-        <button class="danger" data-spot-id="${spot.id}" data-action="delete">Verwijder</button>
-      </div>`;
-    }
-    return html;
-  }
-
-  function escapeHtml(s) {
-    if (s == null) return "";
-    return String(s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-
-  async function z1RefreshSpots() {
-    let me = null;
-    try {
-      const r = await fetch("/api/me");
-      if (r.ok) me = await r.json();
-    } catch (e) { /* anonymous */ }
-    cachedMe = me || false;
-
-    let spots = [];
-    try {
-      const r = await fetch("/api/spots");
-      if (r.ok) spots = (await r.json()).spots || [];
-    } catch (e) { return; }
-
-    z1SpotsCluster.clearLayers();
-    const markers = [];
-    for (const s of spots) {
-      const isOwn = me && s.owner.id === me.id;
-      const m = L.marker([s.lat, s.lon], { icon: z1SpotIcon(s, isOwn) });
-      m.bindPopup(z1SpotPopup(s, isOwn));
-      markers.push(m);
-    }
-    z1SpotsCluster.addLayers(markers);
-  }
-
-  // Expose so the new-spot modal can refresh on save
-  window.z1RefreshSpots = z1RefreshSpots;
-
-  // Handle popup-action button clicks (request-public / revoke / delete)
-  map.on("popupopen", (e) => {
-    const root = e.popup.getElement();
-    if (!root) return;
-    const buttons = root.querySelectorAll(".spot-popup-actions button");
-    buttons.forEach(b => {
-      b.addEventListener("click", async () => {
-        const sid = b.dataset.spotId;
-        const action = b.dataset.action;
-        if (action === "delete") {
-          if (!confirm("Plekje verwijderen?")) return;
-          await fetch(`/api/spots/${sid}`, { method: "DELETE" });
-        } else if (action === "request") {
-          await fetch(`/api/spots/${sid}/request-public`, { method: "POST" });
-        } else if (action === "revoke") {
-          await fetch(`/api/spots/${sid}/revoke-public`, { method: "POST" });
-        }
-        map.closePopup();
-        await z1RefreshSpots();
-      });
-    });
   });
 
-  // Initial load
-  z1RefreshSpots();
+  // Responsive: watch matchMedia
+  const mql = window.matchMedia("(max-width: 720px)");
+  function onMqlChange(e) { state.isMobile = e.matches; }
+  if (mql.addEventListener) mql.addEventListener("change", onMqlChange);
+  else mql.addListener(onMqlChange);
+}
 
-  // ========== Z v1: Mijn plekjes tab ==========
-  const tabNearby = document.getElementById("sheet-tab-nearby");
-  const tabMijn = document.getElementById("sheet-tab-mijn");
-  const paneNearby = document.getElementById("nearby-list");
-  const paneMijn = document.getElementById("mijn-list");
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  wireEvents();
+  silentGeolocate();
+  await loadDatasets();
+  fetchMe();
+}
 
-  function setActiveTab(name) {
-    const isNearby = name === "nearby";
-    tabNearby.classList.toggle("active", isNearby);
-    tabMijn.classList.toggle("active", !isNearby);
-    paneNearby.hidden = !isNearby;
-    paneMijn.hidden = isNearby;
-    if (!isNearby) renderMijn();
-  }
-  tabNearby.addEventListener("click", () => setActiveTab("nearby"));
-  tabMijn.addEventListener("click", () => setActiveTab("mijn"));
+init();
 
-  function mijnBadge(spot) {
-    if (spot.public_status === "approved")  return '<span class="badge">publiek</span>';
-    if (spot.public_status === "requested") return '<span class="badge pending">in beoordeling</span>';
-    return '<span class="badge private">privé</span>';
-  }
-
-  async function renderMijn() {
-    let me = null;
-    try {
-      const r = await fetch("/api/me");
-      if (r.ok) me = await r.json();
-    } catch (e) {}
-    if (!me) {
-      paneMijn.innerHTML = '<li class="empty">Log in om je plekjes te zien.</li>';
-      return;
-    }
-    let spots = [];
-    try {
-      const r = await fetch("/api/spots");
-      if (r.ok) spots = (await r.json()).spots || [];
-    } catch (e) {}
-    const own = spots
-      .filter(s => s.owner.id === me.id)
-      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
-    if (own.length === 0) {
-      paneMijn.innerHTML = '<li class="empty">Nog geen plekjes — tap + onderaan.</li>';
-      return;
-    }
-    paneMijn.innerHTML = own.map(s => `
-      <li data-lat="${s.lat}" data-lon="${s.lon}">
-        <span class="row-label">${escapeHtml(s.label)}</span>
-        <span class="row-meta">${mijnBadge(s)}</span>
-      </li>
-    `).join("");
-    paneMijn.querySelectorAll("li").forEach(li => {
-      li.addEventListener("click", () => {
-        const lat = parseFloat(li.dataset.lat);
-        const lon = parseFloat(li.dataset.lon);
-        map.flyTo([lat, lon], 17, { duration: 0.6 });
-      });
-    });
-  }
-
-  // Show the tab when logged in; periodically poll on first paint (cheap).
-  async function z1ToggleMijnTabVisibility() {
-    let me = null;
-    try {
-      const r = await fetch("/api/me");
-      if (r.ok) me = await r.json();
-    } catch (e) {}
-    tabMijn.hidden = !me;
-  }
-  z1ToggleMijnTabVisibility();
-
-  // Also expose so login flow can refresh tab visibility
-  window.z1ToggleMijnTabVisibility = z1ToggleMijnTabVisibility;
-
-})().catch(err => {
-  console.error("init failed", err);
-  const s = document.getElementById("status");
-  if (s) s.textContent = "fout bij init";
-});
+})();
 </script>
 </body>
 </html>
