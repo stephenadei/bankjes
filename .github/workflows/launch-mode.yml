@@ -67,5 +67,8 @@ jobs:
             grep -nE "^[# ]*APP_ENV=" "$ENV_FILE" || echo "(none)"
 
             echo "=== Recreating container via $COMPOSE_FILE so env is reloaded…"
-            docker compose -f "$COMPOSE_FILE" up -d --force-recreate
+            # --pull never: this workflow only flips env; the image is already
+            # local. Skipping the pull avoids needing a registry login here
+            # (the deploy workflow handles registry auth on image rebuilds).
+            docker compose -f "$COMPOSE_FILE" up -d --force-recreate --pull never
             echo "=== Done. Visibility: ${{ inputs.mode }}"
