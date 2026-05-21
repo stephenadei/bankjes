@@ -86,3 +86,15 @@ def test_dedup_marks_replicas_on_survivor():
     survivor = out[0]
     assert survivor.id == "b1"
     assert survivor.props.get("merged_replicas") == 2
+
+
+def test_dedup_marks_source_type_on_each_marker():
+    bgt = [_m("b1", 52.37, 4.90)]
+    osm = [
+        _m("o-near", 52.37, 4.9001),    # within 10m, absorbed
+        _m("o-far",  52.40, 4.95),       # far, survives
+    ]
+    out = _dedup_by_proximity(bgt, osm, 10)
+    by_id = {m.id: m for m in out}
+    assert by_id["b1"].props["source_type"] == "bgt"
+    assert by_id["o-far"].props["source_type"] == "osm"
