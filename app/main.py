@@ -109,14 +109,21 @@ async def healthz():
 @app.get("/api/datasets")
 async def datasets():
     """Frontend's single source of truth for what to render. camelCase for JS."""
+    def _source_types_for(ds) -> list[str]:
+        if ds.source_type == "merged":
+            return ["BGT", "OSM"]
+        if ds.source_type == "osm":
+            return ["OSM"]
+        return ["BGT"]
     return [
         {
-            "label":      d.label,
-            "name":       d.name,
-            "color":      d.color,
-            "sourceType": d.source_type,
-            "defaultOn":  d.default_on,
-            "featured":   d.featured,
+            "label":       d.label,
+            "name":        d.name,
+            "color":       d.color,
+            "sourceType":  d.source_type,            # legacy single value
+            "sourceTypes": _source_types_for(d),     # redesign array
+            "defaultOn":   d.default_on,
+            "featured":    d.featured,
         }
         for d in DATASETS
     ]
