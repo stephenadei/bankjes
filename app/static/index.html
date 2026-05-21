@@ -338,6 +338,13 @@
   transition: background 0.14s ease;
 }
 .bj-login-modal-actions .secondary:hover { background: var(--paper-2); }
+.bj-login-modal-skip { text-align: center; margin-top: 14px; margin-bottom: 0; }
+.bj-login-skip-link {
+  background: none; border: 0; padding: 4px 8px;
+  color: var(--muted); font: inherit; font-size: 12px;
+  text-decoration: underline; cursor: pointer;
+}
+.bj-login-skip-link:hover { color: var(--ink); }
 .bj-login-modal-success {
   text-align: center;
   padding: 8px 0 4px;
@@ -752,13 +759,16 @@
   <div class="bj-login-modal-card">
     <div id="bj-login-form-view">
       <h3>Inloggen bij Bankjes</h3>
-      <p>Vul je email in — we sturen je een magic-link. Geen wachtwoord, geen gedoe.</p>
+      <p>Met een account synchroniseer je bewaarde plekjes tussen apparaten en kun je eigen plekjes voorstellen. Zonder account werkt alles ook — bewaard blijft alleen lokaal op dit apparaat.</p>
       <input type="email" id="bj-login-email" name="email" placeholder="jouw@email.nl"
              autocomplete="email" required>
       <div class="bj-login-modal-actions">
         <button class="primary" id="bj-login-send">Stuur magic-link</button>
         <button class="secondary" id="bj-login-cancel">Annuleer</button>
       </div>
+      <p class="bj-login-modal-skip">
+        <button type="button" class="bj-login-skip-link" id="bj-login-skip">Doorgaan zonder account</button>
+      </p>
     </div>
     <div id="bj-login-success-view" hidden>
       <div class="bj-login-modal-success">
@@ -2264,6 +2274,10 @@ function wireEvents() {
     document.getElementById("bj-login-modal").hidden = true;
   });
   document.getElementById("bj-login-close").addEventListener("click", () => {
+    document.getElementById("bj-login-modal").hidden = true;
+  });
+  document.getElementById("bj-login-skip").addEventListener("click", () => {
+    localStorage.setItem("bj-login-skipped", "1");
     document.getElementById("bj-login-modal").hidden = true;
   });
   document.getElementById("bj-login-modal").addEventListener("click", (e) => {
