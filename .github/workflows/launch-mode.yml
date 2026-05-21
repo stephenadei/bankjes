@@ -36,11 +36,14 @@ jobs:
           script: |
             set -e
             cd /home/stephen/projects/bankjes-${{ inputs.env }}
-            ENV_FILE=".env"
-            if [ ! -f "$ENV_FILE" ]; then
-              echo "::error::$ENV_FILE not found in $(pwd)"
-              exit 1
-            fi
+            # The prd/acc/pre containers each load their own .env.<env>
+            # (see docker-compose.<env>.yml `env_file:`), not the bare .env
+            # in this directory — that one belongs to the default dev compose.
+            ENV_FILE=".env.${{ inputs.env }}"
+            COMPOSE_FILE="docker-compose.${{ inputs.env }}.yml"
+            for f in "$ENV_FILE" "$COMPOSE_FILE"; do
+              [ -f "$f" ] || { echo "::error::$f missing in $(pwd)"; exit 1; }
+            done
             echo "=== mode=${{ inputs.mode }} target=bankjes-${{ inputs.env }} ==="
             echo "--- APP_ENV line before:"
             grep -nE "^[# ]*APP_ENV=" "$ENV_FILE" || echo "(none)"
@@ -63,6 +66,6 @@ jobs:
             echo "--- APP_ENV line after:"
             grep -nE "^[# ]*APP_ENV=" "$ENV_FILE" || echo "(none)"
 
-            echo "=== Recreating container so env is reloaded…"
-            docker compose up -d --force-recreate
+            echo "=== Recreating container via $COMPOSE_FILE so env is reloaded…"
+            docker compose -f "$COMPOSE_FILE" up -d --force-recreate
             echo "=== Done. Visibility: ${{ inputs.mode }}"
