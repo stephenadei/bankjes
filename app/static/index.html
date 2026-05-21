@@ -361,31 +361,6 @@
   box-shadow: 0 0 0 4px rgba(91, 122, 63, 0.22), 0 1px 3px rgba(45, 42, 38, 0.4);
 }
 
-/* Locate FAB inside map shell */
-.bj-locate-fab {
-  position: absolute;
-  bottom: 24px;
-  right: 52px;
-  z-index: 570;
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 253, 246, 0.96);
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--shadow-2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  color: var(--ink);
-  transition: transform 0.12s ease, background 0.18s ease;
-}
-.bj-locate-fab:hover { background: var(--paper); }
-.bj-locate-fab:active { transform: scale(0.94); }
-.bj-locate-fab.busy { opacity: 0.55; pointer-events: none; }
-
-@media (max-width: 720px) {
-  .bj-locate-fab { bottom: 110px; right: 14px; }
-}
 
 /* Sidebar noloc-banner */
 .bj-sidebar-noloc-banner {
@@ -571,15 +546,6 @@
 
       <!-- Popup container (injected on marker click) -->
       <!-- id=bj-popup-wrap injected dynamically -->
-
-      <!-- Locate FAB -->
-      <button class="bj-locate-fab" id="bj-locate-fab" aria-label="Ga naar mijn locatie">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-        </svg>
-      </button>
 
       <!-- Desktop pull-tab + sidebar -->
       <button class="bj-pull-tab" id="bj-pull-tab"
@@ -1690,9 +1656,7 @@ function handleLocate() {
   if (locating) return;
   if (!navigator.geolocation) return;
   locating = true;
-  const fab = document.getElementById("bj-locate-fab");
   const cta = document.getElementById("bj-locate-cta");
-  if (fab) fab.classList.add("busy");
   if (cta) cta.classList.add("busy");
 
   navigator.geolocation.getCurrentPosition(
@@ -1711,13 +1675,11 @@ function handleLocate() {
         }),
         interactive: false,
       }).addTo(map);
-      if (fab) fab.classList.remove("busy");
       if (cta) cta.classList.remove("busy");
       renderNearbyList();
     },
     err => {
       locating = false;
-      if (fab) fab.classList.remove("busy");
       if (cta) cta.classList.remove("busy");
       console.warn("geolocation:", err.message);
     }
@@ -1969,7 +1931,6 @@ function debounce(fn, ms) {
 // ============================================================
 function wireEvents() {
   // Locate buttons
-  document.getElementById("bj-locate-fab").addEventListener("click", handleLocate);
   document.getElementById("bj-locate-cta").addEventListener("click", handleLocate);
 
   // Search input
