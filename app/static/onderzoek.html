@@ -7,181 +7,17 @@
 <meta name="description" content="De gemeente Amsterdam registreert 345 banken in de BGT. OpenStreetMap kent er 6.946. Een gap-analyse op publieke open data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-  :root {
-    --cream: #faf7f0;
-    --paper: #fffdf6;
-    --moss:  #5b7a3f;
-    --rust:  #a06a3f;
-    --bark:  #6b5d4f;
-    --ink:   #2d2a26;
-    --muted: #857d72;
-    --line:  rgba(45, 42, 38, 0.10);
-    --line-strong: rgba(45, 42, 38, 0.18);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--cream); color: var(--ink); }
-  body {
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    line-height: 1.6;
-    font-size: 16px;
-  }
-  a { color: var(--moss); text-decoration: underline; text-underline-offset: 3px; }
-  a:hover { color: var(--ink); }
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,ital@9..144,400,0;9..144,400,1;9..144,500,0;9..144,500,1;9..144,600,0;9..144,600,1;9..144,700,0&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/static/bankjes.css">
 
-  .container { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
-
-  nav.topnav {
-    display: flex; align-items: center; gap: 14px;
-    margin-bottom: 36px;
-    font-size: 13px;
-  }
-  nav.topnav .home { color: var(--muted); text-decoration: none; }
-  nav.topnav .home:hover { color: var(--ink); }
-  nav.topnav .sep { color: var(--line-strong); }
-
-  h1, h2, h3 {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
-    color: var(--ink);
-  }
-  h1 {
-    font-size: 38px;
-    font-variation-settings: "opsz" 48;
-    margin-bottom: 8px;
-  }
-  h2 {
-    font-size: 22px;
-    margin-top: 40px;
-    margin-bottom: 12px;
-    font-variation-settings: "opsz" 24;
-  }
-  h3 {
-    font-size: 17px;
-    font-weight: 600;
-    margin-top: 20px;
-    margin-bottom: 6px;
-  }
-
-  .lead {
-    font-size: 18px;
-    color: var(--muted);
-    margin-bottom: 28px;
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-weight: 400;
-    font-variation-settings: "opsz" 18;
-    line-height: 1.5;
-  }
-
-  p { margin-bottom: 14px; color: var(--ink); }
-  p.muted { color: var(--muted); font-size: 14px; }
-
-  ul { margin: 12px 0 18px 22px; }
-  ul li { margin-bottom: 6px; }
-
-  .numbers {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 28px 0 8px;
-  }
-  .num-card {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 20px 22px;
-  }
-  .num-card .big {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-size: 48px;
-    font-weight: 600;
-    line-height: 1;
-    font-variation-settings: "opsz" 60;
-    color: var(--ink);
-  }
-  .num-card .source {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    font-weight: 600;
-    margin-top: 10px;
-  }
-  .num-card.bgt .big { color: var(--moss); }
-  .num-card.osm .big { color: var(--rust); }
-  .num-card .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
-
-  .ratio {
-    text-align: center;
-    margin: 16px 0 36px;
-    color: var(--muted);
-    font-size: 14px;
-  }
-  .ratio strong { color: var(--ink); font-weight: 600; }
-
-  #compare-map {
-    height: 460px;
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    margin: 18px 0 12px;
-    background: var(--cream);
-  }
-  .leaflet-tile-pane { filter: saturate(0.85) contrast(0.97); }
-  .map-legend {
-    display: flex; gap: 22px;
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 28px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .map-legend .swatch {
-    display: inline-block;
-    width: 11px; height: 11px;
-    border-radius: 50%;
-    vertical-align: middle;
-    margin-right: 7px;
-  }
-
-  blockquote {
-    border-left: 3px solid var(--moss);
-    padding: 4px 0 4px 16px;
-    margin: 18px 0;
-    color: var(--ink);
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-size: 17px;
-    font-weight: 400;
-    font-variation-settings: "opsz" 18;
-    font-style: italic;
-  }
-
-  footer {
-    margin-top: 56px;
-    padding-top: 24px;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 13px;
-  }
-  footer a { color: var(--muted); }
-  footer a:hover { color: var(--ink); }
-
-  @media (max-width: 540px) {
-    .container { padding: 22px 18px 64px; }
-    h1 { font-size: 30px; }
-    h2 { font-size: 19px; }
-    .lead { font-size: 16px; }
-    .num-card { padding: 16px 18px; }
-    .num-card .big { font-size: 38px; }
-    #compare-map { height: 360px; }
-  }
-</style>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<meta name="theme-color" content="#5b7a3f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bankjes">
 
 <meta property="og:title" content="Stephen's Bankjes — BGT vs OSM coverage-analyse">
 <meta property="og:description" content="Een verkenning van banken, picknicktafels en afvalbakken in Amsterdam via DSO + OSM open-data.">
@@ -190,181 +26,410 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://bankjes.stephenadei.nl/static/og-banner.png">
+
+<style>
+/* Onderzoek-specific: allow body scroll (unlike kaart which is overflow:hidden) */
+body { overflow: auto; }
+
+/* Header tabs link variant for onderzoek page */
+.bj-tab.active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-1), 0 0 0 1px var(--line);
+}
+.bj-tab-link {
+  display: block;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.bj-tab-link:hover { color: var(--ink); background: rgba(45,42,38,0.05); }
+
+/* ond-main wraps the article, provides scroll container */
+.ond-main { overflow-y: auto; }
+</style>
 </head>
 <body>
-<div class="container">
 
-<nav class="topnav">
-  <a class="home" href="/">← naar de kaart</a>
-  <span class="sep">·</span>
-  <span style="color: var(--muted);">Onderzoek</span>
-</nav>
+<div id="root">
+  <div class="bj-app" style="grid-template-rows: auto 1fr;">
 
-<h1>345 of 6.946?</h1>
-<p class="lead">
-  Wat de gemeente Amsterdam in haar eigen registratie ziet, en wat er werkelijk in de stad staat, verschilt met een factor 20.
-</p>
+    <!-- ===== Header (matches index.html shape) ===== -->
+    <header class="bj-header">
+      <div class="bj-header-row">
+        <a class="bj-mark" href="/" aria-label="Stephen's Bankjes">
+          <span class="bj-mark-glyph" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fffdf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12h18 M5 12v6 M19 12v6 M5 8h14"/>
+            </svg>
+          </span>
+          <span class="bj-mark-text">Bankjes</span>
+        </a>
+        <nav class="bj-tabs" role="tablist">
+          <a class="bj-tab-link" role="tab" aria-selected="false" href="/">Kaart</a>
+          <button class="bj-tab active" role="tab" aria-selected="true" disabled>Onderzoek</button>
+        </nav>
+      </div>
+    </header>
 
-<p id="coverage-text">
-  Bij het bouwen van <a href="/">Stephen's Bankjes</a> kwam een ongemakkelijke discrepantie boven: de officiële Amsterdamse Basisregistratie Grootschalige Topografie (BGT) en OpenStreetMap, gemapt door burgers, verschillen aanzienlijk in hun telling van banken in Amsterdam. Hieronder de actuele cijfers.
-</p>
+    <!-- ===== Main scrollable content ===== -->
+    <main class="ond ond-main" tabindex="-1">
+      <article class="ond-article">
 
-<div class="numbers" id="coverage-cards">
-  <div class="num-card bgt">
-    <div class="big" id="bgt-count">–</div>
-    <div class="label">banken</div>
-    <div class="source">BGT · gemeente</div>
-  </div>
-  <div class="num-card osm">
-    <div class="big" id="osm-count">–</div>
-    <div class="label">banken</div>
-    <div class="source">OSM · burgers</div>
-  </div>
-</div>
+        <!-- ===== Hero ===== -->
+        <header class="ond-hero">
+          <span class="ond-kicker">Coverage-analyse · 6 mei 2026</span>
+          <h1 class="ond-h1">
+            <span class="ond-h1-bgt" id="h1-bgt">345</span>
+            <span class="ond-h1-or">of</span>
+            <span class="ond-h1-osm" id="h1-osm">6.946</span>
+            <span class="ond-h1-q">?</span>
+          </h1>
+          <p class="ond-lede">
+            Wat de gemeente Amsterdam in haar eigen registratie ziet, en wat er werkelijk in
+            de stad staat, verschilt met een factor <b id="lede-ratio">20</b>.
+          </p>
+        </header>
 
-<p class="ratio" id="coverage-ratio">
-  Cijfers laden…
-</p>
+        <!-- ===== Asymmetric number cards ===== -->
+        <section class="ond-numbers" aria-label="Kerngetallen">
+          <div class="ond-num bgt">
+            <div class="ond-num-big" id="num-bgt">345</div>
+            <div class="ond-num-meta">
+              <span class="ond-num-label">banken</span>
+              <span class="ond-num-src">BGT · gemeente</span>
+            </div>
+          </div>
+          <div class="ond-num osm">
+            <div class="ond-num-big" id="num-osm">6.946</div>
+            <div class="ond-num-meta">
+              <span class="ond-num-label">banken</span>
+              <span class="ond-num-src">OpenStreetMap · burgers</span>
+            </div>
+          </div>
+          <p class="ond-ratio">
+            <b>1 op <span id="ratio-n">20</span>.</b>
+            De gemeente registreert ongeveer <b><span id="ratio-pct">5</span>%</b>
+            van wat er feitelijk staat.
+          </p>
+        </section>
 
-<h2>Wat je ziet</h2>
-<p>
-  Op één kaart, op exact dezelfde Amsterdam-bbox, beide bronnen tegelijk. Mosgroene punten zijn BGT-banken (van de gemeente). Oranje punten zijn OSM-banken (van mappers). De densiteit spreekt voor zich.
-</p>
+        <!-- ===== Side-by-side SVG density maps ===== -->
+        <section class="ond-section" aria-labelledby="ond-maps-heading">
+          <h2 class="ond-h2" id="ond-maps-heading">Op dezelfde kaart, beide bronnen apart.</h2>
+          <p class="ond-p">
+            Linker kaart: alles wat de gemeente in haar BGT registreert. Rechter
+            kaart: wat OSM-mappers de afgelopen jaren hebben toegevoegd. Dezelfde
+            Amsterdam-bbox; de densiteit spreekt voor zich.
+          </p>
+          <div class="ond-maps">
+            <!-- BGT map -->
+            <div class="ond-map-wrap">
+              <div class="ond-map-head">
+                <span class="ond-map-label">BGT · gemeente</span>
+                <span class="ond-map-count" style="color: var(--bj-moss);" id="map-count-bgt">–</span>
+              </div>
+              <svg id="bgt-map" viewBox="0 0 360 280" class="ond-map" role="img" aria-label="BGT-banken dichtheidskaart Amsterdam">
+                <rect x="0" y="0" width="360" height="280" fill="#faf7f0"/>
+                <!-- Implied water (IJ) — diagonal band top-right -->
+                <path d="M 198 0 L 360 0 L 360 89.6 L 223.2 28 Z" fill="rgba(74,93,106,0.06)"/>
+                <!-- Implied park outlines -->
+                <ellipse cx="111.6" cy="173.6" rx="22" ry="10" fill="rgba(91,122,63,0.06)"/>
+                <ellipse cx="72" cy="112" rx="14" ry="8" fill="rgba(91,122,63,0.05)"/>
+                <ellipse cx="223.2" cy="201.6" rx="18" ry="9" fill="rgba(91,122,63,0.05)"/>
+                <!-- Dots injected by JS into <g id="bgt-dots"> -->
+                <g id="bgt-dots"></g>
+              </svg>
+            </div>
+            <!-- OSM map -->
+            <div class="ond-map-wrap">
+              <div class="ond-map-head">
+                <span class="ond-map-label">OSM · burgers</span>
+                <span class="ond-map-count" style="color: var(--bj-rust);" id="map-count-osm">–</span>
+              </div>
+              <svg id="osm-map" viewBox="0 0 360 280" class="ond-map" role="img" aria-label="OSM-banken dichtheidskaart Amsterdam">
+                <rect x="0" y="0" width="360" height="280" fill="#faf7f0"/>
+                <path d="M 198 0 L 360 0 L 360 89.6 L 223.2 28 Z" fill="rgba(74,93,106,0.06)"/>
+                <ellipse cx="111.6" cy="173.6" rx="22" ry="10" fill="rgba(91,122,63,0.06)"/>
+                <ellipse cx="72" cy="112" rx="14" ry="8" fill="rgba(91,122,63,0.05)"/>
+                <ellipse cx="223.2" cy="201.6" rx="18" ry="9" fill="rgba(91,122,63,0.05)"/>
+                <g id="osm-dots"></g>
+              </svg>
+            </div>
+          </div>
+          <p class="ond-caption">
+            Punten projecteren naar bbox 52.295–52.430 N / 4.745–5.020 E.
+            Data live via <code>/api/items?dataset=bench</code>, gesplitst op <code>props.source_type</code>.
+          </p>
+        </section>
 
-<div id="compare-map"></div>
-<div class="map-legend">
-  <span><span class="swatch" style="background: #5b7a3f"></span>BGT (gemeente Amsterdam)</span>
-  <span><span class="swatch" style="background: #a06a3f"></span>OpenStreetMap (community)</span>
-</div>
+        <!-- ===== Neighborhood bars ===== -->
+        <section class="ond-section" aria-labelledby="ond-buurt-heading">
+          <h2 class="ond-h2" id="ond-buurt-heading">Het gat per buurt.</h2>
+          <p class="ond-p">
+            BGT-dekking concentreert zich in <b>Weesp</b> (sinds 2022 deel van Amsterdam,
+            mét intact BGT-bestand) en in de buitenwijken. In het centrum — waar
+            mensen op rust-momenten lopen, winkelen, ouder worden — is BGT
+            <em>bijna afwezig</em>. OSM-mappers hebben dat gat zelf gevuld.
+          </p>
+          <div class="ond-bars" id="buurt-bars">
+            <!-- Rows rendered by JS below -->
+          </div>
+          <div class="ond-bar-legend">
+            <span><i class="ond-leg bgt" aria-hidden="true"></i>BGT</span>
+            <span><i class="ond-leg osm" aria-hidden="true"></i>OSM</span>
+          </div>
+        </section>
 
-<h2>Methode</h2>
-<p>
-  De vergelijking gebruikt twee publieke bronnen, beide live opgevraagd:
-</p>
-<ul>
-  <li><strong>BGT</strong> via de Amsterdam DSO-API: <code>bgt/straatmeubilair?plusType=bank&amp;bronhouder=G0363</code>. Filter <code>bronhouder=G0363</code> beperkt tot het gemeentelijke Amsterdam-grondgebied.</li>
-  <li><strong>OSM</strong> via Overpass: <code>node["amenity"="bench"]</code> binnen bbox 52.295-52.430 N / 4.745-5.020 E.</li>
-</ul>
-<p>
-  De code is open en reproduceerbaar — zie <a href="https://github.com/stephenadei/bankjes" target="_blank" rel="noopener">github.com/stephenadei/bankjes</a>. Cijfers van 6 mei 2026.
-</p>
+        <!-- ===== Methode ===== -->
+        <section class="ond-section" aria-labelledby="ond-methode-heading">
+          <h2 class="ond-h2" id="ond-methode-heading">Methode.</h2>
+          <p class="ond-p">
+            De vergelijking gebruikt twee publieke bronnen, beide live opgevraagd:
+          </p>
+          <ul class="ond-list">
+            <li>
+              <b>BGT</b> via de Amsterdam DSO-API:
+              <code>bgt/straatmeubilair?plusType=bank&amp;bronhouder=G0363</code>.
+              Filter <code>bronhouder=G0363</code> beperkt tot het gemeentelijke
+              Amsterdam-grondgebied.
+            </li>
+            <li>
+              <b>OSM</b> via Overpass:
+              <code>node["amenity"="bench"]</code>
+              binnen bbox 52.295-52.430 N / 4.745-5.020 E.
+            </li>
+          </ul>
+          <p class="ond-p">
+            De code is open en reproduceerbaar — zie
+            <a href="https://github.com/stephenadei/bankjes" target="_blank" rel="noopener noreferrer">
+              github.com/stephenadei/bankjes
+            </a>. Cijfers van 6 mei 2026.
+          </p>
+        </section>
 
-<h2>Wat het betekent</h2>
-<p>
-  Banken zijn niet zomaar meubels. Voor mensen met mobiliteits-, hart- of paniek-problemen, voor zwangeren en ouderen zijn rustpunten een primaire kwaliteit van de stedelijke ruimte. Onderzoek vanuit de school van Jan Gehl wijst structureel: zit-mogelijkheden bepalen of een stadsdeel <em>doorlopen</em> of <em>geleefd</em> wordt.
-</p>
-<p>
-  Wanneer beleid leunt op de officiële registratie — voor toegankelijkheidsplannen, hittestress-strategie, of de Inclusieagenda — werkt het met een dataset die 95% van de werkelijkheid niet ziet.
-</p>
+        <!-- ===== Wat het betekent + pull-quote ===== -->
+        <section class="ond-section ond-section-narrow" aria-labelledby="ond-betekent-heading">
+          <h2 class="ond-h2" id="ond-betekent-heading">Wat het betekent.</h2>
+          <p class="ond-p">
+            Banken zijn niet zomaar meubels. Voor mensen met mobiliteits-, hart- of
+            paniek-problemen, voor zwangeren en ouderen zijn rustpunten een primaire
+            kwaliteit van de stedelijke ruimte. Onderzoek vanuit de school van Jan
+            Gehl wijst structureel: zit-mogelijkheden bepalen of een stadsdeel
+            <em>doorlopen</em> of <em>geleefd</em> wordt.
+          </p>
+          <p class="ond-p">
+            Wanneer beleid leunt op de officiële registratie — voor
+            toegankelijkheids&shy;plannen, hittestress-strategie, of de Inclusieagenda
+            — werkt het met een dataset die 95% van de werkelijkheid niet ziet.
+          </p>
 
-<blockquote>
-  Een data-gat is een beleidsgat.
-</blockquote>
+          <blockquote class="ond-quote">
+            <span class="ond-quote-mark" aria-hidden="true">"</span>
+            Een data-gat is een beleidsgat.
+          </blockquote>
 
-<h3>Voor wie zou dit nuttig zijn</h3>
-<ul>
-  <li><strong>Wethouder Openbare Ruimte</strong> + Stadsbeheer V&amp;OR — operationele eigenaars van straatmeubilair</li>
-  <li><strong>CIO Office</strong> Amsterdam, beheerder van het data-portaal — kennen het discourse</li>
-  <li><strong>Cliëntenbelang Amsterdam</strong> — toegankelijkheidsbelangen</li>
-  <li><strong>Code for NL</strong>, Open State Foundation, Geofort — civic-tech amplifiers</li>
-</ul>
+          <h3 class="ond-h3">Voor wie zou dit nuttig zijn</h3>
+          <ul class="ond-list">
+            <li><b>Wethouder Openbare Ruimte</b> + Stadsbeheer V&amp;OR — operationele eigenaars van straatmeubilair</li>
+            <li><b>CIO Office</b> Amsterdam, beheerder van het data-portaal — kennen het discourse</li>
+            <li><b>Cliëntenbelang Amsterdam</b> — toegankelijkheidsbelangen</li>
+            <li><b>Code for NL</b>, Open State Foundation, Geofort — civic-tech amplifiers</li>
+          </ul>
+        </section>
 
-<h2>Caveats</h2>
-<p>
-  De claim "5%" verdient nuance. Een deel van de OSM-banken is mogelijk verouderd, in particulier toegankelijke ruimte, of dubbel ingevoerd. Een conservatieve correctie van 30% laat alsnog ~4.800 echte publieke banken over, tegenover BGT's 345. De gap is niet 20× maar dan nog 14×. De richting is glashelder, het exacte getal niet.
-</p>
-<p>
-  Verder: BGT is een wettelijk register voor wat de gemeente <em>bezit en beheert</em>. Banken op NS-stations, GVB-tramhaltes, in particuliere binnentuinen die toegankelijk zijn voor publiek, of in parken beheerd door derden vallen er buiten. De gemeente <em>kan</em> dat niet allemaal registreren — maar dat is precies waarom een aanvullende crowdsource-bron beleidsmatig waardevol is.
-</p>
+        <!-- ===== Caveats ===== -->
+        <section class="ond-section ond-section-narrow" aria-labelledby="ond-caveats-heading">
+          <h2 class="ond-h2" id="ond-caveats-heading">Caveats.</h2>
+          <p class="ond-p">
+            De claim "5%" verdient nuance. Een deel van de OSM-banken is mogelijk
+            verouderd, in particulier toegankelijke ruimte, of dubbel ingevoerd.
+            Een conservatieve correctie van 30% laat alsnog ~4.800 echte publieke
+            banken over, tegenover BGT's 345. De gap is niet 20× maar dan nog 14×.
+            De richting is glashelder, het exacte getal niet.
+          </p>
+          <p class="ond-p">
+            Verder: BGT is een wettelijk register voor wat de gemeente <em>bezit en
+            beheert</em>. Banken op NS-stations, GVB-tramhaltes, in particuliere
+            binnentuinen die toegankelijk zijn voor publiek, of in parken beheerd
+            door derden vallen er buiten. De gemeente <em>kan</em> dat niet allemaal
+            registreren — maar dat is precies waarom een aanvullende crowdsource-bron
+            beleidsmatig waardevol is.
+          </p>
+        </section>
 
-<h2>Wat zou je doen?</h2>
-<ul>
-  <li><strong>Aanvullen</strong> — BGT mag aangevuld worden met andere bronnen. Een gevalideerde import van OSM-banken zou de coverage in één klap dichterbij de werkelijkheid brengen.</li>
-  <li><strong>VerbeterDeBuurt uitbreiden</strong> met "ontbrekende bank melden" als crowdsource-laag in eigen huis.</li>
-  <li><strong>Reverse flow</strong> — de 345 BGT-banken die nog niet in OSM staan, naar OSM duwen. Beide bronnen completer.</li>
-</ul>
+        <!-- ===== Wat zou je doen? ===== -->
+        <section class="ond-section ond-section-narrow" aria-labelledby="ond-doen-heading">
+          <h2 class="ond-h2" id="ond-doen-heading">Wat zou je doen?</h2>
+          <div class="ond-actions">
+            <div class="ond-action">
+              <span class="ond-action-num" aria-hidden="true">01</span>
+              <div class="ond-action-body">
+                <h3 class="ond-action-h">Aanvullen</h3>
+                <p>BGT mag aangevuld worden met andere bronnen. Een gevalideerde import van OSM-banken zou de coverage in één klap dichterbij de werkelijkheid brengen.</p>
+              </div>
+            </div>
+            <div class="ond-action">
+              <span class="ond-action-num" aria-hidden="true">02</span>
+              <div class="ond-action-body">
+                <h3 class="ond-action-h">VerbeterDeBuurt uitbreiden</h3>
+                <p>Met "ontbrekende bank melden" als crowdsource-laag in eigen huis. De gemeente bezit dan zowel de data als het kanaal.</p>
+              </div>
+            </div>
+            <div class="ond-action">
+              <span class="ond-action-num" aria-hidden="true">03</span>
+              <div class="ond-action-body">
+                <h3 class="ond-action-h">Reverse flow</h3>
+                <p>De 345 BGT-banken die nog niet in OSM staan, naar OSM duwen. Beide bronnen completer; het civic-tech ecosysteem profiteert.</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-<footer>
-  <p>
-    Stephen Adei · 6 mei 2026 · <a href="https://github.com/stephenadei/bankjes" target="_blank" rel="noopener">broncode</a> · <a href="/">terug naar de kaart</a>
-  </p>
-  <p style="margin-top: 8px;">
-    Gemaakt als onderdeel van <a href="/">bankjes.stephensprive.app</a>, een verkenning van Amsterdams straatmeubilair als civic-tech artefact.
-  </p>
-</footer>
+        <!-- ===== Footer ===== -->
+        <footer class="ond-footer">
+          <p>
+            Stephen Adei · 6 mei 2026 ·
+            <a href="https://github.com/stephenadei/bankjes" target="_blank" rel="noopener noreferrer">broncode</a>
+            · <a href="/" id="back-to-kaart">terug naar de kaart</a>
+          </p>
+          <p class="ond-footer-sub">
+            Gemaakt als onderdeel van bankjes.stephenadei.nl, een verkenning van
+            Amsterdams straatmeubilair als civic-tech artefact.
+          </p>
+        </footer>
 
-</div>
+      </article>
+    </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  </div><!-- /.bj-app -->
+</div><!-- /#root -->
+
 <script>
-  const map = L.map("compare-map", { zoomControl: true, scrollWheelZoom: false }).setView([52.3676, 4.9041], 12);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    maxZoom: 19,
-    subdomains: "abcd",
-    attribution: '&copy; CARTO &middot; OSM &middot; data.amsterdam.nl',
-  }).addTo(map);
+"use strict";
 
-  function dotIcon(color) {
-    return L.divIcon({
-      html: `<div style="width:7px;height:7px;border-radius:50%;background:${color};border:1px solid rgba(255,253,246,0.9);box-shadow:0 1px 1px rgba(45,42,38,0.3)"></div>`,
-      className: "",
-      iconSize: [7, 7],
-    });
+// ── Amsterdam bbox for projection ──────────────────────────────────
+const AMS = { minLat: 52.295, maxLat: 52.430, minLon: 4.745, maxLon: 5.020 };
+const SVG_W = 360, SVG_H = 280, SVG_PAD = 6;
+
+function projectAms(lat, lon) {
+  const x = SVG_PAD + ((lon - AMS.minLon) / (AMS.maxLon - AMS.minLon)) * (SVG_W - 2 * SVG_PAD);
+  const y = SVG_PAD + (1 - (lat - AMS.minLat) / (AMS.maxLat - AMS.minLat)) * (SVG_H - 2 * SVG_PAD);
+  return [x, y];
+}
+
+// ── Neighbourhood bar data (static per spec; real /api/coverage?breakdown=buurt is out of scope) ──
+const BUURT_DATA = [
+  { area: "Weesp",    bgt: 270, osm: 14  },
+  { area: "Noord",    bgt: 28,  osm: 38  },
+  { area: "Oost",     bgt: 18,  osm: 110 },
+  { area: "Oud-West", bgt: 12,  osm: 220 },
+  { area: "De Pijp",  bgt: 8,   osm: 180 },
+  { area: "Centrum",  bgt: 4,   osm: 380 },
+  { area: "Jordaan",  bgt: 2,   osm: 140 },
+  { area: "Zuidoost", bgt: 3,   osm: 22  },
+];
+
+function renderBuurtBars() {
+  const max = Math.max(...BUURT_DATA.flatMap(d => [d.bgt, d.osm]));
+  const container = document.getElementById("buurt-bars");
+  if (!container) return;
+  container.innerHTML = BUURT_DATA.map(row => `
+    <div class="ond-bar-row">
+      <span class="ond-bar-area">${row.area}</span>
+      <div class="ond-bar-stack">
+        <div class="ond-bar bgt" style="width: ${(row.bgt / max * 100).toFixed(1)}%">
+          <span>${row.bgt}</span>
+        </div>
+        <div class="ond-bar osm" style="width: ${(row.osm / max * 100).toFixed(1)}%">
+          <span>${row.osm}</span>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ── Dot injection into SVG <g> ──────────────────────────────────────
+function injectDots(groupId, items, color) {
+  const g = document.getElementById(groupId);
+  if (!g) return;
+  const ns = "http://www.w3.org/2000/svg";
+  const frag = document.createDocumentFragment();
+  for (const item of items) {
+    if (item.lat == null || item.lon == null) continue;
+    const [x, y] = projectAms(item.lat, item.lon);
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("cx", x.toFixed(2));
+    circle.setAttribute("cy", y.toFixed(2));
+    circle.setAttribute("r", "2");
+    circle.setAttribute("fill", color);
+    circle.setAttribute("opacity", "0.85");
+    frag.appendChild(circle);
   }
+  g.appendChild(frag);
+}
 
-  async function loadAndPlot(dataset, color) {
-    try {
-      const r = await fetch(`/api/items?dataset=${dataset}`);
-      if (!r.ok) return 0;
-      const d = await r.json();
-      for (const item of d.items) {
-        if (item.lat == null || item.lon == null) continue;
-        L.marker([item.lat, item.lon], { icon: dotIcon(color), interactive: false }).addTo(map);
-      }
-      return d.count;
-    } catch (e) {
-      return 0;
-    }
+// ── /api/coverage → update live numbers in H1 + number cards ───────
+async function loadCoverage() {
+  try {
+    const r = await fetch("/api/coverage");
+    if (!r.ok) return;
+    const d = await r.json();
+    const bgt = d.bgt_count;
+    const osm = d.osm_count;
+    if (!bgt || !osm) return;
+    const ratio = Math.round(osm / bgt);
+    const pct   = Math.round((bgt / osm) * 100);
+    document.getElementById("h1-bgt").textContent = bgt.toLocaleString("nl-NL");
+    document.getElementById("h1-osm").textContent = osm.toLocaleString("nl-NL");
+    document.getElementById("num-bgt").textContent = bgt.toLocaleString("nl-NL");
+    document.getElementById("num-osm").textContent = osm.toLocaleString("nl-NL");
+    document.getElementById("lede-ratio").textContent = ratio;
+    document.getElementById("ratio-n").textContent   = ratio;
+    document.getElementById("ratio-pct").textContent  = pct;
+  } catch (_) {
+    // Keep static fallback values — fail silently
   }
+}
 
-  // Plot beide datasets parallel
-  Promise.all([
-    loadAndPlot("bench", "#5b7a3f"),
-    loadAndPlot("bench_osm", "#a06a3f"),
-  ]).then(([bgt, osm]) => {
-    console.log(`bgt=${bgt} osm=${osm}`);
-  });
+// ── /api/items?dataset=bench → split by source_type → draw SVG dots ─
+async function loadAndDrawMaps() {
+  try {
+    const r = await fetch("/api/items?dataset=bench");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    const items = d.items || [];
 
-  // Fetch coverage stats dynamically
-  (async function () {
-    try {
-      const r = await fetch("/api/coverage");
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const d = await r.json();
+    const bgtItems = items.filter(it => it.props && it.props.source_type === "bgt");
+    const osmItems = items.filter(it => it.props && it.props.source_type === "osm");
 
-      // Format numbers with locale
-      const fmtBgt = d.bgt_count.toLocaleString("nl-NL");
-      const fmtOsm = d.osm_count.toLocaleString("nl-NL");
-      const fmtMerged = d.merged_count.toLocaleString("nl-NL");
+    injectDots("bgt-dots", bgtItems, "#5b7a3f");
+    injectDots("osm-dots", osmItems, "#a06a3f");
 
-      // Fill the number cards
-      document.getElementById("bgt-count").textContent = fmtBgt;
-      document.getElementById("osm-count").textContent = fmtOsm;
+    document.getElementById("map-count-bgt").textContent = bgtItems.length.toLocaleString("nl-NL");
+    document.getElementById("map-count-osm").textContent = osmItems.length.toLocaleString("nl-NL");
+  } catch (err) {
+    console.error("onderzoek map load failed:", err);
+    // Counts stay as "–" — acceptable graceful degradation
+  }
+}
 
-      // Calculate and display ratio
-      const ratio = d.osm_count / d.bgt_count;
-      const pct = Math.round((d.bgt_count / d.merged_count) * 100);
-      document.getElementById("coverage-ratio").innerHTML =
-        "Verhouding: <strong>1 op " + Math.round(ratio) + "</strong> · " +
-        "de gemeente registreert ongeveer <strong>" + pct + "%</strong> " +
-        "van wat er feitelijk staat.";
-    } catch (err) {
-      console.error("coverage fetch failed", err);
-      document.getElementById("bgt-count").textContent = "–";
-      document.getElementById("osm-count").textContent = "–";
-      document.getElementById("coverage-ratio").textContent = "Cijfers konden niet worden opgehaald.";
-    }
-  })();
+// ── "terug naar de kaart" — dispatch custom event so SPA can intercept
+document.getElementById("back-to-kaart")?.addEventListener("click", function (e) {
+  if (window.history && document.referrer.includes(location.hostname)) {
+    // Standard href="/" handles navigation; also fire event for any listening SPA shell
+    window.dispatchEvent(new CustomEvent("bj-go-kaart"));
+  }
+});
+
+// ── Boot ────────────────────────────────────────────────────────────
+renderBuurtBars();
+loadCoverage();
+loadAndDrawMaps();
 </script>
 </body>
 </html>
