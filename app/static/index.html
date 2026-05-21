@@ -82,6 +82,7 @@
   display: flex;
   align-items: flex-end;
 }
+.bj-mobile-sheet-overlay[hidden] { display: none; }
 .bj-mobile-sheet {
   background: var(--paper);
   border-radius: 22px 22px 0 0;
@@ -1007,8 +1008,8 @@ async function loadDatasets() {
 async function loadDataset(key) {
   if (!state.DATASETS[key]) return;
   try {
-    const items = await (await fetch(`/api/items?dataset=${encodeURIComponent(key)}`)).json();
-    state.itemsByDataset[key] = (items || []).map(normalizeItem);
+    const resp = await (await fetch(`/api/items?dataset=${encodeURIComponent(key)}`)).json();
+    state.itemsByDataset[key] = ((resp && resp.items) || []).map(normalizeItem);
     rebuildCluster(key);
   } catch (e) {
     console.error("loadDataset", key, e);
@@ -1120,8 +1121,7 @@ function renderFilterRow() {
   html += `<div class="bj-filter-modifiers">
     <button class="bj-mod ${state.rugleun ? "on" : ""}" id="bj-rugleun"
             aria-pressed="${state.rugleun}" title="Toon alleen banken met rugleuning">
-      <span class="bj-mod-marker">AND</span>
-      <span class="bj-mod-text">+ rugleuning</span>
+      <span class="bj-mod-text">Alleen met rugleuning</span>
     </button>
   </div>`;
 
