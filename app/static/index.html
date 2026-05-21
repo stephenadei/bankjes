@@ -468,6 +468,59 @@
   background: linear-gradient(135deg, #d8d0c0, #c4b99a);
 }
 
+/* ========== Loader overlay ========== */
+#bj-loader {
+  position: fixed; inset: 0;
+  z-index: 9999;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease-out;
+}
+#bj-loader.bj-loader-done {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.bj-loader-figure {
+  position: relative;
+  width: clamp(180px, 30vw, 240px);
+  aspect-ratio: 1 / 1;
+  -webkit-mask: url(/static/silhouette-mask.png) center/contain no-repeat;
+  mask: url(/static/silhouette-mask.png) center/contain no-repeat;
+}
+.bj-loader-figure-bg,
+.bj-loader-figure-fill {
+  position: absolute; inset: 0;
+}
+.bj-loader-figure-bg { background: rgba(45, 42, 38, 0.12); }
+.bj-loader-figure-fill {
+  background: var(--bj-moss);
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bj-loader-text {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: clamp(18px, 3vw, 24px);
+  color: var(--ink-2);
+  text-align: center;
+  min-height: 1.2em;
+  font-variation-settings: "opsz" 28;
+  letter-spacing: -0.01em;
+  transition: opacity 0.18s ease-out;
+}
+.bj-loader-text.fading { opacity: 0; }
+.bj-loader-text.catchphrase {
+  color: var(--bj-moss);
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(22px, 3.4vw, 28px);
+}
+
 /* ========== Add-to-Home-Screen banner ========== */
 #a2hs-banner {
   position: fixed;
@@ -547,6 +600,16 @@
 </style>
 </head>
 <body>
+
+<!-- Loader overlay (covers everything until init() resolves) -->
+<div id="bj-loader" aria-hidden="true">
+  <div class="bj-loader-figure">
+    <div class="bj-loader-figure-bg"></div>
+    <div class="bj-loader-figure-fill" id="bj-loader-fill"></div>
+  </div>
+  <div class="bj-loader-text" id="bj-loader-text">bankjes verzamelen…</div>
+</div>
+
 <div id="root">
   <div class="bj-app" id="bj-app">
 
@@ -2341,7 +2404,72 @@ async function init() {
   fetchMe();
 }
 
-init();
+// ========== Loader (silhouette fill + status text + catchphrase) ==========
+const loaderEl  = document.getElementById("bj-loader");
+const loaderTxt = document.getElementById("bj-loader-text");
+const loaderFill = document.getElementById("bj-loader-fill");
+const LOADER_STATUSES = [
+  "bankjes verzamelen…",
+  "buurten benoemen…",
+  "kaart vouwen…",
+  "rugleuningen tellen…",
+  "afstanden meten…",
+  "data.amsterdam aankloppen…",
+  "OSM uitpluizen…",
+  "tafels rangschikken…",
+  "afvalbakken sorteren…",
+  "Mapillary verkennen…",
+];
+const LOADER_CATCHPHRASES = [
+  "Ga zitten.",
+  "Neem plaats.",
+  "Veel zitplezier.",
+  "Eerst zitten. Dan denken.",
+  "Tijd voor een wandeling.",
+];
+
+let loaderStatusIdx = 0;
+const loaderStatusTimer = setInterval(() => {
+  if (!loaderTxt || loaderEl.classList.contains("bj-loader-done")) return;
+  loaderTxt.classList.add("fading");
+  setTimeout(() => {
+    loaderStatusIdx = (loaderStatusIdx + 1) % LOADER_STATUSES.length;
+    loaderTxt.textContent = LOADER_STATUSES[loaderStatusIdx];
+    loaderTxt.classList.remove("fading");
+  }, 180);
+}, 850);
+
+// Fake-progress fill: 0 → 88% over ~3s, then init() promise pushes to 100%.
+let loaderFillPct = 0;
+const loaderFillTimer = setInterval(() => {
+  if (!loaderFill || loaderFillPct >= 88) { clearInterval(loaderFillTimer); return; }
+  loaderFillPct += 2 + Math.random() * 3;
+  if (loaderFillPct > 88) loaderFillPct = 88;
+  loaderFill.style.clipPath = `inset(${100 - loaderFillPct}% 0 0 0)`;
+}, 120);
+
+async function hideLoader() {
+  if (!loaderEl) return;
+  if (loaderFill) loaderFill.style.clipPath = "inset(0 0 0 0)";
+  clearInterval(loaderStatusTimer);
+  clearInterval(loaderFillTimer);
+  // Catchphrase swap
+  await new Promise(r => setTimeout(r, 350));
+  loaderTxt.classList.add("fading");
+  await new Promise(r => setTimeout(r, 180));
+  const phrase = LOADER_CATCHPHRASES[Math.floor(Math.random() * LOADER_CATCHPHRASES.length)];
+  loaderTxt.textContent = phrase;
+  loaderTxt.classList.add("catchphrase");
+  loaderTxt.classList.remove("fading");
+  await new Promise(r => setTimeout(r, 800));
+  loaderEl.classList.add("bj-loader-done");
+  setTimeout(() => loaderEl.remove(), 700);
+}
+
+init().then(hideLoader).catch((err) => {
+  console.error("init failed", err);
+  hideLoader();
+});
 
 // ========== Add-to-Home-Screen banner ==========
 (function setupA2HS() {
