@@ -6,6 +6,7 @@ caching, and shaping the response.
 """
 
 import asyncio
+import contextlib
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -19,8 +20,12 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.admin import router as admin_router
+from app.auth import router as auth_router
+from app.db import open_db, run_migrations
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
+from app.spots import router as spots_router
 
 # Benches don't move; an hour of staleness is fine and avoids
 # making the first visitor after idle pay the Overpass cold cost.
@@ -37,14 +42,25 @@ log = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.client = httpx.AsyncClient(timeout=60.0)
-    # Pre-warm the cache for datasets the UI loads on first paint,
-    # so the first visitor sees warm timings instead of the ~2.4s
-    # Overpass cold call.
-    app.state.prewarm = asyncio.create_task(_prewarm(app.state.client))
-    yield
-    app.state.prewarm.cancel()
-    await app.state.client.aclose()
+    async with contextlib.AsyncExitStack() as stack:
+        app.state.client = httpx.AsyncClient(timeout=60.0)
+        stack.push_async_callback(app.state.client.aclose)
+
+        db_path = os.environ.get("BANKJES_DB_PATH", "/data/bankjes.db")
+        # Ensure parent dir exists (so tests with tmp_path work and prod /data is created if missing)
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+        app.state.db = await stack.enter_async_context(open_db(db_path))
+        await run_migrations(app.state.db)
+
+        # Pre-warm the cache for datasets the UI loads on first paint,
+        # so the first visitor sees warm timings instead of the ~2.4s
+        # Overpass cold call.
+        app.state.prewarm = asyncio.create_task(_prewarm(app.state.client))
+        try:
+            yield
+        finally:
+            app.state.prewarm.cancel()
 
 
 async def _prewarm(client: httpx.AsyncClient) -> None:
@@ -62,19 +78,40 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+app.include_router(auth_router)
+app.include_router(spots_router)
+app.include_router(admin_router)
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+def _should_serve_coming_soon(preview: Optional[str]) -> bool:
+    """On prd the public surfaces (/, /onderzoek) are gated behind a
+    coming-soon page so the site can sit live without being open to traffic.
+    ?preview=soon forces the page on pre/acc for copy review."""
+    if preview == "soon":
+        return True
+    return os.environ.get("APP_ENV", "").lower() == "prd"
+
+
 @app.get("/", include_in_schema=False)
-async def index():
+async def index(preview: Optional[str] = Query(default=None)):
+    if _should_serve_coming_soon(preview):
+        return FileResponse(STATIC_DIR / "coming-soon.html")
     return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/onderzoek", include_in_schema=False)
-async def onderzoek():
+async def onderzoek(preview: Optional[str] = Query(default=None)):
+    if _should_serve_coming_soon(preview):
+        return FileResponse(STATIC_DIR / "coming-soon.html")
     return FileResponse(STATIC_DIR / "onderzoek.html")
+
+
+@app.get("/admin", include_in_schema=False)
+async def admin_page():
+    return FileResponse(STATIC_DIR / "admin.html")
 
 
 @app.get("/healthz")
@@ -85,14 +122,21 @@ async def healthz():
 @app.get("/api/datasets")
 async def datasets():
     """Frontend's single source of truth for what to render. camelCase for JS."""
+    def _source_types_for(ds) -> list[str]:
+        if ds.source_type == "merged":
+            return ["BGT", "OSM"]
+        if ds.source_type == "osm":
+            return ["OSM"]
+        return ["BGT"]
     return [
         {
-            "label":      d.label,
-            "name":       d.name,
-            "color":      d.color,
-            "sourceType": d.source_type,
-            "defaultOn":  d.default_on,
-            "featured":   d.featured,
+            "label":       d.label,
+            "name":        d.name,
+            "color":       d.color,
+            "sourceType":  d.source_type,            # legacy single value
+            "sourceTypes": _source_types_for(d),     # redesign array
+            "defaultOn":   d.default_on,
+            "featured":    d.featured,
         }
         for d in DATASETS
     ]

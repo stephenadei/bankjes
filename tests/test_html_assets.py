@@ -28,17 +28,38 @@ def test_onderzoek_has_favicons_and_og():
     assert "og-banner.png" in html
 
 
-def test_header_mark_is_image():
+def test_index_has_redesign_header():
     html = _read("index.html")
-    # Old emoji should be gone from the hero
+    # Redesigned header uses bj-mark and bj-tabs
+    assert 'class="bj-mark"' in html
+    assert 'class="bj-tabs"' in html
+    # Old Z v1 emoji mark should be gone
     assert '<span class="mark">🪑</span>' not in html
-    # New image is in
-    assert 'class="mark"' in html
-    assert 'src="/static/silhouette.svg"' in html
 
 
-def test_footer_about_card():
+def test_index_has_bankjes_css():
     html = _read("index.html")
-    assert 'class="about"' in html
-    assert "portrait-halftone.png" in html
-    assert "Stephen Adei" in html
+    assert "bankjes.css" in html
+
+
+def test_index_has_filter_row():
+    html = _read("index.html")
+    assert 'id="bj-filter-row"' in html
+
+
+def test_index_has_sidebar_and_sheet():
+    html = _read("index.html")
+    assert 'class="bj-sidebar"' in html or 'id="bj-sidebar"' in html
+    assert 'class="bj-sheet' in html
+
+
+def test_index_has_login_affordance():
+    html = _read("index.html")
+    assert "Inloggen" in html
+    assert "/api/auth/request-magic-link" in html
+
+
+def test_index_no_z1_fab():
+    html = _read("index.html")
+    assert 'id="z1-fab"' not in html
+    assert 'id="z1-new-spot-modal"' not in html

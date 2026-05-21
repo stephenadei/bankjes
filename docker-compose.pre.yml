@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env.pre
+    volumes:
+      - ./data:/data
     ports:
       - "127.0.0.1:4310:8000"
     healthcheck:

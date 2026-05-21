@@ -75,15 +75,17 @@ def _dedup_by_proximity(
         if not absorbed:
             out.append(o)
 
-    # Re-emit BGT survivors with merged_replicas in props (Marker model
-    # is immutable-ish since props is a dict but we keep it explicit).
+    # Re-emit all survivors with source_type + merged_replicas in props.
+    # source_type is 'bgt' for every BGT marker and 'osm' for every
+    # surviving OSM marker. This lets the frontend split a single merged
+    # /api/items?dataset=bench response back into its two colour groups.
+    bgt_ids = {b.id for b in bgt_markers}
     final: list[Marker] = []
     for m in out:
+        new_props = {**m.props, "source_type": "bgt" if m.id in bgt_ids else "osm"}
         if m.id in replica_counts:
-            new_props = {**m.props, "merged_replicas": replica_counts[m.id]}
-            final.append(Marker(id=m.id, lat=m.lat, lon=m.lon, props=new_props))
-        else:
-            final.append(m)
+            new_props["merged_replicas"] = replica_counts[m.id]
+        final.append(Marker(id=m.id, lat=m.lat, lon=m.lon, props=new_props))
     return final
 
 

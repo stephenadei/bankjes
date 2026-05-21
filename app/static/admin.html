@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Bankjes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --cream:#faf7f0; --paper:#fffdf6; --moss:#5b7a3f; --rust:#a06a3f;
+    --ink:#2d2a26; --muted:#857d72;
+    --line:rgba(45,42,38,0.10); --line-strong:rgba(45,42,38,0.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.5;padding:24px}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin-bottom:6px;font-variation-settings:"opsz" 32}
+  .lead{color:var(--muted);font-size:14px;margin-bottom:24px}
+  .empty{color:var(--muted);font-style:italic;padding:24px 0;text-align:center}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .card .label{font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin-bottom:4px}
+  .card .meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .card .desc{font-size:13px;color:var(--ink);margin-bottom:10px;line-height:1.5}
+  .card .coords{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)}
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  button{background:var(--moss);color:var(--paper);border:none;border-radius:8px;padding:8px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  button:hover{filter:brightness(0.92)}
+  button.deny{background:var(--rust)}
+  button.deny:hover{filter:brightness(0.92)}
+  .reason{display:none;flex-direction:column;gap:6px;margin-top:8px}
+  .reason textarea{padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;font-family:inherit;font-size:12px;min-height:50px;resize:vertical}
+  .card.denying .reason{display:flex}
+  .notice{background:var(--paper);border:1px solid var(--rust);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px}
+  a.back{color:var(--moss);text-decoration:none;border-bottom:1px dotted var(--moss);font-size:12px}
+</style>
+</head>
+<body>
+<a class="back" href="/">← terug naar de kaart</a>
+<h1>Admin · Public-register</h1>
+<p class="lead">Lijst van plekjes waarvoor publiek-zichtbaarheid is aangevraagd. Goedkeuren laat ze op de hoofdkaart verschijnen.</p>
+
+<div id="auth-notice" class="notice" style="display:none">
+  Niet ingelogd als admin. Login via de hoofdpagina, of stel <code>X-Admin-Token</code> in via dev-tools (<code>localStorage.setItem('admin-token', '...')</code>).
+</div>
+
+<div id="pending-list"></div>
+
+<script>
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function authHeaders() {
+  const token = localStorage.getItem("admin-token");
+  return token ? {"X-Admin-Token": token} : {};
+}
+
+async function load() {
+  try {
+    const r = await fetch("/api/admin/spots/pending", {headers: authHeaders()});
+    if (r.status === 401 || r.status === 403) {
+      document.getElementById("auth-notice").style.display = "block";
+      document.getElementById("pending-list").innerHTML = "";
+      return;
+    }
+    const d = await r.json();
+    render(d.spots || []);
+  } catch (e) {
+    document.getElementById("pending-list").innerHTML = '<div class="empty">Fout bij ophalen.</div>';
+  }
+}
+
+function render(spots) {
+  const list = document.getElementById("pending-list");
+  if (spots.length === 0) {
+    list.innerHTML = '<div class="empty">Niets in de wachtrij.</div>';
+    return;
+  }
+  list.innerHTML = spots.map(s => `
+    <div class="card" data-spot-id="${s.id}">
+      <div class="label">${escapeHtml(s.label)}</div>
+      <div class="meta">door <b>${escapeHtml(s.owner.display_name)}</b> (${escapeHtml(s.owner.email || "")}) · ${escapeHtml(s.created_at || "")}</div>
+      ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ""}
+      <div class="coords">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} · <a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank">→ Google Maps</a></div>
+      <div class="actions">
+        <button class="approve">Goedkeuren</button>
+        <button class="deny">Weigeren…</button>
+      </div>
+      <div class="reason">
+        <textarea placeholder="Reden (min 10 tekens)" required></textarea>
+        <div class="actions">
+          <button class="confirm-deny">Bevestig weigering</button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+  document.querySelectorAll(".card").forEach(card => {
+    const sid = card.dataset.spotId;
+    card.querySelector(".approve").addEventListener("click", () => approve(sid));
+    card.querySelector(".deny").addEventListener("click", () => card.classList.add("denying"));
+    card.querySelector(".confirm-deny").addEventListener("click", () => {
+      const reason = card.querySelector("textarea").value.trim();
+      if (reason.length < 10) {
+        alert("Reden moet minstens 10 tekens zijn.");
+        return;
+      }
+      deny(sid, reason);
+    });
+  });
+}
+
+async function approve(sid) {
+  const r = await fetch(`/api/admin/spots/${sid}/approve`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", ...authHeaders()},
+    body: JSON.stringify({}),
+  });
+  if (r.ok) load();
+  else alert("Approve failed: " + r.status);
+}
+
+async function deny(sid, reason) {
+  const r = await fetch(`/api/admin/spots/${sid}/deny`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", ...authHeaders()},
+    body: JSON.stringify({reason}),
+  });
+  if (r.ok) load();
+  else alert("Deny failed: " + r.status);
+}
+
+load();
+</script>
+</body>
+</html>
