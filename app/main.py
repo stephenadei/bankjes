@@ -86,13 +86,26 @@ STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+def _should_serve_coming_soon(preview: Optional[str]) -> bool:
+    """On prd the public surfaces (/, /onderzoek) are gated behind a
+    coming-soon page so the site can sit live without being open to traffic.
+    ?preview=soon forces the page on pre/acc for copy review."""
+    if preview == "soon":
+        return True
+    return os.environ.get("APP_ENV", "").lower() == "prd"
+
+
 @app.get("/", include_in_schema=False)
-async def index():
+async def index(preview: Optional[str] = Query(default=None)):
+    if _should_serve_coming_soon(preview):
+        return FileResponse(STATIC_DIR / "coming-soon.html")
     return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/onderzoek", include_in_schema=False)
-async def onderzoek():
+async def onderzoek(preview: Optional[str] = Query(default=None)):
+    if _should_serve_coming_soon(preview):
+        return FileResponse(STATIC_DIR / "coming-soon.html")
     return FileResponse(STATIC_DIR / "onderzoek.html")
 
 

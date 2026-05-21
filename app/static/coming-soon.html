@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stephen's Bankjes — work in progress</title>
+
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<meta name="theme-color" content="#5b7a3f">
+
+<meta property="og:title" content="Stephen's Bankjes — work in progress">
+<meta property="og:description" content="Een open-data verkenning van Amsterdams straatmeubilair. Door Stephen Adei.">
+<meta property="og:image" content="https://bankjes.stephenadei.nl/static/og-banner.png">
+<meta property="og:url" content="https://bankjes.stephenadei.nl/">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --cream: #faf7f0;
+  --paper: #fffdf6;
+  --ink: #2d2a26;
+  --ink-2: #4a4640;
+  --muted: #857d72;
+  --bj-moss: #5b7a3f;
+  --bj-moss-soft: rgba(91, 122, 63, 0.14);
+  --line: rgba(45, 42, 38, 0.10);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  line-height: 1.5;
+}
+.soon-card {
+  max-width: 580px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.soon-figure {
+  width: clamp(160px, 32vw, 220px);
+  aspect-ratio: 1 / 1;
+  -webkit-mask: url(/static/silhouette-mask.png) center/contain no-repeat;
+  mask: url(/static/silhouette-mask.png) center/contain no-repeat;
+  background: var(--bj-moss);
+  flex-shrink: 0;
+}
+.soon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bj-moss-soft);
+  color: var(--bj-moss);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.soon-chip-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bj-moss);
+  animation: soon-pulse 1.6s ease-in-out infinite;
+}
+@keyframes soon-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.4); opacity: 0.55; }
+}
+h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: clamp(34px, 6.4vw, 52px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  font-variation-settings: "opsz" 64;
+  margin: 0;
+  color: var(--ink);
+}
+h1 em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--bj-moss);
+  font-variation-settings: "opsz" 64;
+}
+.soon-body {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 480px;
+  margin: 0;
+}
+.soon-body b { color: var(--ink); font-weight: 600; }
+.soon-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.soon-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 20px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.18s ease, transform 0.12s ease;
+}
+.soon-link:hover { background: var(--ink-2); }
+.soon-link:active { transform: scale(0.97); }
+.soon-link.outline {
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+.soon-link.outline:hover { background: var(--paper); }
+.soon-link svg { flex-shrink: 0; }
+.soon-credit {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 14px;
+  letter-spacing: 0.02em;
+}
+</style>
+</head>
+<body>
+  <main class="soon-card">
+    <div class="soon-figure" aria-hidden="true"></div>
+
+    <div class="soon-chip">
+      <span class="soon-chip-dot" aria-hidden="true"></span>
+      <span>Work in progress</span>
+    </div>
+
+    <h1>Bankjes komt <em>eraan</em>.</h1>
+
+    <p class="soon-body">
+      Een open-data verkenning van Amsterdams straatmeubilair — <b>banken, picknicktafels, afvalbakken,
+      fietsenrekken</b> — uit BGT en OpenStreetMap, gebouwd door Stephen Adei.
+      Nog even geduld; de publieke versie krijgt nu zijn laatste laagje verf.
+    </p>
+
+    <div class="soon-links">
+      <a class="soon-link" href="https://stephenadei.nl">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Meer over Stephen
+      </a>
+      <a class="soon-link outline" href="https://github.com/stephenadei/bankjes">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-2.13c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18.91-.25 1.89-.38 2.86-.39.97 0 1.95.13 2.86.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
+        </svg>
+        Source op GitHub
+      </a>
+    </div>
+
+    <p class="soon-credit">© Stephen Adei · Amsterdam</p>
+  </main>
+</body>
+</html>
