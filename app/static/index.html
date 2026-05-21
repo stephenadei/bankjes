@@ -1288,7 +1288,7 @@ function _renderNearbyList() {
   // Sheet count
   const sheetCt = document.getElementById("bj-sheet-ct");
   if (sheetCt) {
-    sheetCt.textContent = state.hasLocation
+    sheetCt.innerHTML = state.hasLocation
       ? `${enriched.length.toLocaleString("nl-NL")} binnen kaart`
       : '<span class="bj-sheet-noloc">vanaf kaart-midden</span>';
   }
