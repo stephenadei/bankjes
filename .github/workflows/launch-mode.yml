@@ -1,0 +1,68 @@
+name: launch-mode
+
+# Toggle bankjes-prd between coming-soon (prelaunch) and the real app (live).
+# Edits APP_ENV in /home/stephen/projects/bankjes-prd/.env on the VPS and
+# recreates the container so the new env is loaded.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Public visibility on bankjes.stephenadei.nl"
+        type: choice
+        options:
+          - prelaunch
+          - live
+        required: true
+      env:
+        description: "Target deploy env (almost always prd)"
+        type: choice
+        options:
+          - prd
+          - acc
+          - pre
+        default: prd
+
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH + edit env + recreate container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /home/stephen/projects/bankjes-${{ inputs.env }}
+            ENV_FILE=".env"
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "::error::$ENV_FILE not found in $(pwd)"
+              exit 1
+            fi
+            echo "=== mode=${{ inputs.mode }} target=bankjes-${{ inputs.env }} ==="
+            echo "--- APP_ENV line before:"
+            grep -nE "^[# ]*APP_ENV=" "$ENV_FILE" || echo "(none)"
+
+            if [ "${{ inputs.mode }}" = "prelaunch" ]; then
+              if grep -qE "^# *APP_ENV=" "$ENV_FILE"; then
+                sed -i -E 's/^# *APP_ENV=.*$/APP_ENV=prd/' "$ENV_FILE"
+              elif grep -qE "^APP_ENV=" "$ENV_FILE"; then
+                sed -i -E 's/^APP_ENV=.*$/APP_ENV=prd/' "$ENV_FILE"
+              else
+                printf '\nAPP_ENV=prd\n' >> "$ENV_FILE"
+              fi
+            else
+              # live: comment out the gate
+              if grep -qE "^APP_ENV=" "$ENV_FILE"; then
+                sed -i -E 's/^APP_ENV=.*$/# APP_ENV=prd  (commented for live mode)/' "$ENV_FILE"
+              fi
+            fi
+
+            echo "--- APP_ENV line after:"
+            grep -nE "^[# ]*APP_ENV=" "$ENV_FILE" || echo "(none)"
+
+            echo "=== Recreating container so env is reloaded…"
+            docker compose up -d --force-recreate
+            echo "=== Done. Visibility: ${{ inputs.mode }}"
