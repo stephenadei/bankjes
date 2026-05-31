@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Live app
+    url: https://bankjes.stephenadei.nl
+    about: Try to reproduce against the live viewer before filing.
+  - name: Coverage / onderzoek page
+    url: https://bankjes.stephenadei.nl/onderzoek
+    about: The BGT vs OSM gap analysis that started the project.

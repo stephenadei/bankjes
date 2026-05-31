@@ -1,0 +1,42 @@
+name: Feature request
+description: A new Dataset, data source, or improvement to the viewer
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New data categories are modelled as a **Dataset** backed by one or more
+        **DataSource**s (see `CONTEXT.md`). Frame the request that way where it fits.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What should the viewer do that it doesn't today?
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - New Dataset (e.g. laadpunten, waterpunten, picknicktafels)
+        - New DataSource for an existing Dataset
+        - UI / interaction improvement
+        - New data dimension (e.g. how busy a bench is)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Where would the data come from?
+      description: Known open-data register, OSM tag, API, sensor? "Don't know" is a valid answer.
+    validations:
+      required: false
+  - type: textarea
+    id: why
+    attributes:
+      label: Why / who asked
+      description: Context helps prioritise. Link the email/chat/person if relevant.
+    validations:
+      required: false
