@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in the viewer is broken (a filter, a marker, a popup, the map)
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The more specific the repro, the faster it gets fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What's broken
+      description: One or two sentences on the wrong behaviour.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      description: Which part of the app?
+      options:
+        - Filter pill / Dataset toggle
+        - Marker rendering / clustering
+        - Marker popup (address, photos, links)
+        - Map (pan / zoom / location)
+        - /onderzoek coverage page
+        - API endpoint
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open https://bankjes.stephenadei.nl
+        2. Toggle the "..." filter
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      placeholder: "Expected X markers / behaviour, got Y."
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Browser / device & screenshot
+      description: Optional but helpful. Drag a screenshot in here.
+    validations:
+      required: false
