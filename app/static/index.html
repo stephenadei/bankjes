@@ -983,6 +983,11 @@ function normalizeItem(raw) {
     lat: raw.lat,
     lon: raw.lon,
     props: {
+      // pass-through all original props first (raw strings, for address lookup).
+      // The normalized canonical keys below intentionally override these — keep
+      // this spread FIRST so e.g. backrest stays a boolean, not the raw "yes"/"no"
+      // string (the rugleuning filter compares strictly against `=== true`).
+      ...raw.props,
       street: (raw.props || {}).straatnaam || (raw.props || {}).openbareruimte || (raw.props || {})["addr:street"] || null,
       housenumber: (raw.props || {}).huisnummer || (raw.props || {})["addr:housenumber"] || null,
       postcode: (raw.props || {}).postcode || (raw.props || {})["addr:postcode"] || null,
@@ -994,8 +999,6 @@ function normalizeItem(raw) {
       capacity: (raw.props || {}).capacity ? parseInt((raw.props || {}).capacity, 10) : null,
       capacity_l: (raw.props || {}).capacity_l || null,
       type: (raw.props || {}).type || null,
-      // pass-through all original props too for address lookup
-      ...raw.props,
     },
   };
 }
