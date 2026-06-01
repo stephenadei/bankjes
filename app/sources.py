@@ -269,6 +269,24 @@ DATASETS: list[DataSource] = [
         color="#a08770",
         path="objectenopenbareruimte/afvalbakken",
     ),
+    # Student-variant Datasets (see Jelle's v2 feedback): single-source OSM,
+    # no BGT register exists for these. One DataSource each, no dedup.
+    OsmSource(
+        label="laadpunten",
+        name="Laadpunten",
+        color="#3f7a8a",
+        overpass_query='[out:json][timeout:30];node["amenity"="charging_station"]({s},{w},{n},{e});out;',
+    ),
+    OsmSource(
+        label="waterpunten",
+        name="Waterpunten",
+        color="#3f6f9a",
+        overpass_query=(
+            '[out:json][timeout:30];'
+            '(node["amenity"="drinking_water"]({s},{w},{n},{e});'
+            'node["man_made"="drinking_fountain"]({s},{w},{n},{e}););out;'
+        ),
+    ),
 ]
 
 DATASETS_BY_LABEL: dict[str, DataSource] = {d.label: d for d in DATASETS}

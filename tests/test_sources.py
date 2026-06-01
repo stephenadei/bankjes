@@ -209,3 +209,33 @@ def test_bench_dataset_uses_amsterdam_bronhouder():
     bench = DATASETS_BY_LABEL["bench"]
     assert isinstance(bench, MergedBenchSource)
     assert bench.bgt.params.get("bronhouder") == "G0363"
+
+
+@pytest.mark.parametrize("label, amenity", [
+    ("laadpunten", "charging_station"),
+    ("waterpunten", "drinking_water"),
+])
+def test_student_variant_datasets_registered_as_osm(label, amenity):
+    ds = DATASETS_BY_LABEL[label]
+    assert isinstance(ds, OsmSource)
+    assert ds.source_type == "osm"
+    assert amenity in ds.overpass_query
+    assert ds.default_on is False  # opt-in, don't clutter the initial load
+
+
+@pytest.mark.asyncio
+async def test_waterpunten_queries_drinking_water_and_fountain():
+    """waterpunten is a union of two OSM tags; both must reach Overpass."""
+    captured = {}
+
+    def handler(req):
+        captured["query"] = req.url.params.get("data")
+        return httpx.Response(200, json={"elements": []})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await DATASETS_BY_LABEL["waterpunten"].fetch(client)
+
+    q = captured["query"]
+    assert "drinking_water" in q and "drinking_fountain" in q
+    # bbox interpolated, not left as literal placeholders
+    assert "{s}" not in q and "52.295" in q
