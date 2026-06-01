@@ -14,6 +14,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.auth import User, get_current_user
+from app.spots_repo import (
+    ADMIN_SPOT_SELECT_COLUMNS,
+    PENDING_WHERE,
+    spot_row_to_dict,
+)
 
 router = APIRouter()
 
@@ -49,45 +54,20 @@ class ApproveRequest(BaseModel):
     comment: Optional[str] = None
 
 
-def _spot_row_to_dict(row) -> dict:
-    (sid, owner_id, lat, lon, label, description, category,
-     visibility, public_status, denial_reason, created_at,
-     owner_display_name, owner_email) = row
-    return {
-        "id": sid,
-        "lat": lat,
-        "lon": lon,
-        "label": label,
-        "description": description,
-        "category": category,
-        "visibility": visibility,
-        "public_status": public_status,
-        "denial_reason": denial_reason,
-        "created_at": created_at,
-        "owner": {
-            "id": owner_id,
-            "display_name": owner_display_name,
-            "email": owner_email,
-        },
-    }
-
-
 @router.get("/api/admin/spots/pending", dependencies=[Depends(require_admin)])
 async def list_pending(request: Request):
     db = request.app.state.db
     cur = await db.execute(
-        """
-        SELECT s.id, s.owner_id, s.lat, s.lon, s.label, s.description,
-               s.category, s.visibility, s.public_status, s.denial_reason,
-               s.created_at, u.display_name, u.email
+        f"""
+        SELECT {ADMIN_SPOT_SELECT_COLUMNS}
         FROM spots s
         JOIN users u ON u.id = s.owner_id
-        WHERE s.public_status = 'requested'
+        WHERE {PENDING_WHERE}
         ORDER BY s.created_at ASC
         """
     )
     rows = await cur.fetchall()
-    return {"spots": [_spot_row_to_dict(row) for row in rows]}
+    return {"spots": [spot_row_to_dict(row, admin=True) for row in rows]}
 
 
 async def _decider_id(user: Optional[User]) -> Optional[str]:

@@ -18,6 +18,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.auth import User, get_current_user, require_current_user
+from app.spots_repo import (
+    ACL_VISIBLE_WHERE,
+    SPOT_SELECT_COLUMNS,
+    spot_row_to_dict,
+    user_can_see,
+)
 
 router = APIRouter()
 
@@ -39,26 +45,6 @@ class SpotPatch(BaseModel):
     category: Optional[str] = Field(default=None)
 
 
-def _spot_row_to_dict(row) -> dict:
-    (sid, owner_id, lat, lon, label, description, category,
-     visibility, public_status, created_at, owner_display_name) = row
-    return {
-        "id": sid,
-        "lat": lat,
-        "lon": lon,
-        "label": label,
-        "description": description,
-        "category": category,
-        "visibility": visibility,
-        "public_status": public_status,
-        "created_at": created_at,
-        "owner": {
-            "id": owner_id,
-            "display_name": owner_display_name,
-        },
-    }
-
-
 @router.get("/api/spots")
 async def list_spots(
     request: Request,
@@ -73,21 +59,17 @@ async def list_spots(
     db = request.app.state.db
     user_id = user.id if user else None
     cur = await db.execute(
-        """
-        SELECT s.id, s.owner_id, s.lat, s.lon, s.label, s.description,
-               s.category, s.visibility, s.public_status, s.created_at,
-               u.display_name
+        f"""
+        SELECT {SPOT_SELECT_COLUMNS}
         FROM spots s
         JOIN users u ON u.id = s.owner_id
-        WHERE
-          (s.visibility = 'public' AND s.public_status = 'approved')
-          OR (? IS NOT NULL AND s.owner_id = ?)
+        WHERE {ACL_VISIBLE_WHERE}
         ORDER BY s.created_at DESC
         """,
         (user_id, user_id),
     )
     rows = await cur.fetchall()
-    return {"spots": [_spot_row_to_dict(row) for row in rows]}
+    return {"spots": [spot_row_to_dict(row) for row in rows]}
 
 
 @router.post("/api/spots")
@@ -120,10 +102,8 @@ async def create_spot(
 
     # Return the created spot using the same shape as list_spots
     cur = await db.execute(
-        """
-        SELECT s.id, s.owner_id, s.lat, s.lon, s.label, s.description,
-               s.category, s.visibility, s.public_status, s.created_at,
-               u.display_name
+        f"""
+        SELECT {SPOT_SELECT_COLUMNS}
         FROM spots s
         JOIN users u ON u.id = s.owner_id
         WHERE s.id = ?
@@ -131,25 +111,14 @@ async def create_spot(
         (spot_id,),
     )
     row = await cur.fetchone()
-    return _spot_row_to_dict(row)
-
-
-def _user_can_see(spot: dict, user: Optional[User]) -> bool:
-    """ACL check matching the list-query semantics, applied to one row."""
-    if spot["visibility"] == "public" and spot["public_status"] == "approved":
-        return True
-    if user and spot["owner"]["id"] == user.id:
-        return True
-    return False
+    return spot_row_to_dict(row)
 
 
 async def _fetch_spot(db, spot_id: str) -> Optional[dict]:
     """Fetch a single spot by id with owner info, or None if not found."""
     cur = await db.execute(
-        """
-        SELECT s.id, s.owner_id, s.lat, s.lon, s.label, s.description,
-               s.category, s.visibility, s.public_status, s.created_at,
-               u.display_name
+        f"""
+        SELECT {SPOT_SELECT_COLUMNS}
         FROM spots s
         JOIN users u ON u.id = s.owner_id
         WHERE s.id = ?
@@ -157,7 +126,7 @@ async def _fetch_spot(db, spot_id: str) -> Optional[dict]:
         (spot_id,),
     )
     row = await cur.fetchone()
-    return _spot_row_to_dict(row) if row else None
+    return spot_row_to_dict(row) if row else None
 
 
 @router.get("/api/spots/{spot_id}")
@@ -172,7 +141,7 @@ async def get_spot(
     - Logged-in: above PLUS their own spots regardless of status.
     """
     spot = await _fetch_spot(request.app.state.db, spot_id)
-    if spot is None or not _user_can_see(spot, user):
+    if spot is None or not user_can_see(spot, user):
         raise HTTPException(status_code=404, detail="spot not found")
     return spot
 
