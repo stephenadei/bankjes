@@ -24,7 +24,7 @@ from app.admin import router as admin_router
 from app.auth import router as auth_router
 from app.db import open_db, run_migrations
 from app.domain import Bbox, Marker, MarkerWithSource
-from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource
+from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource, OVERPASS_URL
 from app.spots import router as spots_router
 
 # Benches don't move; an hour of staleness is fine and avoids
@@ -34,6 +34,8 @@ CACHE_TTL_SECONDS = 3600
 cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
 # Photo lookups dwarf dataset count; a day of staleness is fine.
 photo_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
+# Neighbourhood-busyness proxy (nearby POI density); a day of staleness is fine.
+busyness_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
 
 MAPILLARY_TOKEN: Optional[str] = os.environ.get("MAPILLARY_TOKEN") or None
 
@@ -276,4 +278,60 @@ async def photos(
 
     result = {"photos": out}
     photo_cache[key] = result
+    return result
+
+
+# POI count within the radius → human level. Tunable; calibrated for ~150 m
+# in Amsterdam, where a quiet residential street has few amenities and a
+# centre block has dozens.
+def _busyness_level(score: int) -> str:
+    if score >= 50:
+        return "druk"
+    if score >= 15:
+        return "gemiddeld"
+    return "rustig"
+
+
+@app.get("/api/busyness")
+async def busyness(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    radius: int = Query(default=150, ge=25, le=500, description="meters"),
+):
+    """Neighbourhood-busyness proxy: density of nearby liveliness POIs (amenities,
+    shops, transit) via Overpass. This approximates how lively the *area* is, NOT
+    the real occupancy of the bench itself. Returns {score, level} (nulls on
+    failure so the popup just omits the indicator)."""
+    key = f"{lat:.4f},{lon:.4f},{radius}"
+    if key in busyness_cache:
+        return busyness_cache[key]
+
+    query = (
+        "[out:json][timeout:25];("
+        f'node(around:{radius},{lat},{lon})["amenity"];'
+        f'node(around:{radius},{lat},{lon})["shop"];'
+        f'node(around:{radius},{lat},{lon})["public_transport"];'
+        ");out count;"
+    )
+    try:
+        r = await app.state.client.get(
+            OVERPASS_URL,
+            params={"data": query},
+            timeout=25.0,
+            headers={"User-Agent": "stephens-bankjes/1.0 (https://bankjes.stephenadei.nl)"},
+        )
+        r.raise_for_status()
+        elements = r.json().get("elements") or []
+    except (httpx.HTTPError, ValueError) as e:
+        log.warning("busyness fetch failed: %s", e)
+        return {"score": None, "level": None, "radius": radius}
+
+    score = 0
+    for el in elements:
+        if el.get("type") == "count":
+            score = int((el.get("tags") or {}).get("total", 0) or 0)
+            break
+
+    result = {"score": score, "level": _busyness_level(score), "radius": radius}
+    busyness_cache[key] = result
     return result

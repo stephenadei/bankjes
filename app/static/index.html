@@ -1672,6 +1672,7 @@ function openPopup(item) {
             : `<span class="bj-popup-street" id="bj-popup-addr-pending" data-lat="${item.lat}" data-lon="${item.lon}" style="font-style:italic;color:var(--muted)">Adres opzoeken…</span>`}
         </div>
         ${tagsHtml ? `<div class="bj-popup-tags">${tagsHtml}</div>` : ""}
+        <div class="bj-popup-busy" id="bj-popup-busy" hidden style="margin-top:6px;font-size:12px;color:var(--muted)"></div>
         <div class="bj-popup-actions">
           <a class="bj-popup-act primary" href="${escapeHtml(streetView)}" target="_blank" rel="noopener">
             <span>Street View</span>${externalSvg()}
@@ -1709,8 +1710,9 @@ function openPopup(item) {
   wrap.innerHTML = popupHtml;
   document.getElementById("bj-map-shell").appendChild(wrap);
 
-  // Load photo async
+  // Load photo + neighbourhood-busyness async (both degrade silently)
   loadPopupPhoto(item);
+  loadPopupBusyness(item);
 
   // Start popup position tracker (desktop only)
   if (!isMobile) {
@@ -1749,6 +1751,21 @@ function openPopup(item) {
       }
     });
   }
+}
+
+async function loadPopupBusyness(item) {
+  // Neighbourhood-busyness proxy: an area approximation, not the bench itself.
+  // Pure proxy — if it fails or returns nothing, the popup just omits the line.
+  try {
+    const res = await fetch(`/api/busyness?lat=${item.lat}&lon=${item.lon}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.level) return;
+    const el = document.getElementById("bj-popup-busy");
+    if (!el || state.openItem !== item) return;
+    el.textContent = `Drukte in de buurt: ${data.level}`;
+    el.hidden = false;
+  } catch (e) { /* silent */ }
 }
 
 async function loadPopupPhoto(item) {
