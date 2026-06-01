@@ -939,8 +939,9 @@ function humanizeProps(item) {
   const p = item.props || {};
   const ds = item.dataset;
   if (ds === "bench" || ds === "banken") {
-    const backrest = p.backrest === true || p.backrest === "yes";
-    const noBackrest = p.backrest === false || p.backrest === "no";
+    // normalizeItem is the single source of truth: read the canonical boolean.
+    const backrest = p.backrest === true;
+    const noBackrest = p.backrest === false;
     if (backrest) out.push({ k: "rugleuning", v: "ja", accent: true });
     else if (noBackrest) out.push({ k: "rugleuning", v: "nee" });
     if (p.material) out.push({ k: "materiaal", v: p.material });
@@ -961,7 +962,8 @@ function humanizeProps(item) {
 function titleForItem(item) {
   const ds = item.dataset;
   const p = item.props || {};
-  const backrest = p.backrest === true || p.backrest === "yes";
+  // normalizeItem is the single source of truth: read the canonical boolean.
+  const backrest = p.backrest === true;
   if ((ds === "bench" || ds === "banken") && backrest) return "Bank met rugleuning";
   const MAP = {
     bench: "Bank", banken: "Bank",
