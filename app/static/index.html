@@ -910,14 +910,17 @@ try {
 // ============================================================
 // HELPERS
 // ============================================================
-// Dataset label aliases: the same Dataset surfaces under both an English
-// (source-native) and a Dutch (user-visible) key. Encapsulate that alias
-// knowledge here so no caller hardcodes the pairs.
-function isBenchDataset(ds) {
-  return ds === "bench" || ds === "banken";
-}
-function isPicnicDataset(ds) {
-  return ds === "picnic_table" || ds === "picknicktafels";
+// Dataset label aliases (#13): the same Dataset has surfaced under both an
+// English (source-native) and a Dutch (legacy user-visible) key. This map is
+// the ONE place that records those pairs; canonicalDataset() answers "which
+// Dataset is this, alias-independent" and callers compare canonical ids only.
+// Adding a Dataset (or a new alias) means editing only this map.
+const DATASET_ALIASES = {
+  banken: "bench",
+  picknicktafels: "picnic_table",
+};
+function canonicalDataset(ds) {
+  return DATASET_ALIASES[ds] || ds;
 }
 
 function fmtDist(m) {
