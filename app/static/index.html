@@ -986,6 +986,17 @@ function titleForItem(item) {
   return MAP[ds] || (state.DATASETS[ds] && state.DATASETS[ds].name) || "Object";
 }
 
+// Single Marker-interpretation seam (#12): source data carries backrest as
+// "yes"/"no" strings (OSM) or booleans (merged source). This is the ONLY
+// place that decodes that raw shape. Every consumer (rugleuning filter,
+// titleForItem, humanizeProps) reads the canonical boolean that
+// normalizeItem stores — never the raw string.
+function canonicalBackrest(v) {
+  if (v === "yes" || v === true) return true;
+  if (v === "no" || v === false) return false;
+  return null;
+}
+
 function normalizeItem(raw) {
   const sourceType = raw.sourceType
     || (raw.dataset && raw.dataset.endsWith("_osm") ? "OSM" : "BGT");
@@ -1005,9 +1016,7 @@ function normalizeItem(raw) {
       housenumber: (raw.props || {}).huisnummer || (raw.props || {})["addr:housenumber"] || null,
       postcode: (raw.props || {}).postcode || (raw.props || {})["addr:postcode"] || null,
       neighborhood: (raw.props || {}).buurt || null,
-      backrest: (raw.props || {}).backrest === "yes" || (raw.props || {}).backrest === true
-        ? true
-        : ((raw.props || {}).backrest === "no" || (raw.props || {}).backrest === false ? false : null),
+      backrest: canonicalBackrest((raw.props || {}).backrest),
       material: (raw.props || {}).material || null,
       capacity: (raw.props || {}).capacity ? parseInt((raw.props || {}).capacity, 10) : null,
       capacity_l: (raw.props || {}).capacity_l || null,
