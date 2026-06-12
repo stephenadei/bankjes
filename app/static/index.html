@@ -910,14 +910,17 @@ try {
 // ============================================================
 // HELPERS
 // ============================================================
-// Dataset label aliases: the same Dataset surfaces under both an English
-// (source-native) and a Dutch (user-visible) key. Encapsulate that alias
-// knowledge here so no caller hardcodes the pairs.
-function isBenchDataset(ds) {
-  return ds === "bench" || ds === "banken";
-}
-function isPicnicDataset(ds) {
-  return ds === "picnic_table" || ds === "picknicktafels";
+// Dataset label aliases (#13): the same Dataset has surfaced under both an
+// English (source-native) and a Dutch (legacy user-visible) key. This map is
+// the ONE place that records those pairs; canonicalDataset() answers "which
+// Dataset is this, alias-independent" and callers compare canonical ids only.
+// Adding a Dataset (or a new alias) means editing only this map.
+const DATASET_ALIASES = {
+  banken: "bench",
+  picknicktafels: "picnic_table",
+};
+function canonicalDataset(ds) {
+  return DATASET_ALIASES[ds] || ds;
 }
 
 function fmtDist(m) {
@@ -947,8 +950,8 @@ function inlineAddress(props) {
 function humanizeProps(item) {
   const out = [];
   const p = item.props || {};
-  const ds = item.dataset;
-  if (isBenchDataset(ds)) {
+  const ds = canonicalDataset(item.dataset);
+  if (ds === "bench") {
     // normalizeItem is the single source of truth: read the canonical boolean.
     const backrest = p.backrest === true;
     const noBackrest = p.backrest === false;
@@ -956,7 +959,7 @@ function humanizeProps(item) {
     else if (noBackrest) out.push({ k: "rugleuning", v: "nee" });
     if (p.material) out.push({ k: "materiaal", v: p.material });
     if (p.capacity) out.push({ k: "zitplaatsen", v: String(p.capacity) });
-  } else if (isPicnicDataset(ds)) {
+  } else if (ds === "picnic_table") {
     if (p.material) out.push({ k: "materiaal", v: p.material });
     if (p.capacity) out.push({ k: "zitplaatsen", v: String(p.capacity) });
   } else if (ds === "afvalbakken" || ds === "trash_underground" || ds === "trash_surface") {
@@ -970,20 +973,20 @@ function humanizeProps(item) {
 }
 
 function titleForItem(item) {
-  const ds = item.dataset;
+  const ds = canonicalDataset(item.dataset);
   const p = item.props || {};
   // normalizeItem is the single source of truth: read the canonical boolean.
   const backrest = p.backrest === true;
-  if (isBenchDataset(ds) && backrest) return "Bank met rugleuning";
+  if (ds === "bench" && backrest) return "Bank met rugleuning";
   const MAP = {
-    bench: "Bank", banken: "Bank",
-    picnic_table: "Picknicktafel", picknicktafels: "Picknicktafel",
+    bench: "Bank",
+    picnic_table: "Picknicktafel",
     trash_underground: "Afvalbak", trash_surface: "Afvalbak", afvalbakken: "Afvalbak",
     laadpunten: "Laadpunt", waterpunten: "Waterpunt",
     fietsenrekken: "Fietsenrek",
     speeltoestellen: "Speeltoestel",
   };
-  return MAP[ds] || (state.DATASETS[ds] && state.DATASETS[ds].name) || "Object";
+  return MAP[ds] || (state.DATASETS[item.dataset] && state.DATASETS[item.dataset].name) || "Object";
 }
 
 // Single Marker-interpretation seam (#12): source data carries backrest as
@@ -1039,10 +1042,10 @@ function iconSvg(dataset, color, size) {
   size = size || 16;
   const sw = "2.2";
   const attrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${escapeHtml(color)}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"`;
-  const ds = dataset;
-  if (isBenchDataset(ds))
+  const ds = canonicalDataset(dataset);
+  if (ds === "bench")
     return `<svg ${attrs}><path d="M3 12h18"/><path d="M5 12v6"/><path d="M19 12v6"/><path d="M5 8h14"/></svg>`;
-  if (isPicnicDataset(ds))
+  if (ds === "picnic_table")
     return `<svg ${attrs}><path d="M3 10h18"/><path d="M3 14h18"/><path d="M6 10v8"/><path d="M18 10v8"/></svg>`;
   if (ds === "trash_underground" || ds === "trash_surface" || ds === "afvalbakken")
     return `<svg ${attrs}><path d="M5 7h14l-1 13H6L5 7z"/><path d="M3 7h18"/><path d="M9 4h6"/></svg>`;
@@ -1203,11 +1206,11 @@ async function loadDatasets() {
 
 async function loadDataset(key) {
   if (!state.DATASETS[key]) return;
-  setLoaderStatus(DATASET_LOADER_STATUS[key] || `${(state.DATASETS[key].name || key).toLowerCase()} verzamelen…`);
+  setLoaderStatus(DATASET_LOADER_STATUS[canonicalDataset(key)] || `${(state.DATASETS[key].name || key).toLowerCase()} verzamelen…`);
   try {
     const resp = await (await fetch(`/api/items?dataset=${encodeURIComponent(key)}`)).json();
     state.itemsByDataset[key] = ((resp && resp.items) || []).map(normalizeItem);
-    if (key === "bench") setLoaderStatus("rugleuningen tellen…");
+    if (canonicalDataset(key) === "bench") setLoaderStatus("rugleuningen tellen…");
     rebuildCluster(key);
   } catch (e) {
     console.error("loadDataset", key, e);
@@ -1242,7 +1245,7 @@ function getFilteredItemsForDataset(key) {
   const srcF = state.sourceFilter[key];
   return items.filter(item => {
     if (srcF && srcF !== item.sourceType) return false;
-    if (state.rugleun && isBenchDataset(item.dataset)) {
+    if (state.rugleun && canonicalDataset(item.dataset) === "bench") {
       const p = item.props || {};
       if (p.backrest !== true) return false;
     }
