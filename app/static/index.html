@@ -4,9 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Stephen's Bankjes</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/static/fonts/fonts.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -1708,9 +1706,9 @@ function openPopup(item) {
   const sourceType = item.sourceType || "BGT";
   const sourceLabel = sourceType === "OSM" ? "OSM · OpenStreetMap" : "BGT · data.amsterdam.nl";
   const addr = inlineAddress(item.props || {});
-  // Street View blijft tot de Mapillary-viewer (fase 2, zie docs/specs); de
-  // Google-Maps-routelink is vervangen door eigen in-app navigatie (bj-nav).
-  const streetView = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${item.lat},${item.lon}`;
+  // Fase 2: straatbeeld via Mapillary (open platform; de popup-foto's komen
+  // er al vandaan) — de laatste Google-Maps-verwijzing is hiermee weg.
+  const streetView = `https://www.mapillary.com/app/?lat=${item.lat}&lng=${item.lon}&z=17&focus=map`;
 
   const tagsHtml = tags.map(t => {
     const label = (t.k === "rugleuning" && t.accent) ? "+ rugleuning" : `${t.k}: ${t.v}`;
@@ -1743,7 +1741,7 @@ function openPopup(item) {
             <span>Route hierheen</span>
           </button>
           <a class="bj-popup-act ghost" href="${escapeHtml(streetView)}" target="_blank" rel="noopener">
-            <span>Street View</span>${externalSvg()}
+            <span>Straatbeeld</span>${externalSvg()}
           </a>
         </div>
       </div>
@@ -1971,7 +1969,13 @@ function navSpeak(text) {
 async function navFetchRoute(from, to, mode) {
   const qs = `from_lat=${from.lat}&from_lon=${from.lng}&to_lat=${to.lat}&to_lon=${to.lon}&mode=${mode}`;
   const res = await fetch(`/api/route?${qs}`);
-  if (!res.ok) throw new Error(`route ${res.status}`);
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json()).detail || ""; } catch (e) { /* stil */ }
+    const err = new Error(`route ${res.status}`);
+    err.detail = detail;
+    throw err;
+  }
   return res.json();
 }
 
@@ -2008,7 +2012,7 @@ async function navLoadRoute() {
     nav.route = await navFetchRoute(origin, nav.item, nav.mode);
   } catch (e) {
     nav.route = null;
-    navRenderError(origin);
+    navRenderError(origin, e.detail);
     return;
   }
   nav.cum = navCumulative(nav.route.geometry);
@@ -2038,16 +2042,18 @@ function navRenderLoading() {
   el.innerHTML = `<div class="bj-nav-summary"><b>Route berekenen…</b></div>`;
 }
 
-function navRenderError(origin) {
+function navRenderError(origin, detail) {
   const el = navEl();
   el.hidden = false;
   el.innerHTML = `
+    ${navModesHtml()}
     <div class="bj-nav-summary"><b>Route niet beschikbaar</b></div>
-    <div class="bj-nav-note">Onze routedienst doet het even niet.</div>
+    <div class="bj-nav-note">${escapeHtml(detail || "Onze routedienst doet het even niet.")}</div>
     <div class="bj-nav-actions">
       <a class="bj-nav-btn" href="${navOsmFallbackUrl(origin, nav.item, nav.mode)}" target="_blank" rel="noopener">Open route op OSM ↗</a>
       <button class="bj-nav-btn icon" id="bj-nav-close" aria-label="Sluiten">×</button>
     </div>`;
+  navWireModes();
   document.getElementById("bj-nav-close").addEventListener("click", () => navStop());
 }
 
@@ -2079,6 +2085,7 @@ function navRenderPreview(origin) {
       <span class="to">naar ${escapeHtml(titleForItem(nav.item))}</span>
     </div>
     ${origin.real ? "" : `<div class="bj-nav-note">Vanaf kaartmidden — geef locatie-toegang voor live navigatie.</div>`}
+    <div class="bj-nav-note">route via ${r.engine === "ors" ? "OpenRouteService" : "OSRM · FOSSGIS"} · open data © OSM</div>
     <ul class="bj-nav-steps" id="bj-nav-steps" hidden>
       ${r.steps.map(s => `<li><span class="d">${navFmtDist(s.distance_m)}</span><span>${escapeHtml(s.instruction)}</span></li>`).join("")}
     </ul>

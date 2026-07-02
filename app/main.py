@@ -294,23 +294,33 @@ async def route(
     to_lon: float = Query(..., ge=-180, le=180),
     mode: str = Query(default="foot", pattern="^(foot|bike|wheelchair)$"),
 ):
-    """In-app route to a bench via OpenRouteService, normalized to our own
-    contract (see app.routing). Only initial routes + reroutes land here;
-    the live turn-by-turn loop is client-side geometry."""
+    """In-app route to a bench, normalized to our own contract (app.routing).
+    Engine: ORS when ORS_API_KEY is set (incl. the wheelchair profile), else
+    the keyless FOSSGIS-OSRM fallback (foot/bike) — routing works out of the
+    box, ORS upgrades it. Only initial routes + reroutes land here; the live
+    turn-by-turn loop is client-side geometry."""
     key = routing.api_key()
-    if not key:
-        raise HTTPException(status_code=503, detail="routing niet geconfigureerd")
+    if not key and mode == "wheelchair":
+        raise HTTPException(
+            status_code=503,
+            detail="rolstoelroute vereist de ORS-dienst (nog niet geconfigureerd)",
+        )
     for lat, lon in ((from_lat, from_lon), (to_lat, to_lon)):
         if not routing.coords_in_service_area(lat, lon):
             raise HTTPException(status_code=400, detail="buiten servicegebied")
     cache_key = f"{from_lat:.4f},{from_lon:.4f},{to_lat:.4f},{to_lon:.4f},{mode}"
-    # Only real upstream calls count against the daily ORS budget.
+    # Only real upstream calls count against the daily budget (ORS ánd the
+    # fair-use OSRM fallback).
     if cache_key not in route_cache and not routing.budget_allows():
         raise HTTPException(status_code=429, detail="dagbudget routing op")
 
     async def produce() -> dict:
-        return await routing.fetch_route(
-            app.state.client, key, from_lat, from_lon, to_lat, to_lon, mode
+        if key:
+            return await routing.fetch_route(
+                app.state.client, key, from_lat, from_lon, to_lat, to_lon, mode
+            )
+        return await routing.fetch_route_osrm(
+            app.state.client, from_lat, from_lon, to_lat, to_lon, mode
         )
 
     result = await cached_fetch(route_cache, cache_key, produce, None)

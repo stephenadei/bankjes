@@ -137,12 +137,85 @@ async def test_route_wheelchair_profile(monkeypatch):
     assert "/wheelchair/" in seen["url"]
 
 
+# Minimal-but-real FOSSGIS-OSRM shape (geometries=geojson, steps=true).
+OSRM_FIXTURE = {
+    "routes": [
+        {
+            "geometry": {"coordinates": [[4.90, 52.37], [4.905, 52.372], [4.91, 52.374]]},
+            "distance": 850.3,
+            "duration": 612.8,
+            "legs": [
+                {
+                    "steps": [
+                        {
+                            "name": "Herengracht",
+                            "distance": 500.0,
+                            "duration": 360.0,
+                            "maneuver": {"type": "depart", "location": [4.90, 52.37]},
+                        },
+                        {
+                            "name": "Keizersgracht",
+                            "distance": 350.3,
+                            "duration": 252.8,
+                            "maneuver": {"type": "turn", "modifier": "left", "location": [4.905, 52.372]},
+                        },
+                        {
+                            "name": "",
+                            "distance": 0.0,
+                            "duration": 0.0,
+                            "maneuver": {"type": "arrive", "location": [4.91, 52.374]},
+                        },
+                    ]
+                }
+            ],
+        }
+    ]
+}
+
+
+def test_normalize_osrm_same_contract_with_dutch_instructions():
+    out = routing.normalize_osrm(OSRM_FIXTURE)
+    assert out["engine"] == "osrm"
+    assert out["geometry"][0] == [52.37, 4.90]
+    assert out["distance_m"] == 850
+    steps = out["steps"]
+    assert steps[0]["instruction"] == "Vertrek via Herengracht"
+    assert steps[1]["instruction"] == "Sla linksaf naar Keizersgracht"
+    assert steps[2]["instruction"] == "Je bestemming is bereikt"
+    # maneuver anchored on the overview geometry
+    assert steps[1]["geometry_idx"] == 1
+    assert steps[1]["maneuver_point"] == [52.372, 4.905]
+
+
 @pytest.mark.asyncio
-async def test_route_without_key_is_503(monkeypatch):
+async def test_route_without_key_falls_back_to_osrm(monkeypatch):
+    """Keyless install still routes (foot/bike) via the open FOSSGIS OSRM —
+    the platform works out of the box; ORS upgrades it."""
+    monkeypatch.delenv("ORS_API_KEY", raising=False)
+    seen = {}
+
+    def handler(req):
+        seen["url"] = str(req.url)
+        return httpx.Response(200, json=OSRM_FIXTURE)
+
+    async with _mock_client(handler) as client:
+        app.state.client = client
+        out = await route(from_lat=52.37, from_lon=4.90, to_lat=52.374, to_lon=4.91, mode="foot")
+
+    assert "routing.openstreetmap.de/routed-foot" in seen["url"]
+    assert out["engine"] == "osrm"
+    assert out["steps"][0]["instruction"].startswith("Vertrek")
+
+
+@pytest.mark.asyncio
+async def test_route_wheelchair_without_key_is_503(monkeypatch):
+    """No safe wheelchair profile without ORS — never silently serve a foot
+    route as accessible (stairs!)."""
     monkeypatch.delenv("ORS_API_KEY", raising=False)
     with pytest.raises(HTTPException) as e:
-        await route(from_lat=52.37, from_lon=4.90, to_lat=52.374, to_lon=4.91, mode="foot")
+        await route(from_lat=52.37, from_lon=4.90, to_lat=52.374, to_lon=4.91, mode="wheelchair")
     assert e.value.status_code == 503
+    assert "rolstoel" in e.value.detail
 
 
 @pytest.mark.asyncio

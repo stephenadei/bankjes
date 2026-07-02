@@ -45,8 +45,13 @@ Guards (trust boundary — de key is publiek bereikbaar via dit endpoint):
 - coördinaten moeten binnen ~50 km van Amsterdam liggen (anders 400) — het
   endpoint is geen gratis wereld-router;
 - daglimiet (1500, onder ORS' 2000) → 429;
-- geen `ORS_API_KEY` of ORS stuk → 503; frontend toont fallback-link naar
-  OSM-directions (open, keyless).
+- **keyless fallback-engine**: zonder `ORS_API_KEY` routeert het endpoint via
+  FOSSGIS-OSRM (`routing.openstreetmap.de`, dezelfde open instances als
+  osm.org; identificerende User-Agent, zelfde dagbudget) met Nederlandse
+  instructie-synthese — lopen/fietsen werken out-of-the-box, ORS voegt het
+  rolstoelprofiel toe (♿ zonder key → 503 met uitleg; nooit stilletjes een
+  looproute als rolstoelroute serveren). ORS stuk → 503; frontend toont
+  OSM-directions-fallback-link.
 
 ## Live-nav (frontend, vanilla JS in index.html)
 
@@ -75,9 +80,12 @@ admin krijgt een OSM-link. Street View blijft (fase 2).
 - HTML-asserts: nav-UI aanwezig, `google.com/maps/search` afwezig,
   wheelchair-modus aanwezig, watchPosition aanwezig.
 
-## Roadmap (vervolg-subprojecten, elk eigen spec)
+## Roadmap
 
-1. **Routing/nav — dit document.**
-2. Street View → Mapillary viewer (token bestaat al).
-3. Tiles → open provider of pmtiles (CARTO eruit).
-4. Fonts self-hosten (Google Fonts eruit).
+1. **Routing/nav — dit document. GELEVERD** (PR #26 + follow-up).
+2. Street View → Mapillary. **GELEVERD** (popuplink "Straatbeeld" →
+   mapillary.com; de foto's kwamen er al vandaan).
+3. Tiles: CARTO ≠ Google en valt binnen de gekozen lat ("open hosted");
+   wissel naar open/pmtiles blijft optioneel vervolgwerk.
+4. Fonts self-hosten. **GELEVERD** (`app/static/fonts/`, latin-subset
+   variable woff2, OFL; nul `google.*`-requests in de hele app).
