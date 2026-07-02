@@ -99,6 +99,7 @@ def normalize(ors_geojson: dict) -> dict:
                 }
             )
     return {
+        "engine": "ors",
         "geometry": geometry,
         "distance_m": round(summary.get("distance", 0)),
         "duration_s": round(summary.get("duration", 0)),
@@ -130,3 +131,113 @@ async def fetch_route(
     if r.status_code != 200:
         r.raise_for_status()
     return normalize(r.json())
+
+
+# ── OSRM (FOSSGIS) — keyless open fallback ────────────────────────
+# The same public instances osm.org's directions use. No account, fair-use;
+# we identify ourselves and stay under the daily budget. No wheelchair
+# profile — the accessible mode requires ORS.
+
+OSRM_URL = "https://routing.openstreetmap.de/{routed}/route/v1/driving/{coords}"
+OSRM_PROFILES = {"foot": "routed-foot", "bike": "routed-bike"}
+OSRM_UA = "bankjes.stephenadei.nl (civic bench viewer; own-navigation fallback)"
+
+# ponytail: compact Dutch narrative table; OSRM gives maneuver type+modifier,
+# not sentences. Good enough for foot/bike; ORS (language=nl) replaces this
+# entirely once a key is configured.
+_DIR_NL = {
+    "left": "Sla linksaf",
+    "right": "Sla rechtsaf",
+    "slight left": "Houd links aan",
+    "slight right": "Houd rechts aan",
+    "sharp left": "Sla scherp linksaf",
+    "sharp right": "Sla scherp rechtsaf",
+    "straight": "Ga rechtdoor",
+    "uturn": "Keer om",
+}
+
+
+def _osrm_instruction_nl(step: dict) -> str:
+    man = step.get("maneuver") or {}
+    typ = man.get("type", "")
+    name = step.get("name") or ""
+    suffix = f" naar {name}" if name else ""
+    if typ == "depart":
+        return f"Vertrek{f' via {name}' if name else ''}"
+    if typ == "arrive":
+        return "Je bestemming is bereikt"
+    if typ in ("roundabout", "rotary", "roundabout turn"):
+        exit_n = man.get("exit")
+        return f"Neem op de rotonde afslag {exit_n}{suffix}" if exit_n else f"Volg de rotonde{suffix}"
+    base = _DIR_NL.get(man.get("modifier", ""), "Ga verder")
+    if typ in ("continue", "new name") and man.get("modifier") == "straight":
+        return f"Ga rechtdoor{f' op {name}' if name else ''}"
+    return f"{base}{suffix}"
+
+
+def _nearest_idx(geometry: list, lat: float, lon: float) -> int:
+    """Index of the overview-geometry point closest to (lat, lon).
+    O(steps × points) overall — fine for city-scale routes."""
+    best_i, best_d = 0, float("inf")
+    for i, (glat, glon) in enumerate(geometry):
+        d = (glat - lat) ** 2 + (glon - lon) ** 2
+        if d < best_d:
+            best_i, best_d = i, d
+    return best_i
+
+
+def normalize_osrm(osrm: dict) -> dict:
+    """OSRM route response → the same contract normalize() emits."""
+    try:
+        route = osrm["routes"][0]
+        coords = route["geometry"]["coordinates"]  # [[lon, lat], …]
+        legs = route["legs"]
+    except (KeyError, IndexError, TypeError) as e:
+        raise ValueError(f"unexpected OSRM shape: {e}") from e
+
+    geometry = [[c[1], c[0]] for c in coords]
+    steps = []
+    for leg in legs:
+        for st in leg.get("steps", []):
+            loc = (st.get("maneuver") or {}).get("location") or [0, 0]
+            lat, lon = loc[1], loc[0]
+            idx = _nearest_idx(geometry, lat, lon)
+            steps.append(
+                {
+                    "instruction": _osrm_instruction_nl(st),
+                    "distance_m": round(st.get("distance", 0)),
+                    "duration_s": round(st.get("duration", 0)),
+                    "maneuver_point": [lat, lon],
+                    "geometry_idx": idx,
+                    "type": -1,
+                }
+            )
+    return {
+        "engine": "osrm",
+        "geometry": geometry,
+        "distance_m": round(route.get("distance", 0)),
+        "duration_s": round(route.get("duration", 0)),
+        "steps": steps,
+    }
+
+
+async def fetch_route_osrm(
+    client: httpx.AsyncClient,
+    from_lat: float,
+    from_lon: float,
+    to_lat: float,
+    to_lon: float,
+    mode: str,
+) -> dict:
+    """Keyless FOSSGIS-OSRM call → normalized route. foot/bike only."""
+    routed = OSRM_PROFILES[mode]
+    coords = f"{from_lon},{from_lat};{to_lon},{to_lat}"
+    r = await client.get(
+        OSRM_URL.format(routed=routed, coords=coords),
+        params={"overview": "full", "geometries": "geojson", "steps": "true", "alternatives": "false"},
+        headers={"User-Agent": OSRM_UA},
+        timeout=15.0,
+    )
+    if r.status_code != 200:
+        r.raise_for_status()
+    return normalize_osrm(r.json())

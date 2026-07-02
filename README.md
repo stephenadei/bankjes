@@ -47,8 +47,9 @@ zelden genoeg om een DB te rechtvaardigen.
 cp .env.example .env
 # Vul AMSTERDAM_API_KEY in (https://keys.api.data.amsterdam.nl/clients/v1/)
 # Mapillary-token is optioneel (foto-blok in popup verdwijnt zonder)
-# ORS_API_KEY is optioneel (gratis key via https://openrouteservice.org/dev/;
-# zonder key valt de route-knop terug op een OSM-directions-link)
+# ORS_API_KEY is optioneel: zonder key routeert de app via de open
+# FOSSGIS-OSRM-instances (lopen/fietsen); een gratis ORS-key
+# (https://openrouteservice.org/dev/) voegt het rolstoelprofiel toe
 
 docker compose up --build
 # Open http://localhost:4309
