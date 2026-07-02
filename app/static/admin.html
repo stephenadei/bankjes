@@ -81,7 +81,7 @@ function render(spots) {
       <div class="label">${escapeHtml(s.label)}</div>
       <div class="meta">door <b>${escapeHtml(s.owner.display_name)}</b> (${escapeHtml(s.owner.email || "")}) · ${escapeHtml(s.created_at || "")}</div>
       ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ""}
-      <div class="coords">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} · <a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank">→ Google Maps</a></div>
+      <div class="coords">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} · <a href="https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lon}#map=19/${s.lat}/${s.lon}" target="_blank">→ OSM</a></div>
       <div class="actions">
         <button class="approve">Goedkeuren</button>
         <button class="deny">Weigeren…</button>
