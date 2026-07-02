@@ -20,8 +20,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app import routing
 from app.admin import router as admin_router
 from app.auth import router as auth_router
+from app.cached_fetch import cached_fetch
 from app.db import open_db, run_migrations
 from app.domain import Bbox, Marker, MarkerWithSource
 from app.sources import DATASETS, DATASETS_BY_LABEL, DataSource, OVERPASS_URL
@@ -36,6 +38,9 @@ cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
 photo_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
 # Neighbourhood-busyness proxy (nearby POI density); a day of staleness is fine.
 busyness_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
+# Routes: short TTL — mainly dedupes double-clicks/mode-flips; reroutes move
+# beyond the rounded key anyway.
+route_cache: TTLCache = TTLCache(maxsize=500, ttl=600)
 
 MAPILLARY_TOKEN: Optional[str] = os.environ.get("MAPILLARY_TOKEN") or None
 
@@ -225,59 +230,102 @@ async def photos(
         return {"photos": []}
 
     key = f"{lat:.5f},{lon:.5f},{radius},{limit}"
-    if key in photo_cache:
-        return photo_cache[key]
 
-    # Progressive radius: precise first, expand to ~3× if no coverage. Benches
-    # in side streets often have no drive-by within 50m but plenty within 150m.
-    raw: list = []
-    for try_radius in (radius, min(radius * 3, 200)):
-        delta = try_radius / 111000  # degrees per meter, good enough at NL latitudes
-        bbox = f"{lon - delta},{lat - delta},{lon + delta},{lat + delta}"
-        try:
-            r = await app.state.client.get(
-                "https://graph.mapillary.com/images",
-                params={
-                    # is_pano=false: skip 360° panoramas (sparser) so we get
-                    # ordinary street-level shots, which have far better coverage.
-                    "access_token": MAPILLARY_TOKEN,
-                    "bbox": bbox,
-                    "is_pano": "false",
-                    "limit": max(limit * 3, 10),
-                    "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
-                },
-                timeout=10.0,
+    async def produce() -> dict:
+        # Progressive radius: precise first, expand to ~3× if no coverage. Benches
+        # in side streets often have no drive-by within 50m but plenty within 150m.
+        raw: list = []
+        for try_radius in (radius, min(radius * 3, 200)):
+            delta = try_radius / 111000  # degrees per meter, good enough at NL latitudes
+            bbox = f"{lon - delta},{lat - delta},{lon + delta},{lat + delta}"
+            try:
+                r = await app.state.client.get(
+                    "https://graph.mapillary.com/images",
+                    params={
+                        # is_pano=false: skip 360° panoramas (sparser) so we get
+                        # ordinary street-level shots, which have far better coverage.
+                        "access_token": MAPILLARY_TOKEN,
+                        "bbox": bbox,
+                        "is_pano": "false",
+                        "limit": max(limit * 3, 10),
+                        "fields": "id,thumb_256_url,thumb_1024_url,captured_at,compass_angle,geometry",
+                    },
+                    timeout=10.0,
+                )
+            except httpx.HTTPError as e:
+                log.warning("mapillary fetch failed: %s", e)
+                raise
+            if r.status_code != 200:
+                log.warning("mapillary %d: %s", r.status_code, r.text[:200])
+                # Surface to cached_fetch as an upstream failure → {"photos": []}
+                # fallback, uncached. raise_for_status() yields an httpx.HTTPError.
+                r.raise_for_status()
+            raw = r.json().get("data", [])
+            if raw:
+                break
+
+        def dist_sq(img: dict) -> float:
+            coords = (img.get("geometry") or {}).get("coordinates") or [0, 0]
+            return (coords[0] - lon) ** 2 + (coords[1] - lat) ** 2
+
+        raw.sort(key=dist_sq)
+
+        out = [
+            {
+                "id": img["id"],
+                "thumb": img.get("thumb_256_url"),
+                "large": img.get("thumb_1024_url"),
+                "captured_at": img.get("captured_at"),
+                "url": f"https://www.mapillary.com/app/?focus=photo&pKey={img['id']}",
+            }
+            for img in raw[:limit]
+            if img.get("thumb_256_url")
+        ]
+        return {"photos": out}
+
+    return await cached_fetch(photo_cache, key, produce, {"photos": []})
+
+
+@app.get("/api/route")
+async def route(
+    from_lat: float = Query(..., ge=-90, le=90),
+    from_lon: float = Query(..., ge=-180, le=180),
+    to_lat: float = Query(..., ge=-90, le=90),
+    to_lon: float = Query(..., ge=-180, le=180),
+    mode: str = Query(default="foot", pattern="^(foot|bike|wheelchair)$"),
+):
+    """In-app route to a bench, normalized to our own contract (app.routing).
+    Engine: ORS when ORS_API_KEY is set (incl. the wheelchair profile), else
+    the keyless FOSSGIS-OSRM fallback (foot/bike) — routing works out of the
+    box, ORS upgrades it. Only initial routes + reroutes land here; the live
+    turn-by-turn loop is client-side geometry."""
+    key = routing.api_key()
+    if not key and mode == "wheelchair":
+        raise HTTPException(
+            status_code=503,
+            detail="rolstoelroute vereist de ORS-dienst (nog niet geconfigureerd)",
+        )
+    for lat, lon in ((from_lat, from_lon), (to_lat, to_lon)):
+        if not routing.coords_in_service_area(lat, lon):
+            raise HTTPException(status_code=400, detail="buiten servicegebied")
+    cache_key = f"{from_lat:.4f},{from_lon:.4f},{to_lat:.4f},{to_lon:.4f},{mode}"
+    # Only real upstream calls count against the daily budget (ORS ánd the
+    # fair-use OSRM fallback).
+    if cache_key not in route_cache and not routing.budget_allows():
+        raise HTTPException(status_code=429, detail="dagbudget routing op")
+
+    async def produce() -> dict:
+        if key:
+            return await routing.fetch_route(
+                app.state.client, key, from_lat, from_lon, to_lat, to_lon, mode
             )
-        except httpx.HTTPError as e:
-            log.warning("mapillary fetch failed: %s", e)
-            return {"photos": []}
-        if r.status_code != 200:
-            log.warning("mapillary %d: %s", r.status_code, r.text[:200])
-            return {"photos": []}
-        raw = r.json().get("data", [])
-        if raw:
-            break
+        return await routing.fetch_route_osrm(
+            app.state.client, from_lat, from_lon, to_lat, to_lon, mode
+        )
 
-    def dist_sq(img: dict) -> float:
-        coords = (img.get("geometry") or {}).get("coordinates") or [0, 0]
-        return (coords[0] - lon) ** 2 + (coords[1] - lat) ** 2
-
-    raw.sort(key=dist_sq)
-
-    out = [
-        {
-            "id": img["id"],
-            "thumb": img.get("thumb_256_url"),
-            "large": img.get("thumb_1024_url"),
-            "captured_at": img.get("captured_at"),
-            "url": f"https://www.mapillary.com/app/?focus=photo&pKey={img['id']}",
-        }
-        for img in raw[:limit]
-        if img.get("thumb_256_url")
-    ]
-
-    result = {"photos": out}
-    photo_cache[key] = result
+    result = await cached_fetch(route_cache, cache_key, produce, None)
+    if result is None:
+        raise HTTPException(status_code=503, detail="route tijdelijk niet beschikbaar")
     return result
 
 
@@ -303,8 +351,6 @@ async def busyness(
     the real occupancy of the bench itself. Returns {score, level} (nulls on
     failure so the popup just omits the indicator)."""
     key = f"{lat:.4f},{lon:.4f},{radius}"
-    if key in busyness_cache:
-        return busyness_cache[key]
 
     query = (
         "[out:json][timeout:25];("
@@ -313,7 +359,8 @@ async def busyness(
         f'node(around:{radius},{lat},{lon})["public_transport"];'
         ");out count;"
     )
-    try:
+
+    async def produce() -> dict:
         r = await app.state.client.get(
             OVERPASS_URL,
             params={"data": query},
@@ -322,16 +369,16 @@ async def busyness(
         )
         r.raise_for_status()
         elements = r.json().get("elements") or []
-    except (httpx.HTTPError, ValueError) as e:
-        log.warning("busyness fetch failed: %s", e)
-        return {"score": None, "level": None, "radius": radius}
 
-    score = 0
-    for el in elements:
-        if el.get("type") == "count":
-            score = int((el.get("tags") or {}).get("total", 0) or 0)
-            break
+        score = 0
+        for el in elements:
+            if el.get("type") == "count":
+                score = int((el.get("tags") or {}).get("total", 0) or 0)
+                break
 
-    result = {"score": score, "level": _busyness_level(score), "radius": radius}
-    busyness_cache[key] = result
-    return result
+        return {"score": score, "level": _busyness_level(score), "radius": radius}
+
+    return await cached_fetch(
+        busyness_cache, key, produce,
+        {"score": None, "level": None, "radius": radius},
+    )

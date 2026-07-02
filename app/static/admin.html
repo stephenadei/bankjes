@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Bankjes</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/fonts/fonts.css">
 <style>
   :root {
     --cream:#faf7f0; --paper:#fffdf6; --moss:#5b7a3f; --rust:#a06a3f;
@@ -81,7 +81,7 @@ function render(spots) {
       <div class="label">${escapeHtml(s.label)}</div>
       <div class="meta">door <b>${escapeHtml(s.owner.display_name)}</b> (${escapeHtml(s.owner.email || "")}) · ${escapeHtml(s.created_at || "")}</div>
       ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ""}
-      <div class="coords">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} · <a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank">→ Google Maps</a></div>
+      <div class="coords">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} · <a href="https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lon}#map=19/${s.lat}/${s.lon}" target="_blank">→ OSM</a></div>
       <div class="actions">
         <button class="approve">Goedkeuren</button>
         <button class="deny">Weigeren…</button>

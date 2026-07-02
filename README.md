@@ -19,8 +19,10 @@ crowd-sourcing.
 
 Bankjes laat beide bronnen op één kaart zien, gededupliceerd op
 10m-proximity zodat fysieke banken maar één keer geteld worden. Tap
-een bank → adres, foto's van de plek via Mapillary, "↗ Street View" /
-"↗ Open in Maps" links.
+een bank → adres, foto's van de plek via Mapillary, en **eigen in-app
+navigatie**: route + live turn-by-turn (lopen / fietsen / rolstoel) via
+OpenRouteService — geen Google-uitstap meer. Zie
+`docs/specs/2026-07-02-own-navigation-design.md`.
 
 Het project begon als hobby tijdens een minor programmeren aan de UvA;
 het concept bleef daarna in het curriculum maar de uitvoering niet.
@@ -32,7 +34,7 @@ Dit is die uitvoering.
 |---|---|
 | Backend | FastAPI · httpx · cachetools |
 | Frontend | Vanilla JS · Leaflet · Leaflet.markercluster |
-| Sources | DSO (`api.data.amsterdam.nl/v1`), OSM Overpass, Mapillary Graph API |
+| Sources | DSO (`api.data.amsterdam.nl/v1`), OSM Overpass, Mapillary Graph API, OpenRouteService (routing) |
 | Hosting | Docker · nginx · Cloudflare (proxy + origin certs) |
 | Tests | pytest + `httpx.MockTransport` |
 
@@ -45,6 +47,9 @@ zelden genoeg om een DB te rechtvaardigen.
 cp .env.example .env
 # Vul AMSTERDAM_API_KEY in (https://keys.api.data.amsterdam.nl/clients/v1/)
 # Mapillary-token is optioneel (foto-blok in popup verdwijnt zonder)
+# ORS_API_KEY is optioneel: zonder key routeert de app via de open
+# FOSSGIS-OSRM-instances (lopen/fietsen); een gratis ORS-key
+# (https://openrouteservice.org/dev/) voegt het rolstoelprofiel toe
 
 docker compose up --build
 # Open http://localhost:4309
