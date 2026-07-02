@@ -20,6 +20,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app import routing
 from app.admin import router as admin_router
 from app.auth import router as auth_router
 from app.cached_fetch import cached_fetch
@@ -37,6 +38,9 @@ cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
 photo_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
 # Neighbourhood-busyness proxy (nearby POI density); a day of staleness is fine.
 busyness_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
+# Routes: short TTL — mainly dedupes double-clicks/mode-flips; reroutes move
+# beyond the rounded key anyway.
+route_cache: TTLCache = TTLCache(maxsize=500, ttl=600)
 
 MAPILLARY_TOKEN: Optional[str] = os.environ.get("MAPILLARY_TOKEN") or None
 
@@ -280,6 +284,39 @@ async def photos(
         return {"photos": out}
 
     return await cached_fetch(photo_cache, key, produce, {"photos": []})
+
+
+@app.get("/api/route")
+async def route(
+    from_lat: float = Query(..., ge=-90, le=90),
+    from_lon: float = Query(..., ge=-180, le=180),
+    to_lat: float = Query(..., ge=-90, le=90),
+    to_lon: float = Query(..., ge=-180, le=180),
+    mode: str = Query(default="foot", pattern="^(foot|bike|wheelchair)$"),
+):
+    """In-app route to a bench via OpenRouteService, normalized to our own
+    contract (see app.routing). Only initial routes + reroutes land here;
+    the live turn-by-turn loop is client-side geometry."""
+    key = routing.api_key()
+    if not key:
+        raise HTTPException(status_code=503, detail="routing niet geconfigureerd")
+    for lat, lon in ((from_lat, from_lon), (to_lat, to_lon)):
+        if not routing.coords_in_service_area(lat, lon):
+            raise HTTPException(status_code=400, detail="buiten servicegebied")
+    cache_key = f"{from_lat:.4f},{from_lon:.4f},{to_lat:.4f},{to_lon:.4f},{mode}"
+    # Only real upstream calls count against the daily ORS budget.
+    if cache_key not in route_cache and not routing.budget_allows():
+        raise HTTPException(status_code=429, detail="dagbudget routing op")
+
+    async def produce() -> dict:
+        return await routing.fetch_route(
+            app.state.client, key, from_lat, from_lon, to_lat, to_lon, mode
+        )
+
+    result = await cached_fetch(route_cache, cache_key, produce, None)
+    if result is None:
+        raise HTTPException(status_code=503, detail="route tijdelijk niet beschikbaar")
+    return result
 
 
 # POI count within the radius → human level. Tunable; calibrated for ~150 m
