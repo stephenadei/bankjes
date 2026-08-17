@@ -1,8 +1,43 @@
 # CLAUDE.md — Stephen's Bankjes
 
+**Laatst geverifieerd:** 2026-08-17
+
 Civic-tech viewer for Amsterdam street furniture (benches). FastAPI + httpx +
-cachetools backend, vanilla JS + Leaflet frontend. Pure proxy, no DB.
+cachetools backend, vanilla JS + Leaflet frontend.
 See `README.md` for the stack and `CONTEXT.md` for domain vocabulary.
+
+**No longer a pure proxy.** This file claimed "Pure proxy, no DB" until
+2026-08-17; `app/db.py` uses `aiosqlite` with migrations under `app/migrations/`,
+and `app/spots_repo.py` persists spots. Upstream fetches are still proxied and
+cached (`app/cached_fetch.py`) — the DB is additive, not a replacement.
+
+## Commands
+
+```bash
+python3 -m pytest              # asyncio_mode=auto, testpaths=tests (pyproject.toml)
+python3 -m uvicorn app.main:app --reload
+scripts/deploy.sh              # promotes through the branch->env chain below
+python3 scripts/generate-assets.py
+```
+
+## Architecture
+
+- `app/` — FastAPI application: `main.py` (entrypoint), `routing.py`, `admin.py`,
+  `auth.py`, `domain.py`, `sources.py`, `spots.py`
+- `app/db.py` + `app/migrations/` — aiosqlite persistence and schema migrations
+- `app/cached_fetch.py` — cachetools-backed upstream proxy
+- `app/static/` — vanilla JS + Leaflet frontend
+- `scripts/` — `deploy.sh`, `generate-assets.py`
+- `tests/` — pytest suite (`test_admin`, `test_api`, `test_auth`, `test_busyness`, …)
+- `docs/` — `adr/`, `agents/`, `specs/`
+- `data/` — runtime SQLite (`bankjes.db` + `-wal`/`-shm`). Absent in this repo and
+  created per environment, so it exists in `bankjes-acc/`, `bankjes-pre/` and
+  `bankjes-prd/` but not in a fresh clone. Never commit it.
+
+One CLAUDE.md serves four checkouts: this repo plus the three env directories, which
+are the same repo on `develop`/`pre`/`master`. Edit it here and let the promote chain
+carry it — hand-editing `projects/bankjes-{acc,pre,prd}/CLAUDE.md` is overwritten by
+the next deploy.
 
 ## ⚠️ Git account
 
