@@ -1,6 +1,6 @@
 # CLAUDE.md — Stephen's Bankjes
 
-**Laatst geverifieerd:** 2026-08-17
+**Laatst geverifieerd:** 2026-09-28
 
 Civic-tech viewer for Amsterdam street furniture (benches). FastAPI + httpx +
 cachetools backend, vanilla JS + Leaflet frontend.
@@ -25,7 +25,9 @@ python3 scripts/generate-assets.py
 - `app/` — FastAPI application: `main.py` (entrypoint), `routing.py`, `admin.py`,
   `auth.py`, `domain.py`, `sources.py`, `spots.py`
 - `app/db.py` + `app/migrations/` — aiosqlite persistence and schema migrations
+- `app/spots_repo.py` — shared Spot row-mapping + ACL for the public and admin routers
 - `app/cached_fetch.py` — cachetools-backed upstream proxy
+- `app/mail.py` — Resend API wrapper, sends magic-link login emails
 - `app/static/` — vanilla JS + Leaflet frontend
 - `scripts/` — `deploy.sh`, `generate-assets.py`
 - `tests/` — pytest suite (`test_admin`, `test_api`, `test_auth`, `test_busyness`, …)
