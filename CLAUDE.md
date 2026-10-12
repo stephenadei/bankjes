@@ -1,6 +1,6 @@
 # CLAUDE.md — Stephen's Bankjes
 
-**Laatst geverifieerd:** 2026-09-28
+**Laatst geverifieerd:** 2026-10-12
 
 Civic-tech viewer for Amsterdam street furniture (benches). FastAPI + httpx +
 cachetools backend, vanilla JS + Leaflet frontend.
@@ -29,7 +29,7 @@ python3 scripts/generate-assets.py
 - `app/cached_fetch.py` — cachetools-backed upstream proxy
 - `app/mail.py` — Resend API wrapper, sends magic-link login emails
 - `app/static/` — vanilla JS + Leaflet frontend
-- `scripts/` — `deploy.sh`, `generate-assets.py`
+- `scripts/` — `deploy.sh` (per-env pull + restart, runs from the env checkout), `generate-assets.py` (derives silhouette/favicons into `app/static/`)
 - `tests/` — pytest suite (`test_admin`, `test_api`, `test_auth`, `test_busyness`, …)
 - `docs/` — `adr/`, `agents/`, `specs/`
 - `data/` — runtime SQLite (`bankjes.db` + `-wal`/`-shm`). Absent in this repo and
@@ -40,6 +40,18 @@ One CLAUDE.md serves four checkouts: this repo plus the three env directories, w
 are the same repo on `develop`/`pre`/`master`. Edit it here and let the promote chain
 carry it — hand-editing `projects/bankjes-{acc,pre,prd}/CLAUDE.md` is overwritten by
 the next deploy.
+
+## Environment
+
+Per-env files `.env.<acc|pre|prd>` (templates `.env*.example`, never committed). Read in `app/`:
+`SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_TOKEN`, `APP_BASE_URL`, `BANKJES_DB_PATH` (default `/data/bankjes.db`),
+`BANKJES_INSECURE_COOKIES`, `RESEND_API_KEY`, `RESEND_FROM_DOMAIN`, `MAIL_FROM`, `ORS_API_KEY`,
+`MAPILLARY_TOKEN`, `AMSTERDAM_API_KEY`, `TG_NOTIFY_ON_PUBLIC_REQUEST`, `APP_ENV`.
+
+## Gotchas
+
+- `APP_ENV=prd` serves the coming-soon page at `/`; `?preview=soon` forces it on acc/pre.
+- `projects/bankjes-{acc,pre,prd}` are deploy checkouts of this repo (not separate repos); see above.
 
 ## ⚠️ Git account
 
