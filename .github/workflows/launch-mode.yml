@@ -25,30 +25,29 @@ on:
 
 jobs:
   toggle:
-    runs-on: ubuntu-latest
+    # workflow_dispatch only (needs write access); runs on the VPS runner itself.
+    runs-on: [self-hosted, vps]
     steps:
-      - name: SSH + edit env + recreate container
-        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262  # v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_SSH_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
+      - name: Edit env + recreate container
+        env:
+          TARGET_ENV: ${{ inputs.env }}
+          MODE: ${{ inputs.mode }}
+        run: |
             set -e
-            cd /home/stephen/projects/bankjes-${{ inputs.env }}
+            cd "/home/stephen/projects/bankjes-$TARGET_ENV"
             # The prd/acc/pre containers each load their own .env.<env>
             # (see docker-compose.<env>.yml `env_file:`), not the bare .env
             # in this directory — that one belongs to the default dev compose.
-            ENV_FILE=".env.${{ inputs.env }}"
-            COMPOSE_FILE="docker-compose.${{ inputs.env }}.yml"
+            ENV_FILE=".env.$TARGET_ENV"
+            COMPOSE_FILE="docker-compose.$TARGET_ENV.yml"
             for f in "$ENV_FILE" "$COMPOSE_FILE"; do
               [ -f "$f" ] || { echo "::error::$f missing in $(pwd)"; exit 1; }
             done
-            echo "=== mode=${{ inputs.mode }} target=bankjes-${{ inputs.env }} ==="
+            echo "=== mode=$MODE target=bankjes-$TARGET_ENV ==="
             echo "--- APP_ENV line before:"
             grep -nE "^[# ]*APP_ENV=" "$ENV_FILE" || echo "(none)"
 
-            if [ "${{ inputs.mode }}" = "prelaunch" ]; then
+            if [ "$MODE" = "prelaunch" ]; then
               if grep -qE "^# *APP_ENV=" "$ENV_FILE"; then
                 sed -i -E 's/^# *APP_ENV=.*$/APP_ENV=prd/' "$ENV_FILE"
               elif grep -qE "^APP_ENV=" "$ENV_FILE"; then
@@ -71,4 +70,4 @@ jobs:
             # local. Skipping the pull avoids needing a registry login here
             # (the deploy workflow handles registry auth on image rebuilds).
             docker compose -f "$COMPOSE_FILE" up -d --force-recreate --pull never
-            echo "=== Done. Visibility: ${{ inputs.mode }}"
+            echo "=== Done. Visibility: $MODE"

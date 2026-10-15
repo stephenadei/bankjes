@@ -14,20 +14,19 @@ on:
       - 'docs/**'
 
 jobs:
+  # PUBLIC repo + self-hosted runner: never run fork PR code on the VPS.
   test:
-    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, vps]
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
+      # System python3 (3.12) + per-job venv; no tool cache needed on the runner.
       - name: Install deps
         run: |
-          pip install -r requirements.txt
-          pip install pytest pytest-asyncio
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q -r requirements.txt pytest pytest-asyncio
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
 
       - name: Run tests
         run: pytest -q
@@ -35,7 +34,7 @@ jobs:
   deploy:
     needs: test
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, vps]
     permissions:
       contents: read
       packages: write
@@ -47,14 +46,14 @@ jobs:
         run: |
           case "${{ github.ref }}" in
             refs/heads/master)
-              echo "env=prd" >> $GITHUB_OUTPUT
-              echo "branch=master" >> $GITHUB_OUTPUT ;;
+              echo "env=prd" >> "$GITHUB_OUTPUT"
+              echo "branch=master" >> "$GITHUB_OUTPUT" ;;
             refs/heads/develop)
-              echo "env=acc" >> $GITHUB_OUTPUT
-              echo "branch=develop" >> $GITHUB_OUTPUT ;;
+              echo "env=acc" >> "$GITHUB_OUTPUT"
+              echo "branch=develop" >> "$GITHUB_OUTPUT" ;;
             refs/heads/pre)
-              echo "env=pre" >> $GITHUB_OUTPUT
-              echo "branch=pre" >> $GITHUB_OUTPUT ;;
+              echo "env=pre" >> "$GITHUB_OUTPUT"
+              echo "branch=pre" >> "$GITHUB_OUTPUT" ;;
             *)
               echo "Unsupported branch: ${{ github.ref }}" >&2
               exit 1 ;;
@@ -77,17 +76,19 @@ jobs:
             ghcr.io/stephenadei/bankjes:${{ steps.env.outputs.env }}-${{ github.sha }}
 
       - name: Deploy on VPS
-        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262  # v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_SSH_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -e
-            cd /home/stephen/projects/bankjes-${{ steps.env.outputs.env }}
-            # Use the workflow's GITHUB_TOKEN directly in the fetch URL so we
-            # bypass whichever gh account happens to be "active" on the VPS.
-            git fetch https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ${{ steps.env.outputs.branch }}
-            git checkout -B ${{ steps.env.outputs.branch }} FETCH_HEAD
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            ./scripts/deploy.sh ${{ steps.env.outputs.env }}
+        # Runs on the VPS runner itself (user stephen): same commands the SSH hop ran.
+        env:
+          ENV_NAME: ${{ steps.env.outputs.env }}
+          BRANCH: ${{ steps.env.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          cd "/home/stephen/projects/bankjes-$ENV_NAME"
+          # Use the workflow's GITHUB_TOKEN directly in the fetch URL so we
+          # bypass whichever gh account happens to be "active" on the VPS.
+          git fetch "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "$BRANCH"
+          git checkout -B "$BRANCH" FETCH_HEAD
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+          ./scripts/deploy.sh "$ENV_NAME"
