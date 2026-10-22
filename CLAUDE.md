@@ -1,6 +1,6 @@
 # CLAUDE.md — Stephen's Bankjes
 
-**Laatst geverifieerd:** 2026-10-12
+**Laatst geverifieerd:** 2026-10-22
 
 Civic-tech viewer for Amsterdam street furniture (benches). FastAPI + httpx +
 cachetools backend, vanilla JS + Leaflet frontend.
@@ -30,7 +30,8 @@ python3 scripts/generate-assets.py
 - `app/mail.py` — Resend API wrapper, sends magic-link login emails
 - `app/static/` — vanilla JS + Leaflet frontend
 - `scripts/` — `deploy.sh` (per-env pull + restart, runs from the env checkout), `generate-assets.py` (derives silhouette/favicons into `app/static/`)
-- `tests/` — pytest suite (`test_admin`, `test_api`, `test_auth`, `test_busyness`, …)
+- `tests/` — pytest suite, one `test_<module>.py` per `app/` module plus HTML/asset checks
+  (`test_html_*`, `test_generate_assets`); HTTP is mocked with `httpx.MockTransport`, no network
 - `docs/` — `adr/`, `agents/`, `specs/`
 - `data/` — runtime SQLite (`bankjes.db` + `-wal`/`-shm`). Absent in this repo and
   created per environment, so it exists in `bankjes-acc/`, `bankjes-pre/` and
