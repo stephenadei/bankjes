@@ -1039,8 +1039,10 @@ function canonicalBackrest(v) {
 }
 
 function normalizeItem(raw) {
-  const sourceType = raw.sourceType
-    || (raw.dataset && raw.dataset.endsWith("_osm") ? "OSM" : "BGT");
+  // Register (BGT/OSM) per marker: the bench merge tags props.source_type ("bgt"/"osm");
+  // a single-source Dataset has exactly one register in its sourceTypes.
+  const tagged = (raw.props || {}).source_type;
+  const sourceType = tagged ? tagged.toUpperCase() : state.DATASETS[raw.dataset].sourceTypes[0];
   return {
     id: raw.id,
     dataset: raw.dataset,
@@ -1145,10 +1147,11 @@ const map = L.map("map", {
   attributionControl: true,
 }).setView([AMS_CENTER.lat, AMS_CENTER.lng], 13);
 
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+// PDOK BRT-Achtergrondkaart (Kadaster): open data, no key. EPSG:3857 has levels 0–19.
+L.tileLayer("https://service.pdok.nl/kadaster/brt-achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png", {
   maxZoom: 19,
-  subdomains: "abcd",
-  attribution: '&copy; CARTO &middot; OSM',
+  attribution: 'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a> &middot; '
+    + 'banken &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, gemeente Amsterdam',
 }).addTo(map);
 
 state.mapBounds = map.getBounds();

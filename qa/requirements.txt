@@ -1,0 +1,5 @@
+# Post-deploy QA (qa/), run by pipeline.yml's qa job — not part of the app image.
+# playwright 1.58.0 = Chromium rev 1208, already cached in ~/.cache/ms-playwright on the VPS runner.
+playwright==1.58.0
+pytest>=8
+httpx>=0.27
