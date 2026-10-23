@@ -72,6 +72,7 @@ jobs:
         with:
           context: .
           push: true
+          build-args: GIT_SHA=${{ github.sha }}
           tags: |
             ghcr.io/stephenadei/bankjes:${{ steps.env.outputs.env }}
             ghcr.io/stephenadei/bankjes:${{ steps.env.outputs.env }}-${{ github.sha }}
@@ -91,3 +92,66 @@ jobs:
             git checkout -B ${{ steps.env.outputs.branch }} FETCH_HEAD
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             ./scripts/deploy.sh ${{ steps.env.outputs.env }}
+
+  # Post-deploy QA on acc/pre, then promote (docs/qa.md): acc green → pre; pre green → release PR.
+  # Push-only, so fork code never reaches the VPS runner. VPS because herald, the stephenadei gh
+  # login and the cached Playwright Chromium live there.
+  qa:
+    needs: deploy
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/pre')
+    runs-on: [self-hosted, vps]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      ENV_NAME: ${{ github.ref == 'refs/heads/develop' && 'acc' || 'pre' }}
+      QA_BASE_URL: ${{ github.ref == 'refs/heads/develop' && 'https://bankjes-acc.stephensprive.app' || 'https://bankjes-pre.stephensprive.app' }}
+      QA_EXPECT_SHA: ${{ github.sha }}
+      QA_ARTIFACTS: qa-artifacts
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # promote.sh merges
+          persist-credentials: false  # public repo; pushes use the PAT below, not this token
+
+      - name: Install QA deps
+        run: |
+          python3 -m venv "$RUNNER_TEMP/qa-venv"
+          "$RUNNER_TEMP/qa-venv/bin/pip" install -q -r qa/requirements.txt
+          "$RUNNER_TEMP/qa-venv/bin/python" -m playwright install --only-shell chromium
+          echo "$RUNNER_TEMP/qa-venv/bin" >> "$GITHUB_PATH"
+
+      - name: QA ${{ env.ENV_NAME }}
+        run: pytest qa -q -p no:cacheprovider -W ignore::pytest.PytestConfigWarning
+
+      - name: Summary
+        if: always()
+        run: cat "$QA_ARTIFACTS/results.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - name: Upload screenshots
+        id: upload
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-${{ env.ENV_NAME }}-${{ github.sha }}
+          path: qa-artifacts/
+          retention-days: 30
+
+      - name: Promote
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          RESULTS: qa-artifacts/results.md
+        run: |
+          # stephenadei's PAT from the runner's gh login: GITHUB_TOKEN pushes/PRs trigger no workflows.
+          GH_TOKEN="$(gh auth token -u stephenadei)" || { echo "::error::no stephenadei gh login on this runner"; exit 1; }
+          echo "::add-mask::$GH_TOKEN"
+          export GH_TOKEN
+          scripts/promote.sh "$ENV_NAME" "$GITHUB_SHA"
+
+      - name: Alert on red
+        if: failure()
+        run: |
+          line="$(head -1 "$QA_ARTIFACTS/results.md" 2>/dev/null | tr -d '*')"
+          NOTIFY_CONTEXT=ops.alert herald send "🔴 bankjes $ENV_NAME QA/promotion failed at ${GITHUB_SHA::7}; nothing promoted. ${line:-no QA results}. $RUN_URL"
