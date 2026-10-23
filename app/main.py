@@ -150,6 +150,14 @@ async def datasets():
 
 
 async def _cached_fetch(ds: DataSource, client: httpx.AsyncClient) -> list[Marker]:
+    """Cache a dataset's markers for the TTL. Successes only.
+
+    A failure is deliberately NOT cached: pinning an upstream blip for the full
+    hour turns a five-second outage into a sixty-minute one, and a silent one,
+    because every later request is then a cache hit on nothing. Same rule as
+    app/cached_fetch.py, which /api/photos and /api/busyness already use — this
+    endpoint predates it.
+    """
     if ds.label in cache:
         return cache[ds.label]
     markers = await ds.fetch(client)
@@ -183,11 +191,29 @@ async def items(
     )
 
     results = await asyncio.gather(
-        *[_cached_fetch(ds, app.state.client) for ds in targets]
+        *[_cached_fetch(ds, app.state.client) for ds in targets],
+        return_exceptions=True,
     )
+
+    # One dead upstream must not blank the map. Drop the datasets that failed and
+    # serve the rest — but only when the caller asked for "everything", where a
+    # missing layer is visible as a missing layer. If they named ONE dataset and
+    # it failed, an empty 200 would be a lie, so that stays an error.
+    failed = [ds.label for ds, r in zip(targets, results) if isinstance(r, BaseException)]
+    if failed:
+        for ds, r in zip(targets, results):
+            if isinstance(r, BaseException):
+                log.warning("items: dataset %s unavailable: %r", ds.label, r)
+        if dataset is not None:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Upstream unavailable for dataset: {dataset}",
+            )
 
     out: list[MarkerWithSource] = []
     for ds, markers in zip(targets, results):
+        if isinstance(markers, BaseException):
+            continue
         for m in markers:
             if bb is not None and not bb.contains(m.lat, m.lon):
                 continue
@@ -206,15 +232,44 @@ async def coverage():
     if not hasattr(bench_ds, "bgt"):
         # Defensive: if Banken is ever swapped back to a non-composite, return zeros.
         return {"bgt_count": 0, "osm_count": 0, "merged_count": 0}
-    bgt_markers, osm_markers = await asyncio.gather(
-        bench_ds.bgt.fetch(app.state.client),
-        bench_ds.osm.fetch(app.state.client),
-    )
+    # ONE fetch, not two rounds. This used to gather bgt+osm, then call
+    # bench_ds.fetch() — which gathers bgt+osm AGAIN. Four upstream reads where two
+    # would do, and the three counts came from two different moments, so
+    # merged_count could exceed bgt+osm. OSM is edited continuously; seven benches
+    # appearing between rounds is ordinary. tests/test_coverage.py asserts the
+    # conservation invariant that caught it.
     merged = await bench_ds.fetch(app.state.client)
+
+    # The REGISTER sizes, recovered from the merged set — not the post-dedup
+    # survivors. This page's whole subject is "345 official vs ~7,000 mapped", so
+    # reporting OSM minus whatever dedup absorbed would answer a different
+    # question. Every absorbed OSM marker incremented merged_replicas on exactly
+    # one BGT survivor (the scan breaks on first match), and BGT markers are never
+    # dropped, so both originals are exact:
+    #     raw_bgt = markers tagged bgt
+    #     raw_osm = surviving osm + total absorbed
+    bgt_count = osm_surviving = absorbed = 0
+    for m in merged:
+        props = m.props or {}
+        if props.get("source_type") == "bgt":
+            bgt_count += 1
+        elif props.get("source_type") == "osm":
+            osm_surviving += 1
+        absorbed += int(props.get("merged_replicas") or 0)
+    osm_count = osm_surviving + absorbed
+
+    # A gap-analysis page comparing two registers must never quietly report a
+    # figure taken while one of them was down — that is not a slightly-off number,
+    # it is a wrong finding. MergedBenchSource degrades to a single register on
+    # purpose; here that has to be visible to the caller.
+    degraded = [
+        name for name, n in (("bgt", bgt_count), ("osm", osm_count)) if n == 0
+    ]
     return {
-        "bgt_count": len(bgt_markers),
-        "osm_count": len(osm_markers),
+        "bgt_count": bgt_count,
+        "osm_count": osm_count,
         "merged_count": len(merged),
+        "degraded": degraded or None,
     }
 
 
