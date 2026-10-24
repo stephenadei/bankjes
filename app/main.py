@@ -123,7 +123,12 @@ async def admin_page():
 
 @app.get("/healthz")
 async def healthz():
-    return {"ok": True, "datasets": sorted(DATASETS_BY_LABEL.keys())}
+    # version = the commit the image was built from (Dockerfile GIT_SHA); post-deploy QA checks it.
+    return {
+        "ok": True,
+        "version": os.environ.get("GIT_SHA", "dev"),
+        "datasets": sorted(DATASETS_BY_LABEL.keys()),
+    }
 
 
 @app.get("/api/datasets")

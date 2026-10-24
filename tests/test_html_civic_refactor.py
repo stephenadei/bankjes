@@ -38,3 +38,18 @@ def test_rugleun_filter_present():
     # Redesigned rugleuning uses bj-mod + bj-rugleun ids
     assert "rugleuning" in html
     assert "localStorage" in html  # persistence
+
+
+def test_basemap_is_pdok_not_keyed_carto():
+    """CARTO answers key-less requests with an 'API KEY REQUIRED' tile everywhere."""
+    html = _read("index.html")
+    assert "service.pdok.nl/kadaster/brt-achtergrondkaart" in html
+    assert "cartocdn" not in html
+    assert "Kadaster" in html  # PDOK attribution
+
+
+def test_register_comes_from_props_source_type():
+    """The API sends the register as props.source_type, never as a camelCase sourceType."""
+    html = _read("index.html")
+    assert "(raw.props || {}).source_type" in html
+    assert "raw.sourceType" not in html
