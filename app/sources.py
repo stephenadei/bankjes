@@ -7,6 +7,7 @@ adapter and appending it to DATASETS — nothing in main.py has to change.
 """
 
 import asyncio
+import logging
 import math
 import os
 from dataclasses import dataclass, field
@@ -16,6 +17,8 @@ from urllib.parse import urlencode
 import httpx
 
 from app.domain import AMSTERDAM, Bbox, Marker
+
+log = logging.getLogger("uvicorn.error")
 
 DSO_BASE = "https://api.data.amsterdam.nl/v1"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -224,9 +227,37 @@ class MergedBenchSource:
     featured: bool = True
 
     async def fetch(self, client: httpx.AsyncClient) -> list[Marker]:
+        """Merge both registers, or serve whichever one answered.
+
+        `return_exceptions=True` is the whole point. Without it the first failure
+        cancels its sibling, so an Overpass 504 — routine for a volunteer-run
+        shared service — took the 345 healthy BGT markers down with it and the
+        endpoint 500'd. On 2026-09-24 that emptied BOTH panels of /onderzoek, the
+        OSM one and the official one, from a fault in only one upstream.
+
+        A half-populated map is strictly better than no map. What it must never do
+        is pretend to be whole: the surviving markers keep their own source_type,
+        so a caller counting by source sees the real shortfall rather than a
+        silently smaller total. /api/coverage is the one caller that must NOT
+        present a degraded read as a finding — see its own guard.
+
+        Both down is still an error. Nothing was fetched, and returning [] there
+        would cache emptiness as if it were an answer.
+        """
         bgt_markers, osm_markers = await asyncio.gather(
-            self.bgt.fetch(client), self.osm.fetch(client)
+            self.bgt.fetch(client), self.osm.fetch(client), return_exceptions=True
         )
+
+        if isinstance(bgt_markers, BaseException):
+            log.warning("bench merge: BGT unavailable, serving OSM only: %r", bgt_markers)
+            bgt_markers = []
+        if isinstance(osm_markers, BaseException):
+            log.warning("bench merge: OSM unavailable, serving BGT only: %r", osm_markers)
+            osm_markers = []
+
+        if not bgt_markers and not osm_markers:
+            raise RuntimeError("bench merge: both registers failed")
+
         return _dedup_by_proximity(bgt_markers, osm_markers, self.dedup_m)
 
 
