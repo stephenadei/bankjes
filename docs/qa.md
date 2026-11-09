@@ -6,7 +6,8 @@ release PR into `master` and that is the only manual step left.
 ## What runs, per env
 
 After every deploy of `develop` (acc) and `pre` (pre), the `qa` job in `.github/workflows/pipeline.yml`
-runs `qa/` against the live URL from the VPS runner. acc and pre get the same suite.
+runs `qa/` against the live URL from the titanium runner, inside the Playwright image. acc and pre get the
+same suite.
 
 | Area | Checked |
 |---|---|
@@ -33,11 +34,12 @@ QA_BASE_URL=https://bankjes-acc.stephensprive.app /tmp/qa/bin/pytest qa -q
    fast-forward when nothing diverged. The evidence goes as a comment on the feature PR.
 3. The push to `pre` deploys **pre**, then QA runs on pre.
 4. pre green: `scripts/promote.sh pre` opens the release PR `pre → master`, or comments on the one already
-   open. Each green pre run adds an `## Evidence` comment with results and screenshot links. It also posts
-   one line to herald `personal.log`.
+   open. Each green pre run adds an `## Evidence` comment with results and screenshot links. Its herald
+   `personal.log` line is skipped: herald is not on the titanium runner.
 5. You merge the release PR with **Create a merge commit**. That push deploys **prd**.
 
-Red at any step: nothing is promoted and herald `ops.alert` posts one message with the run link. That
+Red at any step: nothing is promoted and herald `ops.alert` posts one message with the run link (the
+`qa-alert` job, on the VPS deploy runner; a failed deploy alerts from the deploy script itself). That
 covers a failed QA test, a failed install and a merge conflict. Fix forward on `develop`, or rerun in
 place (`gh run rerun <id> --failed`) when an upstream (Overpass, DSO, OSRM) was the cause.
 
@@ -47,9 +49,9 @@ green once the env has refetched, which means after the TTL or a container resta
 
 Why it is built this way:
 
-- Pushes and PRs use the runner's stephenadei gh login. A `GITHUB_TOKEN` push would not start the pre
-  pipeline, and a `GITHUB_TOKEN` PR would never get `master`'s required `test` check. This repo also does
-  not let Actions open PRs.
+- Pushes and PRs use stephenadei's classic PAT from the repo secret `BANKJES_PROMOTE_TOKEN`. A
+  `GITHUB_TOKEN` push would not start the pre pipeline, and a `GITHUB_TOKEN` PR would never get
+  `master`'s required `test` check. This repo also does not let Actions open PRs.
 - `master` is merged into `pre` so the release PR is never "behind" under `master`'s strict
   up-to-date protection, and so pre is never behind prd.
 - The release PR carries `no-automerge`. Without it, `personal-pr-automerge` would squash-merge it
