@@ -8,9 +8,6 @@ visibility/status). The friends-tier is reserved for Z v2.
 
 from __future__ import annotations
 
-import os
-import shutil
-import subprocess
 import uuid
 from typing import Optional
 
@@ -191,36 +188,6 @@ async def patch_spot(
     return await _fetch_spot(db, spot_id)
 
 
-def _tg_notify_request(spot_label: str, owner_name: str) -> None:
-    """Fire-and-forget Telegram ping to Stephen when a public-spot is requested.
-
-    Reads TG_NOTIFY_ON_PUBLIC_REQUEST env (set to "1" in prd). Uses the
-    /home/stephen/scripts/notify/tg CLI which already exists in this
-    workspace. Failures are swallowed: a missed ping must never block
-    the user's submit flow.
-    """
-    if os.environ.get("TG_NOTIFY_ON_PUBLIC_REQUEST") != "1":
-        return
-    tg = shutil.which("tg") or "/home/stephen/scripts/notify/tg"
-    if not os.path.exists(tg):
-        return
-    msg = (
-        f"🆕 <b>Bankjes — nieuw plekje voor approval</b>\n\n"
-        f"<b>{spot_label}</b> door {owner_name}\n"
-        f"Open /admin om te reviewen."
-    )
-    try:
-        subprocess.Popen(
-            [tg, "send", msg],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            stdin=subprocess.DEVNULL,
-        )
-    except Exception:
-        # Never let a notification failure block a user request
-        pass
-
-
 @router.post("/api/spots/{spot_id}/request-public")
 async def request_public(
     spot_id: str,
@@ -230,7 +197,7 @@ async def request_public(
     """Request public listing for a spot.
 
     Transitions a private spot to public with public_status='requested'.
-    Owner-only. Calls _tg_notify_request to ping Stephen for approval.
+    Owner-only.
     """
     db = request.app.state.db
     spot = await _fetch_spot(db, spot_id)
@@ -249,7 +216,6 @@ async def request_public(
     )
     await db.commit()
 
-    _tg_notify_request(spot["label"], user.display_name)
     return await _fetch_spot(db, spot_id)
 
 

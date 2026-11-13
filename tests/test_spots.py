@@ -3,7 +3,6 @@
 import asyncio
 import os
 import uuid
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -287,14 +286,12 @@ def test_request_public_owner_transitions_to_requested(client):
     db = os.environ["BANKJES_DB_PATH"]
     sid = _seed_spot(db, me_id, 52.37, 4.90, "going public")
 
-    with patch("app.spots._tg_notify_request") as ping:
-        r = client.post(f"/api/spots/{sid}/request-public")
+    r = client.post(f"/api/spots/{sid}/request-public")
 
     assert r.status_code == 200
     spot = r.json()
     assert spot["visibility"] == "public"
     assert spot["public_status"] == "requested"
-    ping.assert_called_once()
 
 
 def test_request_public_non_owner_403(client):
@@ -302,8 +299,7 @@ def test_request_public_non_owner_403(client):
     other = _seed_user(db, "viola@example.com")
     sid = _seed_spot(db, other, 52.37, 4.90, "theirs")
     _login_as(client, "wim@example.com")
-    with patch("app.spots._tg_notify_request"):
-        r = client.post(f"/api/spots/{sid}/request-public")
+    r = client.post(f"/api/spots/{sid}/request-public")
     assert r.status_code == 403
 
 
@@ -350,7 +346,6 @@ def test_request_public_resubmit_after_denial(client):
             await conn.commit()
             return sid
     sid = asyncio.run(seed())
-    with patch("app.spots._tg_notify_request"):
-        r = client.post(f"/api/spots/{sid}/request-public")
+    r = client.post(f"/api/spots/{sid}/request-public")
     assert r.status_code == 200
     assert r.json()["public_status"] == "requested"
