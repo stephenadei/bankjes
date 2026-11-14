@@ -19,7 +19,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, vps]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # System python3 (3.12) + per-job venv; no tool cache needed on the runner.
       - name: Install deps
@@ -39,7 +39,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve target env
         id: env
@@ -111,7 +111,7 @@ jobs:
       QA_ARTIFACTS: qa-artifacts
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0            # promote.sh merges
           persist-credentials: false  # public repo; pushes use the PAT below, not this token
