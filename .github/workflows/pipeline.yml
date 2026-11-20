@@ -158,6 +158,12 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           scripts/promote.sh "$ENV_NAME" "$GITHUB_SHA"
 
+      # The job container runs as root in the shared runner workspace; hand every file back to the runner
+      # user, or the next job's checkout fails on root-owned qa-artifacts/ and __pycache__/ (20 Nov 2026).
+      - name: Return workspace to the runner user
+        if: always()
+        run: chown -R "$(stat -c '%u:%g' "$GITHUB_WORKSPACE/..")" "$GITHUB_WORKSPACE"
+
   # herald lives on the VPS only: the deploy runner posts the red-QA alert through deploy-bankjes.
   qa-alert:
     needs: [build, qa]
