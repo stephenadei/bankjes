@@ -17,7 +17,7 @@ import httpx
 from cachetools import TTLCache
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import routing
@@ -119,6 +119,17 @@ async def onderzoek(preview: Optional[str] = Query(default=None)):
 @app.get("/admin", include_in_schema=False)
 async def admin_page():
     return FileResponse(STATIC_DIR / "admin.html")
+
+
+# One bundle, one team; every env serves the same AASA, the app's entitlement picks the hosts.
+APPLE_APP_ID = "QQS3VCWWUJ.app.stephensprive.bankjes"
+
+
+@app.get("/.well-known/apple-app-site-association", include_in_schema=False)
+async def apple_app_site_association():
+    return JSONResponse({"applinks": {"details": [
+        {"appIDs": [APPLE_APP_ID], "components": [{"/": "/auth/app*", "comment": "magic link -> app"}]}
+    ]}})
 
 
 @app.get("/healthz")

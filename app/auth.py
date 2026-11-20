@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from typing import Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -32,6 +33,11 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 class MagicLinkRequest(BaseModel):
     email: str
+    client: Optional[str] = None   # "ios" -> link targets /auth/app (Universal Link)
+
+
+class TokenExchange(BaseModel):
+    token: str
 
 
 class User(BaseModel):
@@ -55,10 +61,13 @@ def _session_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(secret, salt="session")
 
 
+def _sign_session(user_id: str) -> str:
+    return _session_serializer().dumps({"user_id": user_id, "issued_at": _now_utc().isoformat()})
+
+
 def _issue_session_cookie(response, user_id: str) -> None:
     """Sign + set the session cookie on the given response."""
-    payload = {"user_id": user_id, "issued_at": _now_utc().isoformat()}
-    token = _session_serializer().dumps(payload)
+    token = _sign_session(user_id)
     # secure=False in test mode (env BANKJES_INSECURE_COOKIES=1) for TestClient compatibility
     secure = not os.environ.get("BANKJES_INSECURE_COOKIES")
     response.set_cookie(
@@ -77,8 +86,9 @@ def _now_utc() -> datetime:
 
 
 async def get_current_user(request: Request) -> Optional[User]:
-    """Return the authenticated User from the session cookie, or None."""
-    token = request.cookies.get(SESSION_COOKIE_NAME)
+    """Return the authenticated User from `Authorization: Bearer` or the session cookie, or None."""
+    auth = request.headers.get("authorization", "")
+    token = auth[7:].strip() if auth[:7].lower() == "bearer " else request.cookies.get(SESSION_COOKIE_NAME)
     if not token:
         return None
     try:
@@ -88,7 +98,10 @@ async def get_current_user(request: Request) -> Optional[User]:
     user_id = payload.get("user_id")
     if not user_id:
         return None
-    db = request.app.state.db
+    return await _load_user(request.app.state.db, user_id)
+
+
+async def _load_user(db, user_id: str) -> Optional[User]:
     cur = await db.execute(
         "SELECT id, email, display_name FROM users WHERE id = ?",
         (user_id,),
@@ -142,16 +155,15 @@ async def request_magic_link(payload: MagicLinkRequest, request: Request):
     await db.commit()
 
     base = os.environ.get("APP_BASE_URL", "").rstrip("/")
-    link = f"{base}/auth/verify?token={token}"
+    path = "/auth/app" if payload.client == "ios" else "/auth/verify"
+    link = f"{base}{path}?token={token}"
     await send_magic_link(request.app.state.client, email, link)
 
     return {"sent": True}
 
 
-@router.get("/auth/verify")
-async def verify_magic_link(request: Request, token: str):
-    db = request.app.state.db
-
+async def _consume_magic_token(db, token: str) -> str:
+    """Verify + consume a magic token, upsert its user. Returns user_id; 400/410 on failure."""
     # Verify signature + age
     try:
         payload = _serializer().loads(token, max_age=MAGIC_LINK_TTL_SECONDS)
@@ -200,10 +212,30 @@ async def verify_magic_link(request: Request, token: str):
         )
 
     await db.commit()
+    return user_id
 
+
+@router.get("/auth/verify")
+async def verify_magic_link(request: Request, token: str):
+    user_id = await _consume_magic_token(request.app.state.db, token)
     response = RedirectResponse(url="/", status_code=302)
     _issue_session_cookie(response, user_id)
     return response
+
+
+@router.get("/auth/app")
+async def app_link_fallback(token: str):
+    """Universal Link target; only reached when the app is not installed -> web login."""
+    return RedirectResponse(url=f"/auth/verify?token={quote(token)}", status_code=302)
+
+
+@router.post("/api/auth/token")
+async def exchange_token(payload: TokenExchange, request: Request):
+    """App sign-in: magic token -> bearer session. Deliberately no Set-Cookie."""
+    db = request.app.state.db
+    user_id = await _consume_magic_token(db, payload.token)
+    user = await _load_user(db, user_id)
+    return {"session": _sign_session(user_id), "user": user.model_dump()}
 
 
 @router.get("/api/me")
