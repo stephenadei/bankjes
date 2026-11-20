@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "Bankjes";
+"NSLocationWhenInUseUsageDescription" = "Bankjes uses your location to show benches near you and to navigate you there. Your location is only shared to calculate a route.";

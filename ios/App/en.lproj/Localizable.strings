@@ -1,0 +1,24 @@
+/* English for every Dutch key (keys are the Dutch text). */
+"Testomgeving %@" = "Test environment %@";
+"Bankjes laden…" = "Loading benches…";
+"Offline" = "Offline";
+"Laatst bijgewerkt %@" = "Last updated %@";
+"Tik om opnieuw te laden" = "Tap to reload";
+"Geen verbinding" = "No connection";
+"Bankjes laden zodra je weer online bent. Tik om opnieuw te proberen." = "Benches load as soon as you are back online. Tap to try again.";
+"%lld bankjes" = "%lld benches";
+"Bankje met rugleuning" = "Bench with backrest";
+"Bankje zonder rugleuning" = "Bench without backrest";
+"Bankje" = "Bench";
+"Gemeente (BGT)" = "Municipality (BGT)";
+"Onbekende bron" = "Unknown source";
+"In de buurt" = "Near me";
+"Locatie staat uit" = "Location is off";
+"Bankjes mag je locatie niet gebruiken, dus de afstanden zijn gemeten vanaf de Dam. Zet locatie aan in Instellingen om bankjes bij jou in de buurt te zien." = "Bankjes may not use your location, so distances are measured from the Dam. Turn on location in Settings to see benches near you.";
+"Open Instellingen" = "Open Settings";
+"Locatie zoeken… tot die tijd gemeten vanaf de Dam." = "Finding your location… measuring from the Dam until then.";
+"Nog geen bankjes geladen." = "No benches loaded yet.";
+"Dichtstbij de Dam" = "Nearest to the Dam";
+"Dichtstbij jou" = "Nearest to you";
+"Klaar" = "Done";
+"Toon op de kaart" = "Show on the map";

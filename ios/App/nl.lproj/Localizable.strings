@@ -1,0 +1,24 @@
+/* Dutch is the development language: the keys are the Dutch text. */
+"Testomgeving %@" = "Testomgeving %@";
+"Bankjes laden…" = "Bankjes laden…";
+"Offline" = "Offline";
+"Laatst bijgewerkt %@" = "Laatst bijgewerkt %@";
+"Tik om opnieuw te laden" = "Tik om opnieuw te laden";
+"Geen verbinding" = "Geen verbinding";
+"Bankjes laden zodra je weer online bent. Tik om opnieuw te proberen." = "Bankjes laden zodra je weer online bent. Tik om opnieuw te proberen.";
+"%lld bankjes" = "%lld bankjes";
+"Bankje met rugleuning" = "Bankje met rugleuning";
+"Bankje zonder rugleuning" = "Bankje zonder rugleuning";
+"Bankje" = "Bankje";
+"Gemeente (BGT)" = "Gemeente (BGT)";
+"Onbekende bron" = "Onbekende bron";
+"In de buurt" = "In de buurt";
+"Locatie staat uit" = "Locatie staat uit";
+"Bankjes mag je locatie niet gebruiken, dus de afstanden zijn gemeten vanaf de Dam. Zet locatie aan in Instellingen om bankjes bij jou in de buurt te zien." = "Bankjes mag je locatie niet gebruiken, dus de afstanden zijn gemeten vanaf de Dam. Zet locatie aan in Instellingen om bankjes bij jou in de buurt te zien.";
+"Open Instellingen" = "Open Instellingen";
+"Locatie zoeken… tot die tijd gemeten vanaf de Dam." = "Locatie zoeken… tot die tijd gemeten vanaf de Dam.";
+"Nog geen bankjes geladen." = "Nog geen bankjes geladen.";
+"Dichtstbij de Dam" = "Dichtstbij de Dam";
+"Dichtstbij jou" = "Dichtstbij jou";
+"Klaar" = "Klaar";
+"Toon op de kaart" = "Toon op de kaart";
