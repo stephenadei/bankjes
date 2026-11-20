@@ -233,3 +233,82 @@ def test_invalid_session_cookie_treated_as_unauth(client_with_envs):
     client_with_envs.cookies.set("bankjes_session", "garbage-not-signed")
     r = client_with_envs.get("/api/me")
     assert r.status_code == 401
+
+
+# ── iOS app: Universal Link magic link, bearer session, AASA ─────────────
+
+def test_request_magic_link_ios_client_links_to_auth_app(client_with_envs):
+    with patch("app.auth.send_magic_link", new=AsyncMock()) as fake_send:
+        r = client_with_envs.post(
+            "/api/auth/request-magic-link",
+            json={"email": "ios@example.com", "client": "ios"},
+        )
+    assert r.status_code == 200
+    assert fake_send.await_args.args[2].startswith("https://test.example/auth/app?token=")
+
+
+def test_token_exchange_returns_session_usable_as_bearer(client_with_envs):
+    token = _issue_token_via_request(client_with_envs, "ivy@example.com")
+    r = client_with_envs.post("/api/auth/token", json={"token": token})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["user"]["email"] == "ivy@example.com"
+    assert set(body["user"]) == {"id", "email", "display_name", "is_admin"}
+    me = client_with_envs.get("/api/me", headers={"Authorization": f"Bearer {body['session']}"})
+    assert me.status_code == 200
+    assert me.json()["id"] == body["user"]["id"]
+
+
+def test_token_exchange_sets_no_cookie(client_with_envs):
+    token = _issue_token_via_request(client_with_envs, "jan@example.com")
+    r = client_with_envs.post("/api/auth/token", json={"token": token})
+    assert r.status_code == 200
+    assert "set-cookie" not in r.headers
+    assert not client_with_envs.cookies
+
+
+def test_token_exchange_replay_is_410(client_with_envs):
+    token = _issue_token_via_request(client_with_envs, "kim@example.com")
+    assert client_with_envs.post("/api/auth/token", json={"token": token}).status_code == 200
+    assert client_with_envs.post("/api/auth/token", json={"token": token}).status_code == 410
+
+
+def test_token_exchange_rejects_bad_token(client_with_envs):
+    r = client_with_envs.post("/api/auth/token", json={"token": "garbage"})
+    assert r.status_code == 400
+
+
+def test_bad_bearer_is_unauthenticated(client_with_envs):
+    r = client_with_envs.get("/api/me", headers={"Authorization": "Bearer garbage-not-signed"})
+    assert r.status_code == 401
+
+
+def test_bearer_authorises_spot_writes(client_with_envs):
+    token = _issue_token_via_request(client_with_envs, "lex@example.com")
+    session = client_with_envs.post("/api/auth/token", json={"token": token}).json()["session"]
+    h = {"Authorization": f"Bearer {session}"}
+    r = client_with_envs.post("/api/spots", json={"lat": 52.37, "lon": 4.9, "label": "x"}, headers=h)
+    assert r.status_code in (200, 201), r.text
+    assert client_with_envs.post("/api/spots", json={"lat": 52.37, "lon": 4.9, "label": "x"}).status_code == 401
+
+
+def test_auth_app_redirects_to_web_verify(client_with_envs):
+    r = client_with_envs.get("/auth/app?token=abc.def-ghi_", follow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers["location"] == "/auth/verify?token=abc.def-ghi_"
+
+
+def test_auth_app_fallback_logs_in_on_web(client_with_envs):
+    token = _issue_token_via_request(client_with_envs, "mia@example.com")
+    r = client_with_envs.get(f"/auth/app?token={token}")   # follows to /auth/verify then /
+    assert r.status_code == 200
+    assert client_with_envs.get("/api/me").json()["email"] == "mia@example.com"
+
+
+def test_aasa_served_as_json_with_app_id(client_with_envs):
+    r = client_with_envs.get("/.well-known/apple-app-site-association", follow_redirects=False)
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("application/json")
+    details = r.json()["applinks"]["details"]
+    assert details[0]["appIDs"] == ["QQS3VCWWUJ.app.stephensprive.bankjes"]
+    assert details[0]["components"][0]["/"] == "/auth/app*"
