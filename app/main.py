@@ -34,6 +34,10 @@ from app.spots import router as spots_router
 CACHE_TTL_SECONDS = 3600
 
 cache: TTLCache = TTLCache(maxsize=64, ttl=CACHE_TTL_SECONDS)
+# A merged dataset that came back with one register missing: kept briefly so an
+# Overpass outage doesn't hit upstream per request, but not pinned for the hour.
+DEGRADED_CACHE_TTL_SECONDS = 60
+degraded_cache: TTLCache = TTLCache(maxsize=64, ttl=DEGRADED_CACHE_TTL_SECONDS)
 # Photo lookups dwarf dataset count; a day of staleness is fine.
 photo_cache: TTLCache = TTLCache(maxsize=2000, ttl=86400)
 # Neighbourhood-busyness proxy (nearby POI density); a day of staleness is fine.
@@ -74,8 +78,8 @@ async def _prewarm(client: httpx.AsyncClient) -> None:
     targets = [ds for ds in DATASETS if ds.default_on]
     for ds in targets:
         try:
-            await _cached_fetch(ds, client)
-            log.info("prewarm: %s loaded (%d cached)", ds.label, len(cache[ds.label]))
+            markers = await _cached_fetch(ds, client)
+            log.info("prewarm: %s loaded (%d cached)", ds.label, len(markers))
         except Exception as e:
             log.warning("prewarm: %s failed: %s", ds.label, e)
 
@@ -173,12 +177,25 @@ async def _cached_fetch(ds: DataSource, client: httpx.AsyncClient) -> list[Marke
     because every later request is then a cache hit on nothing. Same rule as
     app/cached_fetch.py, which /api/photos and /api/busyness already use — this
     endpoint predates it.
+
+    A merged dataset that degraded to one register is cached for
+    DEGRADED_CACHE_TTL_SECONDS only, so the full merge returns once the
+    upstream recovers instead of an hour later.
     """
-    if ds.label in cache:
-        return cache[ds.label]
+    for c in (cache, degraded_cache):
+        if ds.label in c:
+            return c[ds.label]
     markers = await ds.fetch(client)
-    cache[ds.label] = markers
+    (degraded_cache if _is_degraded_merge(ds, markers) else cache)[ds.label] = markers
     return markers
+
+
+def _is_degraded_merge(ds: DataSource, markers: list[Marker]) -> bool:
+    """A merged source missing BGT or OSM markers entirely served one register only."""
+    if ds.source_type != "merged":
+        return False
+    seen = {(m.props or {}).get("source_type") for m in markers}
+    return not {"bgt", "osm"} <= seen
 
 
 @app.get("/api/items")
