@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# bin/device — build Bankjes and install it on your iPhone, no TestFlight. Copied from ios-cockpit's bin/device.
+# Builds Debug (→ acc, decision D1) unless BANKJES_CONFIG=Release (→ prd).
+# BANKJES_TEAM_ID = the team that signs:
+#   - the paid team QQS3VCWWUJ (Stephen's Apple Developer Program membership): full app incl. Associated Domains;
+#   - a free Apple ID ("Personal Team"): no Associated Domains (a free team cannot sign them), so the
+#     magic-link sign-in (I5) cannot open the app on that build; the map and navigation work. Expires after 7 days.
+# One-time setup:
+#   1. Xcode > Settings > Accounts: add your Apple ID.
+#   2. The iPhone: connect by cable once, tap "Trust", then Settings > Privacy & Security > Developer Mode > On.
+#   3. Free team only, after the first install: Settings > General > VPN & Device Management > your Apple ID > Trust.
+# Usage: BANKJES_TEAM_ID=XXXXXXXXXX bin/device [all | iphone | device name or id]
+#   no argument = the only connected iPhone; `all` = every connected one.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+: "${BANKJES_TEAM_ID:?set BANKJES_TEAM_ID (QQS3VCWWUJ for the paid team, or your Personal Team id; see the header of bin/device)}"
+CONFIG="${BANKJES_CONFIG:-Debug}"
+(cd Packages/BankjesCore && swift run -c release BankjesChecks ../../Fixtures) || { echo "device: core checks failed" >&2; exit 1; }
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+xcodegen generate --quiet
+EXTRA=()
+if [ "$BANKJES_TEAM_ID" != "QQS3VCWWUJ" ]; then
+  EXTRA=(BANKJES_ENTITLEMENTS=)
+  echo "device: team $BANKJES_TEAM_ID is not the paid team: building without Associated Domains (no Universal Link sign-in)"
+fi
+SEL="${1:-}"
+J="$(mktemp)"; xcrun devicectl list devices --json-output "$J" >/dev/null 2>&1 || true
+DEVS="$(python3 -c 'import json,sys
+sel=sys.argv[2].lower()
+d=json.load(open(sys.argv[1])).get("result",{}).get("devices",[])
+out=[]
+for x in d:
+    h=x.get("hardwareProperties",{}); t=(h.get("deviceType") or "")
+    if h.get("reality")=="simulated" or t!="iPhone": continue
+    uid=h.get("udid") or x["identifier"]; name=x.get("deviceProperties",{}).get("name","")
+    if sel in ("","all","iphone") or sel in (uid.lower(), x["identifier"].lower(), name.lower()):
+        out.append(uid)
+if sel=="" and len(out)!=1: out=[]
+print(" ".join(out))' "$J" "$SEL" 2>/dev/null || true)"; rm -f "$J"
+if [ -z "$DEVS" ]; then
+  if [ -n "$SEL" ] && [ "$SEL" != all ] && [ "$SEL" != iphone ]; then DEVS="$SEL"   # a name/id devicectl did not list
+  else echo "device: no single iPhone found; connect it (cable or same Wi-Fi), or pass all | iphone | a name" >&2
+       xcrun devicectl list devices >&2 || true; exit 1; fi
+fi
+APP="build/device/Build/Products/${CONFIG}-iphoneos/Bankjes.app"
+for DEV in $DEVS; do
+  rm -rf "$APP"
+  xcodebuild -project Bankjes.xcodeproj -scheme Bankjes -configuration "$CONFIG" -destination "id=$DEV" \
+    -derivedDataPath build/device DEVELOPMENT_TEAM="$BANKJES_TEAM_ID" ${EXTRA[@]+"${EXTRA[@]}"} -allowProvisioningUpdates build \
+    | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+  [ -d "$APP" ] || { echo "device: build for $DEV failed (see errors above)" >&2; exit 1; }
+  xcrun devicectl device install app --device "$DEV" "$APP"
+  echo "device: installed $CONFIG on $DEV."
+done

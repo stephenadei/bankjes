@@ -1,0 +1,2803 @@
+{
+ "count": 179,
+ "items": [
+  {
+   "id": "osm:10000638159",
+   "lat": 52.343835,
+   "lon": 4.8578257,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:10300158085",
+   "lat": 52.3447645,
+   "lon": 4.9316252,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:10764130671",
+   "lat": 52.3502345,
+   "lon": 4.9681983,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:10931867211",
+   "lat": 52.3613262,
+   "lon": 4.8208805,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11172671818",
+   "lat": 52.3592562,
+   "lon": 4.8737074,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11310547152",
+   "lat": 52.3604175,
+   "lon": 4.896954,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11538108380",
+   "lat": 52.3404162,
+   "lon": 4.8927953,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11830331419",
+   "lat": 52.3720457,
+   "lon": 4.8851124,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11877404681",
+   "lat": 52.3428919,
+   "lon": 4.9004589,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11889597677",
+   "lat": 52.372127,
+   "lon": 4.8997443,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11889597678",
+   "lat": 52.3721332,
+   "lon": 4.8998278,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11889597679",
+   "lat": 52.3720967,
+   "lon": 4.8998193,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11889600936",
+   "lat": 52.3775285,
+   "lon": 4.8977547,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11889600937",
+   "lat": 52.3775591,
+   "lon": 4.8977061,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11889600938",
+   "lat": 52.3776964,
+   "lon": 4.8974874,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11895825121",
+   "lat": 52.3706901,
+   "lon": 4.8871206,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11895884298",
+   "lat": 52.3719231,
+   "lon": 4.8872547,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11933239796",
+   "lat": 52.3747727,
+   "lon": 4.8893338,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11933241627",
+   "lat": 52.3746781,
+   "lon": 4.8892164,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11933256976",
+   "lat": 52.3747274,
+   "lon": 4.8892788,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11933578706",
+   "lat": 52.3743056,
+   "lon": 4.8949834,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "8",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11933582361",
+   "lat": 52.3744084,
+   "lon": 4.8951119,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "8",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:11937519569",
+   "lat": 52.3703221,
+   "lon": 4.8879092,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12053005011",
+   "lat": 52.3451728,
+   "lon": 4.9315464,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12144929485",
+   "lat": 52.3031626,
+   "lon": 4.9583353,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12160405164",
+   "lat": 52.3710959,
+   "lon": 4.8849663,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12160413561",
+   "lat": 52.3715618,
+   "lon": 4.8850186,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12181707255",
+   "lat": 52.3762695,
+   "lon": 4.8865081,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12189757865",
+   "lat": 52.3698079,
+   "lon": 4.8954497,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12189764272",
+   "lat": 52.369298,
+   "lon": 4.8937623,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12189764273",
+   "lat": 52.3692966,
+   "lon": 4.8937169,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12189764274",
+   "lat": 52.3692953,
+   "lon": 4.8936704,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12431803368",
+   "lat": 52.3730169,
+   "lon": 4.900943,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12503034069",
+   "lat": 52.3625364,
+   "lon": 4.8975515,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:1250800937",
+   "lat": 52.3679475,
+   "lon": 4.8961071,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2021-06-06",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12620408838",
+   "lat": 52.3758376,
+   "lon": 4.8843769,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12620472570",
+   "lat": 52.3756229,
+   "lon": 4.8859035,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12620473861",
+   "lat": 52.3758122,
+   "lon": 4.8843501,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12670475792",
+   "lat": 52.3680153,
+   "lon": 4.8929795,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12670588066",
+   "lat": 52.3679379,
+   "lon": 4.8930664,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12670588067",
+   "lat": 52.3678679,
+   "lon": 4.8931562,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12670588068",
+   "lat": 52.3677971,
+   "lon": 4.8932468,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12670588069",
+   "lat": 52.367723,
+   "lon": 4.8933406,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12684791516",
+   "lat": 52.3699523,
+   "lon": 4.9360413,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:12883597950",
+   "lat": 52.3039169,
+   "lon": 4.9522217,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "layer": "1",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13095356315",
+   "lat": 52.3689309,
+   "lon": 4.8869753,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "colour": "green",
+    "direction": "268",
+    "material": "wood",
+    "not:inscription": "yes",
+    "not:tourism:artwork": "yes",
+    "seats:separated": "no",
+    "survey:date": "2025-08-25",
+    "two_sided": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13103244128",
+   "lat": 52.3691822,
+   "lon": 4.8924683,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "colour": "brown",
+    "direction": "169",
+    "material": "wood",
+    "seats": "6",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13103244137",
+   "lat": 52.3691773,
+   "lon": 4.8924117,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "colour": "brown",
+    "direction": "169",
+    "material": "wood",
+    "seats": "6",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13105647732",
+   "lat": 52.3682818,
+   "lon": 4.8932684,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13123139931",
+   "lat": 52.3535554,
+   "lon": 4.8458898,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13175383486",
+   "lat": 52.3688751,
+   "lon": 4.8981469,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13180073022",
+   "lat": 52.3766424,
+   "lon": 4.8988297,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13180073023",
+   "lat": 52.3765743,
+   "lon": 4.8989425,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13180073024",
+   "lat": 52.3765503,
+   "lon": 4.8989865,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13180085928",
+   "lat": 52.3743741,
+   "lon": 4.9051762,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13181056558",
+   "lat": 52.377366,
+   "lon": 4.8980448,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189193585",
+   "lat": 52.37278,
+   "lon": 4.9007878,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189193586",
+   "lat": 52.3727432,
+   "lon": 4.9007639,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189193587",
+   "lat": 52.3726302,
+   "lon": 4.9007037,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189193588",
+   "lat": 52.3725953,
+   "lon": 4.9006811,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189193589",
+   "lat": 52.3724884,
+   "lon": 4.9006152,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189193590",
+   "lat": 52.3724485,
+   "lon": 4.900592,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195764",
+   "lat": 52.3722203,
+   "lon": 4.900839,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "12",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195765",
+   "lat": 52.3721325,
+   "lon": 4.9010638,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "6",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195766",
+   "lat": 52.3721252,
+   "lon": 4.9011015,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "6",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195767",
+   "lat": 52.3721066,
+   "lon": 4.9011025,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "wood",
+    "seats": "6",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195768",
+   "lat": 52.3729269,
+   "lon": 4.900537,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195769",
+   "lat": 52.3729113,
+   "lon": 4.9005752,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195770",
+   "lat": 52.3728895,
+   "lon": 4.900649,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13189195771",
+   "lat": 52.3728763,
+   "lon": 4.9006846,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "4",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13228056267",
+   "lat": 52.3860477,
+   "lon": 4.8751085,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "metal",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120191",
+   "lat": 52.3730362,
+   "lon": 4.8938314,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120192",
+   "lat": 52.3729914,
+   "lon": 4.8939233,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120193",
+   "lat": 52.3729111,
+   "lon": 4.8940896,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120194",
+   "lat": 52.3728767,
+   "lon": 4.8941593,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120195",
+   "lat": 52.3735533,
+   "lon": 4.8935455,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120196",
+   "lat": 52.3735797,
+   "lon": 4.8939227,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "30",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120197",
+   "lat": 52.373945,
+   "lon": 4.8940666,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "20",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120198",
+   "lat": 52.3738432,
+   "lon": 4.8942785,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "30",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120199",
+   "lat": 52.3741244,
+   "lon": 4.8953578,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "8",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241120200",
+   "lat": 52.3742315,
+   "lon": 4.8954903,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "8",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13241145701",
+   "lat": 52.3746538,
+   "lon": 4.8949563,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "20",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13363359328",
+   "lat": 52.3575262,
+   "lon": 4.8700098,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2021-01-10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13712368838",
+   "lat": 52.3686115,
+   "lon": 4.8869453,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718113169",
+   "lat": 52.3721094,
+   "lon": 4.8930626,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718113170",
+   "lat": 52.3720432,
+   "lon": 4.8930654,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718113171",
+   "lat": 52.3719767,
+   "lon": 4.8930582,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718120248",
+   "lat": 52.3720776,
+   "lon": 4.8931786,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718120249",
+   "lat": 52.372037,
+   "lon": 4.8931664,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718120250",
+   "lat": 52.3719976,
+   "lon": 4.8931554,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718660620",
+   "lat": 52.3685309,
+   "lon": 4.8929727,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13718660621",
+   "lat": 52.368395,
+   "lon": 4.8931464,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13723128744",
+   "lat": 52.3683674,
+   "lon": 4.8960923,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:13752204075",
+   "lat": 52.3904747,
+   "lon": 4.9105362,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "yes",
+    "material": "wood",
+    "seats": "12",
+    "two_sided": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14079171173",
+   "lat": 52.3697741,
+   "lon": 4.8946051,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14079194002",
+   "lat": 52.3697528,
+   "lon": 4.8945949,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14079202760",
+   "lat": 52.3696863,
+   "lon": 4.8945668,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14079214164",
+   "lat": 52.3697124,
+   "lon": 4.8945794,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14099886002",
+   "lat": 52.377615,
+   "lon": 4.8952771,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14296034265",
+   "lat": 52.2957321,
+   "lon": 4.9572976,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "direction": "151",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14324059018",
+   "lat": 52.3677336,
+   "lon": 4.8959656,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:14324100267",
+   "lat": 52.3678523,
+   "lon": 4.8960239,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:1851914050",
+   "lat": 52.3522932,
+   "lon": 4.9780689,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:2325490640",
+   "lat": 52.3708919,
+   "lon": 4.90104,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:2325490652",
+   "lat": 52.3709091,
+   "lon": 4.9011366,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:3404634847",
+   "lat": 52.3601292,
+   "lon": 4.8995662,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2021-06-06",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:440009657",
+   "lat": 52.3648529,
+   "lon": 4.9111233,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2021-01-30",
+    "material": "wood",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:4894401573",
+   "lat": 52.357236,
+   "lon": 4.8641047,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2025-01-25",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:4933197352",
+   "lat": 52.376755,
+   "lon": 4.8900987,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:4946846521",
+   "lat": 52.3726652,
+   "lon": 4.8966431,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5048599930",
+   "lat": 52.3683444,
+   "lon": 4.8960281,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184783",
+   "lat": 52.3733711,
+   "lon": 4.8925415,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184784",
+   "lat": 52.3733422,
+   "lon": 4.8926174,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184785",
+   "lat": 52.3733144,
+   "lon": 4.8926932,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184786",
+   "lat": 52.3732867,
+   "lon": 4.8927686,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184787",
+   "lat": 52.3732593,
+   "lon": 4.8928437,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184788",
+   "lat": 52.3728499,
+   "lon": 4.8922781,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184789",
+   "lat": 52.3728462,
+   "lon": 4.8923661,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184790",
+   "lat": 52.3728426,
+   "lon": 4.8924544,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184791",
+   "lat": 52.3728389,
+   "lon": 4.8925421,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5413184792",
+   "lat": 52.3728352,
+   "lon": 4.8926324,
+   "props": {
+    "amenity": "bench",
+    "armrest": "no",
+    "backrest": "no",
+    "material": "stone",
+    "seats": "10",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5645656856",
+   "lat": 52.3239628,
+   "lon": 4.9359176,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2026-10-19",
+    "layer": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039705",
+   "lat": 52.3728395,
+   "lon": 4.8932516,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039707",
+   "lat": 52.3729776,
+   "lon": 4.8933197,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039709",
+   "lat": 52.3730253,
+   "lon": 4.8933542,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039711",
+   "lat": 52.3731411,
+   "lon": 4.8934278,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039713",
+   "lat": 52.3731945,
+   "lon": 4.8934781,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039715",
+   "lat": 52.3732611,
+   "lon": 4.8935771,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5672039716",
+   "lat": 52.3726945,
+   "lon": 4.8932882,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5674541699",
+   "lat": 52.3755475,
+   "lon": 4.9000259,
+   "props": {
+    "amenity": "bench",
+    "artist_name": "Peter de Leeuwe",
+    "artwork_type": "sculpture",
+    "backrest": "yes",
+    "check_date": "2026-02-03",
+    "historic": "memorial",
+    "material": "bronze",
+    "memorial": "statue",
+    "name": "Majoor Bosshardt",
+    "start_date": "2013-06-07",
+    "subject:wikidata": "Q274040",
+    "tourism": "artwork",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5713819669",
+   "lat": 52.3721203,
+   "lon": 4.8996676,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:5713819670",
+   "lat": 52.3720646,
+   "lon": 4.8998635,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:6295443766",
+   "lat": 52.3469436,
+   "lon": 4.8262755,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "check_date": "2025-12-21",
+    "colour": "brown",
+    "material": "wood",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:6299153186",
+   "lat": 52.3706199,
+   "lon": 4.894879,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:7780912702",
+   "lat": 52.3531981,
+   "lon": 4.8402983,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:8494657691",
+   "lat": 52.3149991,
+   "lon": 4.9657583,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "direction": "240",
+    "material": "wood",
+    "seats": "3",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449092",
+   "lat": 52.37495,
+   "lon": 4.8837607,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449093",
+   "lat": 52.3749174,
+   "lon": 4.8838582,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449094",
+   "lat": 52.3748872,
+   "lon": 4.8839487,
+   "props": {
+    "amenity": "bench",
+    "backrest": "no",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449099",
+   "lat": 52.3746732,
+   "lon": 4.8843229,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449100",
+   "lat": 52.3746775,
+   "lon": 4.88422,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449101",
+   "lat": 52.3745652,
+   "lon": 4.8844281,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141449102",
+   "lat": 52.3746282,
+   "lon": 4.8844309,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141453931",
+   "lat": 52.3741859,
+   "lon": 4.8840585,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141453932",
+   "lat": 52.3741744,
+   "lon": 4.8843374,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141453937",
+   "lat": 52.3741805,
+   "lon": 4.8837791,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9141453939",
+   "lat": 52.3743263,
+   "lon": 4.8839457,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9308363309",
+   "lat": 52.342123,
+   "lon": 4.9508335,
+   "props": {
+    "amenity": "bench",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "osm:9898807407",
+   "lat": 52.3196337,
+   "lon": 4.9891449,
+   "props": {
+    "amenity": "bench",
+    "backrest": "yes",
+    "source_type": "osm"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.04d6a722402e48e5a562949599009faf.1",
+   "lat": 52.41312897333229,
+   "lon": 4.89075130386525,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.89075130386525,
+      52.41312897333229
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.04d6a722402e48e5a562949599009faf",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.10dca6b2de1240b98b43515c2336f634.1",
+   "lat": 52.32903840994233,
+   "lon": 4.820732011859244,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.820732011859244,
+      52.32903840994233
+     ]
+    },
+    "objectBegintijd": "2023-06-22",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.10dca6b2de1240b98b43515c2336f634",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2023-06-26T10:36:15",
+    "eindRegistratie": null,
+    "lvPublicatie": "2023-06-26T11:58:05",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.1fc5a4e9dca1451aa1a12f0503b0983b.1",
+   "lat": 52.380360102428746,
+   "lon": 4.999949962465144,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.999949962465144,
+      52.380360102428746
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.1fc5a4e9dca1451aa1a12f0503b0983b",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.29d59118ff5b49d79f219b9d6ab5df48.1",
+   "lat": 52.41302911560213,
+   "lon": 4.890958192326361,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.890958192326361,
+      52.41302911560213
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.29d59118ff5b49d79f219b9d6ab5df48",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.2f160885740e409ab292733d1d98fc9b.1",
+   "lat": 52.38034650042526,
+   "lon": 4.999547733899544,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.999547733899544,
+      52.38034650042526
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.2f160885740e409ab292733d1d98fc9b",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.33c40fa6d39442a2955c56975f1001ba.1",
+   "lat": 52.40611429196648,
+   "lon": 4.918736187869954,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.918736187869954,
+      52.40611429196648
+     ]
+    },
+    "objectBegintijd": "2020-01-17",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.33c40fa6d39442a2955c56975f1001ba",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2020-01-26T13:22:48",
+    "eindRegistratie": null,
+    "lvPublicatie": "2020-01-26T17:43:13",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.37f199492f394f3681816a1db4cc1797.1",
+   "lat": 52.380225245102544,
+   "lon": 4.999420504119462,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.999420504119462,
+      52.380225245102544
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.37f199492f394f3681816a1db4cc1797",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.41c4f9ef0fa341778acab62ae120895f.1",
+   "lat": 52.380281209517406,
+   "lon": 4.999329440878868,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.999329440878868,
+      52.380281209517406
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.41c4f9ef0fa341778acab62ae120895f",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.43023306505d454b8aafb91a00d39e3a.1",
+   "lat": 52.40608597936511,
+   "lon": 4.919711885624799,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.919711885624799,
+      52.40608597936511
+     ]
+    },
+    "objectBegintijd": "2020-01-17",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.43023306505d454b8aafb91a00d39e3a",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2020-01-26T13:22:48",
+    "eindRegistratie": null,
+    "lvPublicatie": "2020-01-26T17:43:13",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.4613eb0950f64e309a41a07ab071f863.1",
+   "lat": 52.41326576339487,
+   "lon": 4.890918223648783,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.890918223648783,
+      52.41326576339487
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.4613eb0950f64e309a41a07ab071f863",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.4c425c77e631455384ea9a6b4cab7cfc.1",
+   "lat": 52.40617157390046,
+   "lon": 4.918607599032335,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.918607599032335,
+      52.40617157390046
+     ]
+    },
+    "objectBegintijd": "2020-01-17",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.4c425c77e631455384ea9a6b4cab7cfc",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2020-01-26T13:22:48",
+    "eindRegistratie": null,
+    "lvPublicatie": "2020-01-26T17:43:13",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.5051d84d7cbb4a92be9179854ac65a90.1",
+   "lat": 52.3810845713477,
+   "lon": 5.001934844623495,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      5.001934844623495,
+      52.3810845713477
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.5051d84d7cbb4a92be9179854ac65a90",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.55ef2569623044e39adc3e57351ddf38.1",
+   "lat": 52.32617881314347,
+   "lon": 4.818581051080862,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.818581051080862,
+      52.32617881314347
+     ]
+    },
+    "objectBegintijd": "2023-06-22",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.55ef2569623044e39adc3e57351ddf38",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2023-06-26T10:36:15",
+    "eindRegistratie": null,
+    "lvPublicatie": "2023-06-26T11:58:05",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.6937e3b365c34860a4f459e67f7ecd72.1",
+   "lat": 52.37974852837488,
+   "lon": 4.997639402006526,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.997639402006526,
+      52.37974852837488
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.6937e3b365c34860a4f459e67f7ecd72",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.a30de4362054420988eed6affb40ad73.1",
+   "lat": 52.40605382212864,
+   "lon": 4.919673296547243,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.919673296547243,
+      52.40605382212864
+     ]
+    },
+    "objectBegintijd": "2020-01-17",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.a30de4362054420988eed6affb40ad73",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2020-01-26T13:22:48",
+    "eindRegistratie": null,
+    "lvPublicatie": "2020-01-26T17:43:13",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.ade92458277c4337b49ce50f6cf659f6.1",
+   "lat": 52.40598008001777,
+   "lon": 4.918547667945433,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.918547667945433,
+      52.40598008001777
+     ]
+    },
+    "objectBegintijd": "2020-01-27",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.ade92458277c4337b49ce50f6cf659f6",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2020-02-08T19:12:32",
+    "eindRegistratie": null,
+    "lvPublicatie": "2020-02-08T20:28:27",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.af1a68661dd741f8ae473b0edd46cf33.1",
+   "lat": 52.32689833455493,
+   "lon": 4.818287517443527,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.818287517443527,
+      52.32689833455493
+     ]
+    },
+    "objectBegintijd": "2023-06-22",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.af1a68661dd741f8ae473b0edd46cf33",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2023-06-26T10:36:15",
+    "eindRegistratie": null,
+    "lvPublicatie": "2023-06-26T11:58:05",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.baf83d99e2934c588bff6392f7979593.1",
+   "lat": 52.41314247178589,
+   "lon": 4.891113704668078,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.891113704668078,
+      52.41314247178589
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.baf83d99e2934c588bff6392f7979593",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.c6d043a5455b4811b1da35e2b2c495cf.1",
+   "lat": 52.41324708400902,
+   "lon": 4.890885303844913,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.890885303844913,
+      52.41324708400902
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.c6d043a5455b4811b1da35e2b2c495cf",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.cd71d38dcbf34a8f8b4a57f5cafc0d16.1",
+   "lat": 52.41316451074921,
+   "lon": 4.891131183511018,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.891131183511018,
+      52.41316451074921
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.cd71d38dcbf34a8f8b4a57f5cafc0d16",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.d1ad9f65690c471a987b26bc599ccf40.1",
+   "lat": 52.379662203637444,
+   "lon": 4.99759889071668,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.99759889071668,
+      52.379662203637444
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.d1ad9f65690c471a987b26bc599ccf40",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.ec46320ee071473f85f9e1e3c887ac27.1",
+   "lat": 52.40595580408853,
+   "lon": 4.918518048839447,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.918518048839447,
+      52.40595580408853
+     ]
+    },
+    "objectBegintijd": "2020-01-27",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.ec46320ee071473f85f9e1e3c887ac27",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2020-02-08T19:12:32",
+    "eindRegistratie": null,
+    "lvPublicatie": "2020-02-08T20:28:27",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.ef38efa69d0c4fc5b1b57b1a2bbdf3f7.1",
+   "lat": 52.327845720400774,
+   "lon": 4.819429871617788,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.819429871617788,
+      52.327845720400774
+     ]
+    },
+    "objectBegintijd": "2023-06-22",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.ef38efa69d0c4fc5b1b57b1a2bbdf3f7",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2023-06-26T10:36:15",
+    "eindRegistratie": null,
+    "lvPublicatie": "2023-06-26T11:58:05",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.f5c79134804342ea99413dd8144a9243.1",
+   "lat": 52.32824188337964,
+   "lon": 4.819927703097222,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.819927703097222,
+      52.32824188337964
+     ]
+    },
+    "objectBegintijd": "2023-06-22",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.f5c79134804342ea99413dd8144a9243",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2023-06-26T10:36:15",
+    "eindRegistratie": null,
+    "lvPublicatie": "2023-06-26T11:58:05",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt",
+    "merged_replicas": 1
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.f696df80b72c4bb6a4bc7bd97c64824b.1",
+   "lat": 52.372110584115184,
+   "lon": 4.949329673877748,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.949329673877748,
+      52.372110584115184
+     ]
+    },
+    "objectBegintijd": "2024-02-29",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.f696df80b72c4bb6a4bc7bd97c64824b",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2024-03-07T10:06:19",
+    "eindRegistratie": null,
+    "lvPublicatie": "2024-03-07T10:14:33",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0363.fc67c85705b240ce86999092ff6d40ba.1",
+   "lat": 52.37976733971544,
+   "lon": 4.99770777960028,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      4.99770777960028,
+      52.37976733971544
+     ]
+    },
+    "objectBegintijd": "2026-08-24",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0363.fc67c85705b240ce86999092ff6d40ba",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2026-08-24T13:39:44",
+    "eindRegistratie": null,
+    "lvPublicatie": "2026-08-24T13:58:44",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0457.01b3d5a5ac4844928146012777398255.1",
+   "lat": 52.3100102166477,
+   "lon": 5.031064751260606,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      5.031064751260606,
+      52.3100102166477
+     ]
+    },
+    "objectBegintijd": "2020-04-14",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0457.01b3d5a5ac4844928146012777398255",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2022-04-09T19:04:18",
+    "eindRegistratie": null,
+    "lvPublicatie": "2022-04-09T20:27:25",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0457.01d7987016c849dcb4ad5f8f2bd94a86.1",
+   "lat": 52.310471536644,
+   "lon": 5.029660225632095,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      5.029660225632095,
+      52.310471536644
+     ]
+    },
+    "objectBegintijd": "2017-07-11",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0457.01d7987016c849dcb4ad5f8f2bd94a86",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2022-04-09T19:04:18",
+    "eindRegistratie": null,
+    "lvPublicatie": "2022-04-09T20:27:25",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0457.0328eca9ebd54678b810cabdf57ec8f5.1",
+   "lat": 52.31584879399608,
+   "lon": 5.027968070384886,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      5.027968070384886,
+      52.31584879399608
+     ]
+    },
+    "objectBegintijd": "2017-07-10",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0457.0328eca9ebd54678b810cabdf57ec8f5",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2022-04-09T19:04:18",
+    "eindRegistratie": null,
+    "lvPublicatie": "2022-04-09T20:27:25",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  },
+  {
+   "id": "straatmeubilair.NL.IMGeo.G0457.033c5077fbac414d8859e8055acba06d.1",
+   "lat": 52.31011675379497,
+   "lon": 5.030875499089833,
+   "props": {
+    "bgtType": "niet-bgt",
+    "plusType": "bank",
+    "geometriePunt": {
+     "type": "Point",
+     "coordinates": [
+      5.030875499089833,
+      52.31011675379497
+     ]
+    },
+    "objectBegintijd": "2020-04-14",
+    "objectEindtijd": null,
+    "identificatie": "NL.IMGeo.G0457.033c5077fbac414d8859e8055acba06d",
+    "volgnummer": 1,
+    "tijdstipRegistratie": "2022-04-09T19:04:18",
+    "eindRegistratie": null,
+    "lvPublicatie": "2022-04-09T20:27:25",
+    "bronhouder": "G0363",
+    "inOnderzoek": "N",
+    "relatieveHoogteligging": 0,
+    "bgtStatus": "bestaand",
+    "plusStatus": null,
+    "datumActueelTot": null,
+    "source_type": "bgt"
+   },
+   "dataset": "bench"
+  }
+ ]
+}

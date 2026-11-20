@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# bin/sim — build the app for the iOS Simulator (Debug → acc, no signing) and print the .app path.
+# Install + launch: xcrun simctl install booted "$(bin/sim | tail -1)" && xcrun simctl launch booted app.stephensprive.bankjes
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+xcodegen generate --quiet
+xcodebuild -project Bankjes.xcodeproj -scheme Bankjes -configuration Debug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build \
+  | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+ls -d build/sim/Build/Products/Debug-iphonesimulator/Bankjes.app

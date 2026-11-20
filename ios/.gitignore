@@ -1,0 +1,12 @@
+*.xcodeproj/
+build/
+DerivedData/
+.build/
+Packages/BankjesCore/.build/
+Packages/BankjesCore/.swiftpm/
+App/Info.plist
+App/Bankjes.entitlements
+*.ipa
+*.xcarchive
+ExportOptions.local.plist
+build-*.log

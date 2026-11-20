@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# bin/testflight — archive Bankjes (Release → prd, decision D1) and upload it to TestFlight.
+# Copied from ios-cockpit's bin/testflight (myworkspace, manual-signing version) and renamed.
+#
+#   bin/testflight                 checks, archive, export + upload to App Store Connect
+#   bin/testflight --preflight     only checks the certificate and the profile, exit 0 (no key fetch, no build)
+#   bin/testflight --archive-only  checks, archive, and a local signed .ipa export; no key, no upload
+#
+# Needs the App Store Connect app record for app.stephensprive.bankjes (spec step S-1) before an upload.
+# The App Store Connect API key never lives in the repo or in a chat. Two ways to provide it:
+#   A. Infisical (default): ~/.config/asc/infisical.env (0600, never committed) holds the bootstrap for
+#      env prod, path /asc (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8) on vault.stephensprive.app. That vault sits
+#      behind Cloudflare Access: CF_ACCESS_CLIENT_ID/SECRET ride on every request (headers, never argv).
+#      Optional INFISICAL_SSH_TUNNEL (e.g. "-L 18088:127.0.0.1:8088 Contabo") opens a tunnel for the fetch only.
+#      The .p8 is written to a 0600 temp file and deleted on exit. It is the same team-scoped key as Cockpit's.
+#   B. Manual: ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH (path to AuthKey_<id>.p8, mode 600) in the env.
+#
+# Signing is manual for both the archive and the export: the API key is App Manager, so Xcode cloud signing
+# fails. It needs the "Apple Distribution: Stephen Adei (QQS3VCWWUJ)" certificate with its private key in the
+# login keychain and the App Store profile "Bankjes App Store" (app.stephensprive.bankjes, with Associated
+# Domains) in ~/Library/MobileDevice/Provisioning Profiles/. Both were created via the App Store Connect API on
+# 20 Nov 2026 and are valid until 2027-11-20. Renewing the profile = POST /v1/profiles (IOS_APP_STORE, bundleId
+# H26YHRMRJV, the current DISTRIBUTION certificate) with the same name, then install the .mobileprovision there.
+# Build number = unix minutes, so every upload is unique. Prints nothing secret.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export BANKJES_TEAM_ID="${BANKJES_TEAM_ID:-QQS3VCWWUJ}"
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+BOOT="${ASC_INFISICAL_ENV:-$HOME/.config/asc/infisical.env}"
+
+APP_BUNDLE="app.stephensprive.bankjes"; APP_PROFILE="Bankjes App Store"
+PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+MODE="${1:-upload}"
+case "$MODE" in upload|--preflight|--archive-only) ;; *) echo "usage: bin/testflight [--preflight | --archive-only]" >&2; exit 2;; esac
+
+profile_file() {  # $1 = profile name; prints the path of a matching, unexpired profile
+  local f name exp
+  for f in "$PROFILE_DIR"/*.mobileprovision; do
+    [ -e "$f" ] || continue
+    name="$(security cms -D -i "$f" 2>/dev/null | plutil -extract Name raw -o - - 2>/dev/null || true)"
+    [ "$name" = "$1" ] || continue
+    exp="$(security cms -D -i "$f" 2>/dev/null | plutil -extract ExpirationDate raw -o - - 2>/dev/null || true)"
+    [ -n "$exp" ] && [ "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \> "$exp" ] && continue
+    echo "$f"; return 0
+  done
+  return 1
+}
+
+preflight() {
+  local hint="see the header of ios/bin/testflight to recreate it via the App Store Connect API" f ents
+  security find-identity -v -p codesigning | grep "Apple Distribution" | grep -q "($BANKJES_TEAM_ID)" \
+    || { echo "testflight: no valid \"Apple Distribution\" certificate for team $BANKJES_TEAM_ID in the login keychain ($hint)" >&2; exit 2; }
+  f="$(profile_file "$APP_PROFILE")" \
+    || { echo "testflight: provisioning profile \"$APP_PROFILE\" ($APP_BUNDLE) not found or expired in $PROFILE_DIR ($hint)" >&2; exit 2; }
+  ents="$(security cms -D -i "$f" | plutil -extract Entitlements xml1 -o - -)"
+  grep -q "<string>$BANKJES_TEAM_ID.$APP_BUNDLE</string>" <<<"$ents" \
+    || { echo "testflight: profile \"$APP_PROFILE\" is not for $BANKJES_TEAM_ID.$APP_BUNDLE ($hint)" >&2; exit 2; }
+  grep -q "com.apple.developer.associated-domains" <<<"$ents" \
+    || { echo "testflight: profile \"$APP_PROFILE\" lacks Associated Domains: enable it on the App ID, then recreate the profile ($hint)" >&2; exit 2; }
+  echo "testflight: preflight OK (Apple Distribution $BANKJES_TEAM_ID, profile \"$APP_PROFILE\" $(basename "$f" .mobileprovision), Associated Domains)"
+}
+if [ "$MODE" = "--preflight" ]; then preflight; exit 0; fi
+
+TMPK=""; SOCK=""; TUN_HOST=""
+close_tunnel() {
+  if [ -n "$SOCK" ] && [ -S "$SOCK" ]; then ssh -S "$SOCK" -O exit "$TUN_HOST" >/dev/null 2>&1 || true; fi
+  SOCK=""
+}
+cleanup() { [ -n "$TMPK" ] && rm -f "$TMPK"; close_tunnel; }
+trap cleanup EXIT
+
+AUTH=()
+if [ "$MODE" = upload ]; then
+  if [ -z "${ASC_KEY_PATH:-}" ]; then
+    [ -f "$BOOT" ] || { echo "testflight: no ASC_KEY_PATH and no $BOOT (see the header)" >&2; exit 2; }
+    [ "$(stat -f %Lp "$BOOT")" = 600 ] || { echo "testflight: $BOOT must be mode 600" >&2; exit 2; }
+    TUNNEL="$(sed -n 's/^INFISICAL_SSH_TUNNEL=//p' "$BOOT" | tr -d "\"'")"
+    if [ -n "$TUNNEL" ]; then
+      SOCK="$(mktemp -u "${TMPDIR:-/tmp}/asc-tunnel.XXXXXX")"
+      TUN_HOST="${TUNNEL##* }"
+      # shellcheck disable=SC2086  # TUNNEL is "-L port:host:port sshhost", split on purpose
+      ssh -M -S "$SOCK" -f -N -o ExitOnForwardFailure=yes -o ConnectTimeout=10 $TUNNEL \
+        || { echo "testflight: could not open the Infisical tunnel ($TUN_HOST)" >&2; exit 2; }
+    fi
+    TMPK="$(mktemp "${TMPDIR:-/tmp}/asc.XXXXXX")"
+    IDS="$(python3 -I tools/asc_key.py "$BOOT" "$TMPK")"
+    close_tunnel   # the key file stays until exit
+    ASC_KEY_ID="${IDS#ASC_KEY_ID=}"; ASC_KEY_ID="${ASC_KEY_ID%% *}"
+    ASC_ISSUER_ID="${IDS##*ASC_ISSUER_ID=}"
+    ASC_KEY_PATH="$TMPK"
+    echo "testflight: key ${ASC_KEY_ID} fetched from Infisical"
+  fi
+  : "${ASC_KEY_ID:?}" "${ASC_ISSUER_ID:?}" "${ASC_KEY_PATH:?}"
+  [ -f "$ASC_KEY_PATH" ] || { echo "testflight: $ASC_KEY_PATH missing" >&2; exit 2; }
+  AUTH=(-authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" -authenticationKeyPath "$ASC_KEY_PATH")
+fi
+
+preflight
+(cd Packages/BankjesCore && swift run -c release BankjesChecks ../../Fixtures) || { echo "testflight: core checks failed" >&2; exit 1; }
+xcodegen generate --quiet
+OUT="build/$(date +%Y%m%d-%H%M)"; mkdir -p "$OUT"
+# Manual signing on the app target only (BANKJES_SIGN_* exist only there; see project.yml), so the Swift
+# package targets are not handed a provisioning profile.
+xcodebuild -project Bankjes.xcodeproj -scheme Bankjes -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath "$OUT/Bankjes.xcarchive" DEVELOPMENT_TEAM="$BANKJES_TEAM_ID" CURRENT_PROJECT_VERSION="$(( $(date +%s) / 60 ))" \
+  BANKJES_SIGN_STYLE=Manual BANKJES_SIGN_IDENTITY="Apple Distribution" BANKJES_PROFILE="$APP_PROFILE" \
+  archive >"$OUT/archive.log" 2>&1 || true
+grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" "$OUT/archive.log" || true
+grep -q "ARCHIVE SUCCEEDED" "$OUT/archive.log" && [ -d "$OUT/Bankjes.xcarchive" ] \
+  || { echo "testflight: archive failed (see $OUT/archive.log)" >&2; exit 1; }
+DEST=upload; [ "$MODE" = --archive-only ] && DEST="export"
+cat > "$OUT/ExportOptions.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>destination</key><string>${DEST}</string>
+  <key>teamID</key><string>${BANKJES_TEAM_ID}</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>provisioningProfiles</key><dict>
+    <key>${APP_BUNDLE}</key><string>${APP_PROFILE}</string>
+  </dict>
+  <key>manageAppVersionAndBuildNumber</key><false/>
+  <key>uploadSymbols</key><true/>
+</dict></plist>
+PLIST
+LOG="$OUT/export.log"
+xcodebuild -exportArchive -archivePath "$OUT/Bankjes.xcarchive" -exportOptionsPlist "$OUT/ExportOptions.plist" \
+  -exportPath "$OUT/export" ${AUTH[@]+"${AUTH[@]}"} >"$LOG" 2>&1 || true
+grep -E "error|EXPORT (SUCCEEDED|FAILED)|Upload" "$LOG" | grep -v xcdistributionlogs || true
+grep -q "EXPORT SUCCEEDED" "$LOG" || { echo "testflight: export failed (see $LOG)" >&2; exit 1; }
+if [ "$MODE" = --archive-only ]; then
+  echo "testflight: archive and signed .ipa in $OUT (not uploaded)"
+else
+  echo "testflight: uploaded from $OUT — App Store Connect processes it in ~10 min, then it shows in TestFlight."
+fi

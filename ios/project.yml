@@ -1,0 +1,80 @@
+# XcodeGen spec: `xcodegen generate` writes Bankjes.xcodeproj (not committed). Copied from myworkspace
+# projects/ios-cockpit and trimmed (spec docs/specs/2026-11-20-ios-app-design.md, "Project layout").
+# Debug → acc, Release (TestFlight) → prd (decision D1): BANKJES_API_BASE below, read from Info.plist.
+# Signing: Debug and bin/device sign automatically (BANKJES_TEAM_ID). bin/testflight archives and exports
+# with manual signing (Apple Distribution + profile "Bankjes App Store") by overriding the BANKJES_SIGN_*
+# settings on the command line; they only exist on the app target, so the Swift package is not touched.
+name: Bankjes
+options:
+  bundleIdPrefix: app.stephensprive
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: nl
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.10"
+    DEVELOPMENT_TEAM: ${BANKJES_TEAM_ID}
+packages:
+  BankjesCore:
+    path: Packages/BankjesCore
+targets:
+  Bankjes:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - path: Resources/Assets.xcassets
+    dependencies:
+      - package: BankjesCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Bankjes
+        CFBundleDevelopmentRegion: nl
+        CFBundleLocalizations: [nl, en]
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        BankjesAPIBase: $(BANKJES_API_BASE)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSLocationWhenInUseUsageDescription: Bankjes gebruikt je locatie om bankjes bij jou in de buurt te tonen en je ernaartoe te navigeren. Je locatie wordt alleen gedeeld om een route te berekenen.
+        # D2 (I4): navigation keeps running with the screen locked. Add `UIBackgroundModes: [location]` here
+        # together with LocationProvider.setNavigating(true); still When-In-Use, never "Always".
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: App/Bankjes.entitlements
+      properties:
+        com.apple.developer.associated-domains:
+          - applinks:bankjes.stephenadei.nl
+          - applinks:bankjes-acc.stephensprive.app
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.stephensprive.bankjes
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"
+        BANKJES_SIGN_STYLE: Automatic
+        BANKJES_SIGN_IDENTITY: Apple Development
+        BANKJES_PROFILE: ""
+        CODE_SIGN_STYLE: $(BANKJES_SIGN_STYLE)
+        CODE_SIGN_IDENTITY: $(BANKJES_SIGN_IDENTITY)
+        PROVISIONING_PROFILE_SPECIFIER: $(BANKJES_PROFILE)
+        # bin/device on a free Personal Team blanks this: a free team cannot sign Associated Domains.
+        BANKJES_ENTITLEMENTS: App/Bankjes.entitlements
+        CODE_SIGN_ENTITLEMENTS: $(BANKJES_ENTITLEMENTS)
+      configs:
+        Debug:
+          BANKJES_API_BASE: https://bankjes-acc.stephensprive.app
+        Release:
+          BANKJES_API_BASE: https://bankjes.stephenadei.nl
+schemes:
+  Bankjes:
+    build:
+      targets: {Bankjes: all}
+    run:
+      config: Debug
+    archive:
+      config: Release
