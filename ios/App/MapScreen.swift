@@ -9,13 +9,25 @@ let amsterdamRegion = MKCoordinateRegion(
 
 struct MapScreen: View {
     @Environment(AppModel.self) private var model
+    @Environment(SpotsModel.self) private var spots
+    @Environment(AuthModel.self) private var auth
     @Environment(\.scenePhase) private var scenePhase
     @State private var showNearMe = false
+    @State private var spotFocus: Spot?
 
     var body: some View {
         // Reading model.focus here (not a binding) is what makes the view update when the list sets it.
+        @Bindable var spots = spots
         ClusterMapView(benches: model.benches, version: model.benchesVersion, focus: model.focus,
-                       focusHandled: { model.focus = nil })
+                       focusHandled: { model.focus = nil },
+                       spots: spots.spots, spotsVersion: spots.version, userId: auth.user?.id,
+                       spotFocus: spotFocus, spotFocusHandled: { spotFocus = nil },
+                       onLongPress: { c in
+                           // Signed out: the list sheet shows the sign-in prompt instead of the form.
+                           spots.sheet = spots.isSignedIn ? .add(c) : .list
+                       },
+                       onCentre: { spots.mapCentre = $0 },
+                       onSpotTapped: { spots.sheet = .detail($0.id) })
             .ignoresSafeArea()
             .overlay(alignment: .top) {
                 VStack(spacing: 6) {
@@ -35,14 +47,66 @@ struct MapScreen: View {
                 .padding(.bottom, 12)
                 .disabled(model.benches.isEmpty)
             }
+            .overlay(alignment: .bottomLeading) {
+                Button { spots.sheet = .list } label: {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.title2)
+                        .foregroundStyle(Color.spotOwn)
+                        .frame(width: 48, height: 48)
+                        .background(.regularMaterial, in: Circle())
+                        .shadow(radius: 3, y: 1)
+                }
+                .accessibilityLabel(Text("Mijn plekjes"))
+                .padding(.leading, 16).padding(.bottom, 100)   // above the account button
+            }
             .sheet(isPresented: $showNearMe) {
                 NearMeList().presentationDetents([.medium, .large])
             }
+            .sheet(item: $spots.sheet) { sheet in
+                switch sheet {
+                case .list:
+                    SpotsList(signIn: signInFromSheet, show: showOnMap)
+                case .add(let c):
+                    SpotForm(mode: .add(c))
+                case .detail(let id):
+                    NavigationStack {
+                        SpotDetail(spotId: id, show: showOnMap)
+                            .toolbar {
+                                ToolbarItem(placement: .confirmationAction) { Button("Klaar") { spots.sheet = nil } }
+                            }
+                    }
+                    .presentationDetents([.medium, .large])
+                }
+            }
             .task { await model.load() }
+            // Spots follow the account: reload on sign-in / sign-out (and at launch).
+            .task(id: auth.user?.id) {
+                if auth.user == nil { spots.signedOut() }
+                await spots.load()
+            }
+            .onAppear {
+                spots.onSignedOut = {
+                    // The 401 closed the Spots sheet; open sign-in once it is gone.
+                    auth.showAccount = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { auth.showAccount = true }
+                }
+            }
             .onChange(of: scenePhase) { _, phase in
                 // Back from the background with a stale map: try again.
                 if phase == .active, case .stale = model.status { Task { await model.load() } }
             }
+    }
+}
+
+extension MapScreen {
+    private func signInFromSheet() {
+        spots.sheet = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { auth.showAccount = true }
+    }
+
+    private func showOnMap(_ spot: Spot) {
+        spots.sheet = nil
+        spotFocus = spot
     }
 }
 
