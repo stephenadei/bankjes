@@ -124,6 +124,127 @@ check(Geo.formatDistance(996, locale: nl) == "1,0 km", "996 m → 1,0 km")
 check(Geo.formatDistance(1234, locale: nl) == "1,2 km" && Geo.formatDistance(1234, locale: en) == "1.2 km", "km with the locale's decimal")
 check(Geo.formatDistance(12_400, locale: nl) == "12 km", "no decimal from 10 km")
 
+// MARK: sign-in (I5): magic link client "ios", token exchange, Bearer, 401, env mismatch, link parser
+func body(_ r: URLRequest) -> [String: String]? {
+    r.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: String] }
+}
+let authFake = FakeTransport()
+let store = MemorySessionStore()
+let sessions = SessionManager(store: store)
+final class ChangeLog: @unchecked Sendable { var all: [SessionManager.Change] = [] }
+let log = ChangeLog()
+sessions.onChange = { log.all.append($0) }
+let authClient = APIClient(environment: .acc, transport: authFake, session: sessions)
+check(!sessions.isSignedIn && sessions.user == nil, "starts signed out")
+
+// request-magic-link body
+let mlReq = authClient.magicLinkRequest(email: "ann@example.nl")
+check(mlReq.url?.absoluteString == "https://bankjes-acc.stephensprive.app/api/auth/request-magic-link", "magic-link URL on acc")
+check(mlReq.httpMethod == "POST" && mlReq.value(forHTTPHeaderField: "Content-Type") == "application/json", "magic-link: POST json")
+check(body(mlReq) == ["email": "ann@example.nl", "client": "ios"], "magic-link body {email, client:\"ios\"}")
+authFake.reply = (200, Data(#"{"sent":true}"#.utf8))
+let mlOK = run { () -> Bool in (try? await authClient.requestMagicLink(email: "ann@example.nl")) != nil }
+check(mlOK && authFake.requests.last.flatMap(body) == ["email": "ann@example.nl", "client": "ios"], "requestMagicLink sends that body")
+check(authFake.requests.last?.value(forHTTPHeaderField: "Authorization") == nil, "no Authorization while signed out")
+authFake.reply = (400, Data(#"{"detail":"invalid email"}"#.utf8))
+let mlBad = run { () -> APIError? in do { try await authClient.requestMagicLink(email: "x"); return nil } catch { return error as? APIError } }
+check(mlBad == .http(status: 400, detail: "invalid email"), "400 invalid email surfaces")
+check(EmailAddress.normalise("  Ann@Example.NL ") == "ann@example.nl", "email trimmed + lowercased")
+check(["", "ann", "ann@", "@example.nl", "ann@example", "ann@example.", "a b@example.nl", "a@b@c.nl", "ann@.nl"].allSatisfy { EmailAddress.normalise($0) == nil }, "bad emails refused (backend's rule)")
+
+// token exchange
+let teReq = authClient.tokenExchangeRequest(token: "MAGIC.tok-1")
+check(teReq.url?.absoluteString == "https://bankjes-acc.stephensprive.app/api/auth/token" && teReq.httpMethod == "POST", "token URL, POST")
+check(body(teReq) == ["token": "MAGIC.tok-1"], "token body {token}")
+let userJSON = #"{"id":"u-1","email":"ann@example.nl","display_name":"ann","is_admin":false}"#
+authFake.reply = (200, Data(#"{"session":"SESS-abc","user":\#(userJSON)}"#.utf8))
+let signedUser = run { try? await authClient.signIn(withMagicToken: "MAGIC.tok-1") }
+check(signedUser == AuthUser(id: "u-1", email: "ann@example.nl", displayName: "ann", isAdmin: false), "exchange decodes the user")
+check(store.load()?.session == "SESS-abc" && store.load()?.user.email == "ann@example.nl", "session + user stored")
+check(sessions.isSignedIn && log.all.last == .signedIn(signedUser!), "signed-in change")
+check(SessionManager(store: store).user?.email == "ann@example.nl", "relaunch: the stored session is picked up")
+authFake.reply = (400, Data(#"{"detail":"invalid token"}"#.utf8))
+let badTok = run { () -> APIError? in do { try await APIClient(environment: .acc, transport: authFake, session: SessionManager(store: MemorySessionStore())).signIn(withMagicToken: "TEST"); return nil } catch { return error as? APIError } }
+check(badTok == .http(status: 400, detail: "invalid token"), "bad magic token → 400 invalid token, nothing stored")
+authFake.reply = (200, Data(#"{"session":"S"}"#.utf8))
+let badShape = run { () -> APIError? in do { _ = try await authClient.exchangeToken("t"); return nil } catch { return error as? APIError } }
+check(badShape == .decoding("token exchange response"), "malformed exchange body → decoding error without the body")
+
+// Bearer on every request
+authFake.reply = (200, sampleData)
+_ = run { try? await authClient.items() }
+check(authFake.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer SESS-abc", "Bearer on items")
+authFake.reply = (200, Data(#"{"id":"u-1","email":"ann@example.nl","display_name":"Ann B","is_admin":false}"#.utf8))
+let meUser = run { try? await authClient.me() }
+check(authFake.requests.last?.url?.path == "/api/me" && authFake.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer SESS-abc", "Bearer on /api/me")
+check(meUser?.displayName == "Ann B" && store.load()?.user.displayName == "Ann B" && store.load()?.session == "SESS-abc", "/api/me refreshes the stored user")
+authFake.reply = (200, Data(#"{"sent":true}"#.utf8))
+_ = run { try? await authClient.requestMagicLink(email: "ann@example.nl") }
+check(authFake.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer SESS-abc", "Bearer on POSTs too")
+check(authClient.itemsRequest().value(forHTTPHeaderField: "Authorization") == nil, "the Bearer is added at send time, not baked into requests")
+
+// 401 → signed out
+// A sign-in that lands while an old request is in flight: that request's 401 must not sign out the new session.
+final class RacingTransport: HTTPTransport, @unchecked Sendable {
+    let during: () -> Void
+    init(during: @escaping () -> Void) { self.during = during }
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        during()
+        return (Data(), HTTPURLResponse(url: request.url!, statusCode: 401, httpVersion: nil, headerFields: nil)!)
+    }
+}
+let raced = SessionManager(store: MemorySessionStore(StoredSession(session: "OLD", user: signedUser!)))
+let racer = APIClient(environment: .acc, transport: RacingTransport { try? raced.signIn(StoredSession(session: "NEW", user: signedUser!)) }, session: raced)
+_ = run { try? await racer.me() }
+check(raced.isSignedIn, "a 401 for an older Bearer does not sign out the newer session")
+authFake.reply = (401, Data(#"{"detail":"not authenticated"}"#.utf8))
+let e401 = run { () -> APIError? in do { _ = try await authClient.me(); return nil } catch { return error as? APIError } }
+check(e401?.isUnauthorized == true, "401 surfaces as unauthorized")
+check(!sessions.isSignedIn && store.load() == nil && log.all.last == .expired, "401 → signed out, Keychain cleared, expired change")
+_ = run { try? await authClient.items() }
+check(authFake.requests.last?.value(forHTTPHeaderField: "Authorization") == nil, "no Bearer after the 401")
+authFake.reply = (401, Data())
+let anon401 = run { () -> APIError? in do { _ = try await authClient.me(); return nil } catch { return error as? APIError } }
+check(anon401?.isUnauthorized == true && log.all.last == .expired && log.all.filter { $0 == .expired }.count == 1, "a 401 while signed out does not fire again")
+try! sessions.signIn(StoredSession(session: "S2", user: signedUser!))
+sessions.signOut()
+check(!sessions.isSignedIn && store.load() == nil && log.all.last == .signedOut, "sign out clears the store")
+
+// the link parser + env mismatch
+let accTok = URL(string: "https://bankjes-acc.stephensprive.app/auth/app?token=abc.DEF-123")!
+let prdTok = URL(string: "https://bankjes.stephenadei.nl/auth/app?token=abc")!
+check(MagicLink.parse(accTok, for: .acc) == .token("abc.DEF-123"), "acc link in an acc build → token")
+check(MagicLink.parse(prdTok, for: .prd) == .token("abc"), "prd link in a prd build → token")
+check(MagicLink.parse(prdTok, for: .acc) == .wrongEnvironment(link: .prd, app: .acc), "prd link in an acc (Debug) build → mismatch")
+check(MagicLink.parse(accTok, for: .prd) == .wrongEnvironment(link: .acc, app: .prd), "acc link in a prd build → mismatch")
+check(MagicLink.parse(URL(string: "https://BANKJES-ACC.stephensprive.app/auth/app?token=t")!, for: .acc) == .token("t"), "host case-insensitive")
+let custom = AppEnvironment(apiBase: URL(string: "https://bankjes-test.example.org")!)
+check(MagicLink.parse(accTok, for: custom) == .wrongEnvironment(link: .acc, app: custom), "a Debug override host: acc links are a mismatch")
+let rejects = [
+    "https://evil.example/auth/app?token=t",                         // foreign host
+    "https://bankjes-acc.stephensprive.app.evil.example/auth/app?token=t",
+    "https://evil.example/bankjes-acc.stephensprive.app/auth/app?token=t",
+    "https://bankjes-acc.stephensprive.app/auth/verify?token=t",      // the web login path
+    "https://bankjes-acc.stephensprive.app/auth/application?token=t",
+    "https://bankjes-acc.stephensprive.app/x/auth/app?token=t",
+    "https://bankjes-acc.stephensprive.app/?token=t",
+    "http://bankjes-acc.stephensprive.app/auth/app?token=t",          // not https
+    "bankjes://auth/app?token=t",
+    "https://bankjes-acc.stephensprive.app:8443/auth/app?token=t",    // another port
+    "https://u:p@bankjes-acc.stephensprive.app/auth/app?token=t",
+    "https://bankjes-acc.stephensprive.app/auth/app",                 // no token
+    "https://bankjes-acc.stephensprive.app/auth/app?token=",
+    "https://bankjes-acc.stephensprive.app/auth/app?token=a&token=b", // ambiguous
+]
+let wrongly = rejects.filter { MagicLink.parse(URL(string: $0)!, for: .acc) != .rejected }
+check(wrongly.isEmpty, "foreign host / path / scheme / port / token-less links rejected: \(wrongly)")
+check(MagicLink.parse(URL(string: "https://evil.example/auth/app?token=t")!, for: .prd) == .rejected, "foreign host rejected in prd too")
+
+// token hygiene: nothing that holds a token or session prints it
+let stored = StoredSession(session: "SESS-SECRET", user: signedUser!)
+let printed = [String(describing: stored), String(reflecting: stored), "\(MagicLink.token("MAGIC-SECRET"))", String(describing: sessions)].joined()
+check(!printed.contains("SESS-SECRET") && !printed.contains("MAGIC-SECRET"), "descriptions redact the session and the magic token")
+
 try? FileManager.default.removeItem(at: tmp)   // not a defer: exit() below skips top-level defers
 print("BankjesChecks: \(passed) passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

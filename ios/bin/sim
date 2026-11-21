@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # bin/sim — build the app for the iOS Simulator (Debug → acc, no signing) and print the .app path.
 # Install + launch: xcrun simctl install booted "$(bin/sim | tail -1)" && xcrun simctl launch booted app.stephensprive.bankjes
+# BANKJES_SIM_LINKS=1 signs the simulator build for the team (QQS3VCWWUJ, "Sign to Run Locally", no profile)
+# so the Associated Domains entitlement is embedded and Universal Links reach the app (I5 sign-in test):
+#   xcrun simctl openurl booted 'https://bankjes-acc.stephensprive.app/auth/app?token=TEST'
+# The first openurl after an install can still go to Safari while swcd fetches the AASA; repeat it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
 xcodegen generate --quiet
+if [[ "${BANKJES_SIM_LINKS:-}" == 1 ]]; then sign=(DEVELOPMENT_TEAM=QQS3VCWWUJ); else sign=(CODE_SIGNING_ALLOWED=NO); fi
 xcodebuild -project Bankjes.xcodeproj -scheme Bankjes -configuration Debug -sdk iphonesimulator \
-  -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim "${sign[@]}" build \
   | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
 ls -d build/sim/Build/Products/Debug-iphonesimulator/Bankjes.app
