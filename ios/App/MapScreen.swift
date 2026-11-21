@@ -9,21 +9,54 @@ let amsterdamRegion = MKCoordinateRegion(
 
 struct MapScreen: View {
     @Environment(AppModel.self) private var model
+    @Environment(NavigationModel.self) private var nav
     @Environment(\.scenePhase) private var scenePhase
     @State private var showNearMe = false
+    @State private var debugNavDone = false
 
     var body: some View {
         // Reading model.focus here (not a binding) is what makes the view update when the list sets it.
         ClusterMapView(benches: model.benches, version: model.benchesVersion, focus: model.focus,
-                       focusHandled: { model.focus = nil })
+                       focusHandled: { model.focus = nil },
+                       route: nav.route?.geometry, routeVersion: nav.routeVersion,
+                       navigating: nav.phase == .navigating, fixCount: nav.fixCount,
+                       onRoute: { nav.preview($0) })
             .ignoresSafeArea()
             .overlay(alignment: .top) {
                 VStack(spacing: 6) {
                     EnvBadge(environment: model.environment)
-                    StatusBanner(status: model.status, retry: { Task { await model.load() } })
+                    if nav.phase != .navigating {
+                        StatusBanner(status: model.status, retry: { Task { await model.load() } })
+                    }
                 }
             }
+            .overlay {
+                if nav.phase == .navigating { NavLiveOverlay().padding(.top, 22) }
+            }
             .overlay(alignment: .bottom) {
+                if nav.phase == .arrived { NavArrivedCard() }
+            }
+            .overlay(alignment: .bottom) {
+                if !nav.isActive { nearMeButton }
+            }
+            .sheet(isPresented: $showNearMe, onDismiss: { nav.openQueued() }) {
+                NearMeList().presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: Binding(get: { nav.showsSheet }, set: { if !$0 && nav.showsSheet { nav.stop() } })) {
+                NavPreviewSheet()
+                    .presentationDetents([.height(340), .large])
+                    .presentationBackgroundInteraction(.enabled(upThrough: .height(340)))
+            }
+            .task { await model.load() }
+            .onChange(of: model.benchesVersion) { _, _ in openDebugRoute() }
+            .onAppear { openDebugRoute() }
+            .onChange(of: scenePhase) { _, phase in
+                // Back from the background with a stale map: try again.
+                if phase == .active, case .stale = model.status { Task { await model.load() } }
+            }
+    }
+
+    private var nearMeButton: some View {
                 Button { showNearMe = true } label: {
                     Label("In de buurt", systemImage: "list.bullet.below.rectangle")
                         .font(.headline)
@@ -34,15 +67,17 @@ struct MapScreen: View {
                 .shadow(radius: 4, y: 2)
                 .padding(.bottom, 12)
                 .disabled(model.benches.isEmpty)
-            }
-            .sheet(isPresented: $showNearMe) {
-                NearMeList().presentationDetents([.medium, .large])
-            }
-            .task { await model.load() }
-            .onChange(of: scenePhase) { _, phase in
-                // Back from the background with a stale map: try again.
-                if phase == .active, case .stale = model.status { Task { await model.load() } }
-            }
+    }
+
+    private func openDebugRoute() {
+        guard !debugNavDone, let id = AppConfig.debugNavTo, !model.benches.isEmpty else { return }
+        // A bench id, or "lat,lon" for a stand-in bench (acc's bench set changes between deploys).
+        let p = id.split(separator: ",").compactMap { Double($0) }
+        let b = model.benches.first { $0.id == id }
+            ?? (p.count == 2 ? Bench(id: "debug:\(id)", coordinate: Coordinate(lat: p[0], lon: p[1]), source: .other, backrest: nil) : nil)
+        guard let b else { return }
+        debugNavDone = true
+        nav.preview(b)
     }
 }
 

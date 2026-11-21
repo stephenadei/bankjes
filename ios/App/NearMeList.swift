@@ -7,6 +7,7 @@ import UIKit
 struct NearMeList: View {
     @Environment(AppModel.self) private var model
     @Environment(LocationProvider.self) private var location
+    @Environment(NavigationModel.self) private var nav
     @Environment(\.dismiss) private var dismiss
 
     private var origin: Coordinate { location.location ?? .dam }
@@ -47,6 +48,13 @@ struct NearMeList: View {
                             NearMeRow(bench: row.bench, metres: row.metres)
                         }
                         .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing) {
+                            Button {
+                                nav.queued = row.bench
+                                dismiss()
+                            } label: { Label("Route", systemImage: "arrow.triangle.turn.up.right.diamond.fill") }
+                            .tint(.accentColor)
+                        }
                     }
                 } header: {
                     Text(usingDam ? "Dichtstbij de Dam" : "Dichtstbij jou")

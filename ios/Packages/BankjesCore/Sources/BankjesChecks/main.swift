@@ -244,6 +244,8 @@ check(MagicLink.parse(URL(string: "https://evil.example/auth/app?token=t")!, for
 let stored = StoredSession(session: "SESS-SECRET", user: signedUser!)
 let printed = [String(describing: stored), String(reflecting: stored), "\(MagicLink.token("MAGIC-SECRET"))", String(describing: sessions)].joined()
 check(!printed.contains("SESS-SECRET") && !printed.contains("MAGIC-SECRET"), "descriptions redact the session and the magic token")
+// MARK: navigation (I4): /api/route + RouteFollower trace replay (RouteChecks.swift)
+routeChecks(fixtures: fixtures)
 
 try? FileManager.default.removeItem(at: tmp)   // not a defer: exit() below skips top-level defers
 print("BankjesChecks: \(passed) passed, \(failures) failed")
