@@ -14,7 +14,7 @@ public struct URLSessionTransport: HTTPTransport {
         return (data, http)
     }
 
-    /// No cookies (the app authenticates by Bearer in I5), gzip by default, a launch-friendly timeout.
+    /// No cookies (the app authenticates by Bearer, I5), gzip by default, a launch-friendly timeout.
     public static func makeDefault() -> URLSessionTransport {
         let cfg = URLSessionConfiguration.default
         cfg.httpShouldSetCookies = false
@@ -29,14 +29,20 @@ public enum APIError: Error, Equatable, Sendable {
     case http(status: Int, detail: String?)
     case decoding(String)
     case transport(String)
+
+    /// 401: not (or no longer) signed in.
+    public var isUnauthorized: Bool { if case .http(401, _) = self { return true } else { return false } }
 }
 
 public struct APIClient: Sendable {
     public let environment: AppEnvironment
     let transport: HTTPTransport
+    /// I5: when set, every request carries `Authorization: Bearer <session>`, and a 401 to that Bearer signs out.
+    public let session: SessionManager?
 
-    public init(environment: AppEnvironment, transport: HTTPTransport = URLSessionTransport.makeDefault()) {
-        self.environment = environment; self.transport = transport
+    public init(environment: AppEnvironment, transport: HTTPTransport = URLSessionTransport.makeDefault(),
+                session: SessionManager? = nil) {
+        self.environment = environment; self.transport = transport; self.session = session
     }
 
     public func itemsRequest() -> URLRequest {
@@ -57,11 +63,16 @@ public struct APIClient: Sendable {
         }
     }
 
-    func get(_ req: URLRequest) async throws -> Data {
+    /// Sends any request (GET or POST): adds the Bearer, maps errors. A 401 to a Bearer clears the session.
+    func get(_ original: URLRequest) async throws -> Data {
+        var req = original
+        let bearer = session?.bearer
+        if let bearer { req.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
         let data: Data, resp: HTTPURLResponse
         do { (data, resp) = try await transport.send(req) } catch let e as APIError { throw e } catch {
             throw APIError.transport(error.localizedDescription)
         }
+        if resp.statusCode == 401, let bearer { session?.invalidate(sentBearer: bearer) }
         guard (200..<300).contains(resp.statusCode) else {
             let detail = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["detail"] as? String
             throw APIError.http(status: resp.statusCode, detail: detail)

@@ -23,9 +23,10 @@ final class AppModel {
     /// A request to centre the map on a bench (I3 "tap to centre"); the map clears it once applied.
     var focus: Bench?
 
-    init(environment: AppEnvironment, repository: BenchRepository? = nil) {
+    init(environment: AppEnvironment, client: APIClient? = nil, repository: BenchRepository? = nil) {
         self.environment = environment
-        self.repository = repository ?? BenchRepository(client: APIClient(environment: environment), cache: .standard())
+        self.repository = repository
+            ?? BenchRepository(client: client ?? APIClient(environment: environment), cache: .standard())
         if let cached = self.repository.cachedOnly() { apply(cached, initial: true) }
     }
 
