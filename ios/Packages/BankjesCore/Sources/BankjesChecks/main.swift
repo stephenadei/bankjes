@@ -124,6 +124,9 @@ check(Geo.formatDistance(996, locale: nl) == "1,0 km", "996 m → 1,0 km")
 check(Geo.formatDistance(1234, locale: nl) == "1,2 km" && Geo.formatDistance(1234, locale: en) == "1.2 km", "km with the locale's decimal")
 check(Geo.formatDistance(12_400, locale: nl) == "12 km", "no decimal from 10 km")
 
+// MARK: navigation (I4): /api/route + RouteFollower trace replay (RouteChecks.swift)
+routeChecks(fixtures: fixtures)
+
 try? FileManager.default.removeItem(at: tmp)   // not a defer: exit() below skips top-level defers
 print("BankjesChecks: \(passed) passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

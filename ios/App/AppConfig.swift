@@ -32,4 +32,14 @@ enum AppConfig {
         return nil
         #endif
     }()
+
+    /// Debug only: `-BankjesNavTo <bench id | lat,lon>` opens the route preview to that bench once the benches have
+    /// loaded (simulator runs of I4; `-bj-nav-mode bike|wheelchair` picks the mode).
+    static let debugNavTo: String? = {
+        #if DEBUG
+        return UserDefaults.standard.string(forKey: "BankjesNavTo")
+        #else
+        return nil
+        #endif
+    }()
 }
