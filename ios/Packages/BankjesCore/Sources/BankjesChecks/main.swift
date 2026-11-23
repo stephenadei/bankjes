@@ -245,6 +245,123 @@ let stored = StoredSession(session: "SESS-SECRET", user: signedUser!)
 let printed = [String(describing: stored), String(reflecting: stored), "\(MagicLink.token("MAGIC-SECRET"))", String(describing: sessions)].joined()
 check(!printed.contains("SESS-SECRET") && !printed.contains("MAGIC-SECRET"), "descriptions redact the session and the magic token")
 
+// MARK: Spots (I6): decoding, the device-side ACL, validation, and every write's method/path/body
+let spotsData = try! Data(contentsOf: fixtures.appending(path: "spots.json"))
+let allSpots = try! SpotsResponse.decode(spotsData).spots
+check(allSpots.count == 9, "9 fixture Spots decode")
+let s1 = allSpots.first { $0.id.hasSuffix("0001") }!
+check(s1.label == "Bankje achter het Paleis" && s1.category == .bank && s1.visibility == .private && s1.publicStatus == .none
+      && s1.owner == Spot.Owner(id: "u-1", displayName: "ann") && abs(s1.coordinate.lat - 52.37445) < 1e-9 && s1.createdAt == "2026-11-18 09:12:00", "Spot fields")
+check(Set(allSpots.map(\.publicStatus)) == [.none, .requested, .approved, .denied, .revoked], "all five public_status values decode")
+check(allSpots.first { $0.id.hasSuffix("0002") }?.description == nil && allSpots.first { $0.id.hasSuffix("0007") }?.owner.displayName == nil, "null description / display_name → nil")
+check(allSpots.first { $0.id.hasSuffix("0003") }.map { $0.visibility == .public && $0.publicStatus == .approved && $0.isPublicApproved } == true, "approved public")
+let oddSpots = try! SpotsResponse.decode(Data(#"{"spots":[{"id":"a","lat":52,"lon":4,"label":"x","category":"troon","visibility":"friends","public_status":"pending","owner":{"id":"u-1"}},{"id":"b","lat":95,"lon":4,"label":"x","owner":{"id":"u"}},{"id":"c","lat":52,"lon":4,"label":"x"}]}"#.utf8)).spots
+check(oddSpots.map(\.id) == ["a"] && oddSpots[0].category == nil && oddSpots[0].visibility == .friends && oddSpots[0].publicStatus == .unknown, "unknown values tolerated, bad rows dropped")
+
+// The ACL: another user's private (or still pending) Spot never appears.
+let visibleToAnn = SpotFilter.visible(allSpots, to: "u-1")
+check(visibleToAnn.count == 7, "ann sees her 5 + 2 approved public")
+check(!visibleToAnn.contains { $0.id.hasSuffix("0008") || $0.id.hasSuffix("0009") }, "bob's private and pending Spots never reach ann")
+check(SpotFilter.own(allSpots, userId: "u-1").count == 5 && SpotFilter.own(allSpots, userId: nil).isEmpty, "own Spots by owner id; none signed out")
+let anon = SpotFilter.visible(allSpots, to: nil)
+check(anon.map(\.id).sorted() == allSpots.filter { $0.id.hasSuffix("0003") || $0.id.hasSuffix("0006") || $0.id.hasSuffix("0007") }.map(\.id).sorted(), "signed out: only public + approved")
+check(SpotFilter.visible(allSpots, to: "u-2").contains { $0.id.hasSuffix("0008") } && !SpotFilter.visible(allSpots, to: "u-2").contains { $0.id.hasSuffix("0001") }, "bob sees his own private one, not ann's")
+
+// status → which action is offered
+let byStatus = Dictionary(allSpots.filter { $0.owner.id == "u-1" }.map { ($0.publicStatus, $0) }, uniquingKeysWith: { a, _ in a })
+check(byStatus[.none]!.canRequestPublic && !byStatus[.none]!.canRevokePublic, "none → request")
+check(!byStatus[.requested]!.canRequestPublic && byStatus[.requested]!.canRevokePublic, "requested → revoke")
+check(!byStatus[.approved]!.canRequestPublic && byStatus[.approved]!.canRevokePublic, "approved → revoke (request would 409)")
+check(byStatus[.denied]!.canRequestPublic && byStatus[.revoked]!.canRequestPublic && !byStatus[.revoked]!.canRevokePublic, "denied / revoked → request again")
+
+// validation (the backend's pydantic rules)
+check(SpotDraft(label: "  ").problems == [.labelEmpty], "blank label refused")
+check(SpotDraft(label: String(repeating: "a", count: 60)).isValid && SpotDraft(label: String(repeating: "a", count: 61)).problems == [.labelTooLong], "label ≤ 60")
+check(SpotDraft(label: "x", description: String(repeating: "d", count: 401)).problems == [.descriptionTooLong] && SpotDraft(label: "x", description: String(repeating: "d", count: 400)).isValid, "description ≤ 400")
+check(SpotCategory.allCases.map(\.rawValue) == ["bank", "stoel", "picknicktafel", "krukje", "anders"], "categories = backend CATEGORIES")
+
+func jsonBody(_ r: URLRequest?) -> NSDictionary? {
+    r?.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? NSDictionary }
+}
+func spotJSON(id: String = "new-1", label: String = "Nieuw", status: String = "none", visibility: String = "private") -> Data {
+    Data(#"{"id":"\#(id)","lat":52.37,"lon":4.89,"label":"\#(label)","description":null,"category":"bank","visibility":"\#(visibility)","public_status":"\#(status)","created_at":"2026-11-20 12:00:00","owner":{"id":"u-1","display_name":"ann"}}"#.utf8)
+}
+let spotFake = FakeTransport()
+let annSession = SessionManager(store: MemorySessionStore(StoredSession(session: "SESS-ann", user: AuthUser(id: "u-1", email: "ann@example.nl", displayName: "ann", isAdmin: false))))
+let spotClient = APIClient(environment: .acc, transport: spotFake, session: annSession)
+let base = "https://bankjes-acc.stephensprive.app"
+func lastIs(_ method: String, _ path: String) -> Bool {
+    spotFake.requests.last.map { $0.httpMethod == method && $0.url?.absoluteString == base + path } ?? false
+}
+
+// GET /api/spots: Bearer, filtered
+spotFake.reply = (200, spotsData)
+let listed = run { try? await spotClient.spots() }
+check(lastIs("GET", "/api/spots") && spotFake.requests.last?.httpBody == nil, "GET /api/spots")
+check(spotFake.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer SESS-ann", "Bearer on /api/spots")
+check(listed?.count == 7 && listed?.contains { $0.owner.id == "u-2" && !$0.isPublicApproved } == false, "spots(): another user's private Spot filtered out")
+let anonClient = APIClient(environment: .acc, transport: spotFake, session: SessionManager(store: MemorySessionStore()))
+check(run { try? await anonClient.spots() }?.count == 3 && spotFake.requests.last?.value(forHTTPHeaderField: "Authorization") == nil, "signed out: no Bearer, public only")
+
+// POST /api/spots
+let draft = SpotDraft(label: "  Bankje bij de gracht ", description: " Mooi uitzicht ", category: .picknicktafel)
+let at = Coordinate(lat: 52.3712, lon: 4.8899)
+spotFake.reply = (200, spotJSON(label: "Bankje bij de gracht"))
+let created = run { try? await spotClient.createSpot(draft, at: at) }
+check(lastIs("POST", "/api/spots"), "create: POST /api/spots")
+check(spotFake.requests.last?.value(forHTTPHeaderField: "Content-Type") == "application/json", "create: JSON")
+check(jsonBody(spotFake.requests.last) == ["lat": 52.3712, "lon": 4.8899, "label": "Bankje bij de gracht", "description": "Mooi uitzicht", "category": "picknicktafel"], "create body {lat, lon, label, description, category}, trimmed")
+check(created?.id == "new-1" && created?.publicStatus == SpotPublicStatus.none, "create returns the Spot")
+check(jsonBody(spotClient.createSpotRequest(SpotDraft(label: "x", description: "  ", category: .anders), at: at)) == ["lat": 52.3712, "lon": 4.8899, "label": "x", "category": "anders"], "empty description left out")
+
+// PATCH /api/spots/{id}: only what changed
+var edit = SpotDraft(s1)
+edit.label = "Bankje achter het Paleis (oost)"
+spotFake.reply = (200, spotJSON(id: s1.id, label: edit.label))
+let patched = run { try? await spotClient.updateSpot(s1, with: edit) }
+check(lastIs("PATCH", "/api/spots/\(s1.id)") && jsonBody(spotFake.requests.last) == ["label": "Bankje achter het Paleis (oost)"], "edit: PATCH with only the label")
+check(patched?.label == "Bankje achter het Paleis (oost)", "edit returns the updated Spot")
+edit = SpotDraft(s1); edit.description = ""; edit.category = .stoel
+check(jsonBody(spotClient.updateSpotRequest(s1, with: edit)) == ["description": "", "category": "stoel"], "cleared description sent as \"\", category changed")
+let before = spotFake.requests.count
+let same = run { try? await spotClient.updateSpot(s1, with: SpotDraft(s1)) }
+check(same == s1 && spotFake.requests.count == before, "nothing changed → no request")
+
+// DELETE /api/spots/{id}
+spotFake.reply = (200, Data(#"{"ok":true}"#.utf8))
+let deleted = run { () -> Bool in (try? await spotClient.deleteSpot(id: s1.id)) != nil }
+check(deleted && lastIs("DELETE", "/api/spots/\(s1.id)") && spotFake.requests.last?.httpBody == nil, "delete: DELETE /api/spots/{id}, no body")
+
+// request-public / revoke-public
+spotFake.reply = (200, spotJSON(id: s1.id, status: "requested", visibility: "public"))
+let req = run { try? await spotClient.requestPublic(id: s1.id) }
+check(lastIs("POST", "/api/spots/\(s1.id)/request-public") && spotFake.requests.last?.httpBody == nil, "request-public: POST, no body")
+check(req?.publicStatus == .requested && req?.visibility == .public && req?.canRevokePublic == true, "request-public → requested")
+spotFake.reply = (200, spotJSON(id: s1.id, status: "revoked", visibility: "private"))
+let rev = run { try? await spotClient.revokePublic(id: s1.id) }
+check(lastIs("POST", "/api/spots/\(s1.id)/revoke-public") && spotFake.requests.last?.httpBody == nil, "revoke-public: POST, no body")
+check(rev?.publicStatus == .revoked && rev?.visibility == .private && rev?.canRequestPublic == true, "revoke-public → revoked")
+check(spotFake.requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == "Bearer SESS-ann" || $0.value(forHTTPHeaderField: "Authorization") == nil }, "only ann's Bearer is ever sent")
+
+// errors: 409, 403, offline (one request, nothing queued or retried)
+spotFake.reply = (409, Data(#"{"detail":"already approved"}"#.utf8))
+let e409 = run { () -> APIError? in do { _ = try await spotClient.requestPublic(id: "x"); return nil } catch { return error as? APIError } }
+check(e409 == .http(status: 409, detail: "already approved"), "409 already approved surfaces")
+spotFake.reply = (403, Data(#"{"detail":"not your spot"}"#.utf8))
+let e403 = run { () -> APIError? in do { _ = try await spotClient.updateSpot(s1, with: SpotDraft(label: "y")); return nil } catch { return error as? APIError } }
+check(e403 == .http(status: 403, detail: "not your spot"), "403 not your spot surfaces")
+spotFake.fail = URLError(.notConnectedToInternet)
+let n0 = spotFake.requests.count
+let eOff = run { () -> APIError? in do { _ = try await spotClient.createSpot(draft, at: at); return nil } catch { return error as? APIError } }
+if case .transport = eOff { check(spotFake.requests.count == n0 + 1, "offline create: one attempt, nothing queued") } else { check(false, "offline create → transport error") }
+spotFake.fail = nil
+spotFake.reply = (200, Data("{}".utf8))
+let eDel = run { () -> APIError? in do { try await spotClient.deleteSpot(id: "x"); return nil } catch { return error as? APIError } }
+check(eDel == .decoding("delete"), "delete without {ok:true} is not a success")
+spotFake.reply = (401, Data())
+_ = run { try? await spotClient.createSpot(draft, at: at) }
+check(!annSession.isSignedIn, "a 401 on a Spot write signs out")
+
 try? FileManager.default.removeItem(at: tmp)   // not a defer: exit() below skips top-level defers
 print("BankjesChecks: \(passed) passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)
