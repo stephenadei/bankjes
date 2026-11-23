@@ -41,8 +41,10 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSLocationWhenInUseUsageDescription: Bankjes gebruikt je locatie om bankjes bij jou in de buurt te tonen en je ernaartoe te navigeren. Je locatie wordt alleen gedeeld om een route te berekenen.
-        # D2 (I4): navigation keeps running with the screen locked. Add `UIBackgroundModes: [location]` here
-        # together with LocationProvider.setNavigating(true); still When-In-Use, never "Always".
+        # D2 (I4): navigation keeps running with the screen locked. The mode is declared here, but
+        # LocationProvider.setNavigating(true) turns `allowsBackgroundLocationUpdates` on only while navigating;
+        # still When-In-Use (blue indicator), never "Always".
+        UIBackgroundModes: [location]
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: App/Bankjes.entitlements

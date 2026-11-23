@@ -5,7 +5,8 @@ import SwiftUI
 struct BankjesApp: App {
     @State private var model: AppModel
     @State private var auth: AuthModel
-    @State private var location = LocationProvider()
+    @State private var location: LocationProvider
+    @State private var nav: NavigationModel
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -15,6 +16,10 @@ struct BankjesApp: App {
         let client = APIClient(environment: env, session: session)
         _model = State(initialValue: AppModel(environment: env, client: client))
         _auth = State(initialValue: AuthModel(environment: env, client: client, session: session))
+        // I4: navigation shares the signed-in client and the one LocationProvider.
+        let location = LocationProvider()
+        _location = State(initialValue: location)
+        _nav = State(initialValue: NavigationModel(client: client, location: location))
     }
 
     var body: some Scene {
@@ -25,6 +30,7 @@ struct BankjesApp: App {
                 .environment(model)
                 .environment(auth)
                 .environment(location)
+                .environment(nav)
                 // The magic link: https://<env host>/auth/app?token=… (Universal Link). Never logged.
                 .onOpenURL { url in Task { await auth.handle(url: url) } }
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
